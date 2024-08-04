@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>FlagMediaPlayer</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>source</name>
+			<type>2</type>
+			<locationURI>FMPLAYER_LOC</locationURI>
+		</link>
+	</linkedResources>
+	<variableList>
+		<variable>
+			<name>FMPLAYER_ROOT_LOC</name>
+			<value>$%7BPARENT-2-PROJECT_LOC%7D</value>
+		</variable>
+		<variable>
+			<name>FMPLAYER_LOC</name>
+			<value>$%7BPARENT-2-PROJECT_LOC%7D/FlagMediaPlayer/src</value>
+		</variable>
+	</variableList>
+</projectDescription>

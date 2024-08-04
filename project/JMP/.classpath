@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="source"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JMPLIB"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/MKJMP"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/FFmpegWrapper"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JMSynthesizer"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/FlagMediaPlayer"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/FunctionLib_jmp"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

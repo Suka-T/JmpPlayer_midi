@@ -1,0 +1,13 @@
+# Whether to convert the specified color to a transparent color.
+CONVERT_TRANS=FALSE
+
+# Color to transmit.
+TRANSPARENT=#FF7F27
+
+# Button background color.
+#  *"TRANS" to specify transparent color.
+BTN_BACKGROUND=#666666
+
+# Application main color.
+APPLICATION_BACKGROUND=#404040
+
