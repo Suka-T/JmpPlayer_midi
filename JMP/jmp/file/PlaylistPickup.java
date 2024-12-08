@@ -44,7 +44,7 @@ public class PlaylistPickup {
         for (int i = 0; i < fm.getFileListModel().getRowCount(); i++) {
             String name = fm.getFileListModel().getValueAt(i, 1).toString();
             File file = map.get(name);
-            if (file.exists() == false || file.isFile() == false || file.canRead() == false) {
+            if (file == null || file.exists() == false || file.isFile() == false || file.canRead() == false) {
                 continue;
             }
 
