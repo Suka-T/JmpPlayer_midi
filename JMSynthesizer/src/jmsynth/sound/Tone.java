@@ -1,6 +1,8 @@
 package jmsynth.sound;
 
 public class Tone {
+    
+    private static double DEFAULT_PITCH_DEF = 220.0;
 
     // 周波数
     private double frequency;
@@ -8,7 +10,7 @@ public class Tone {
     private double amplitude;
 
     // Note情報
-    private float defaultPitch = 440;
+    private double defaultPitch = DEFAULT_PITCH_DEF;
     private int note = 1;
 
     private double pitch = 0;
@@ -36,7 +38,7 @@ public class Tone {
     public void reset() { //
         //setVelocity(127);
 
-        defaultPitch = 440;
+        defaultPitch = DEFAULT_PITCH_DEF;
         //note = 1;
         //pitch = 0;
         // vibrato = 0;

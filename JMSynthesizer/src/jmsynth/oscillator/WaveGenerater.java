@@ -64,7 +64,7 @@ public class WaveGenerater {
         byte y = 0;
         /* 矩形波を少しゆがませる */
         if (ff > duty) {
-            if (((1.0 - dutyThresh) < ff) || (ff < (duty + dutyThresh))) {
+            if (((1.0/* - dutyThresh*/) < ff) || (ff < (duty/* + dutyThresh*/))) {
                 y = (byte) (overallLevel * DUTY_OFFSET);
             }
             else {
@@ -77,7 +77,7 @@ public class WaveGenerater {
             }
         }
         else {
-            if (((duty - dutyThresh) < ff) || (ff < (0.0 + dutyThresh))) {
+            if (((duty/* - dutyThresh*/) < ff) || (ff < (0.0/* + dutyThresh*/))) {
                 y = (byte) (-overallLevel * DUTY_OFFSET);
             }
             else {
