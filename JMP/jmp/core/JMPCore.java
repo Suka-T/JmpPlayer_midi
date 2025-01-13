@@ -20,7 +20,7 @@ public class JMPCore {
     public static final String APPLICATION_NAME = "JMPPlayer";
 
     /** アプリケーションバージョン */
-    public static final String APPLICATION_VERSION = "1.00.001"; /* メジャーリリース番号.機能追加番号.修正番号 */
+    public static final String APPLICATION_VERSION = "1.00.002"; /* メジャーリリース番号.機能追加番号.修正番号 */
 
     /** ライブラリバージョン */
     public static final String LIBRALY_VERSION = JMPLIB.BUILD_VERSION;
