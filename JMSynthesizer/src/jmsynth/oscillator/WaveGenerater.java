@@ -65,27 +65,27 @@ public class WaveGenerater {
         /* 矩形波を少しゆがませる */
         if (ff > duty) {
             if (((1.0/* - dutyThresh*/) < ff) || (ff < (duty/* + dutyThresh*/))) {
-                y = (byte) (overallLevel * DUTY_OFFSET);
+                y = (byte) ((double)overallLevel * DUTY_OFFSET);
             }
             else {
                 if (lowRes == true) {
-                    y = (byte) (overallLevel - ((ff - (duty + dutyThresh)) * 4.0));
+                    y = (byte) ((double)overallLevel - ((ff - (duty + dutyThresh)) * 4.0));
                 }
                 else {
-                    y = (byte) (overallLevel);
+                    y = (byte) ((double)overallLevel);
                 }
             }
         }
         else {
             if (((duty/* - dutyThresh*/) < ff) || (ff < (0.0/* + dutyThresh*/))) {
-                y = (byte) (-overallLevel * DUTY_OFFSET);
+                y = (byte) ((double)-overallLevel * DUTY_OFFSET);
             }
             else {
                 if (lowRes == true) {
-                    y = (byte) (-(overallLevel - ((ff - dutyThresh) * 4.0)));
+                    y = (byte) (-((double)overallLevel - ((ff - dutyThresh) * 4.0)));
                 }
                 else {
-                    y = (byte) (-(overallLevel));
+                    y = (byte) (-((double)overallLevel));
                 }
             }
         }
@@ -126,11 +126,11 @@ public class WaveGenerater {
         double sign = (ff < 0.5) ? -1.0 : 1.0;
         if (slope == 0) {
             // 上り
-            y = (byte) (((overallLevel - (overallLevel * (quarter / 0.25)))) * sign);
+            y = (byte) ((((double)overallLevel - ((double)overallLevel * (quarter / 0.25)))) * sign);
         }
         else {
             // 下り
-            y = (byte) ((overallLevel * (quarter / 0.25)) * sign);
+            y = (byte) (((double)overallLevel * (quarter / 0.25)) * sign);
         }
         return y;
     }

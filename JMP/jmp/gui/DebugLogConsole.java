@@ -60,7 +60,7 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
             {
                 txtpnTest = new JTextPane();
                 txtpnTest.setText("Test");
-                txtpnTest.setFont(new Font("DejaVu Sans Mono", Font.PLAIN, 12));
+                txtpnTest.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
                 txtpnTest.setEditable(false);
                 scrollPane.setViewportView(txtpnTest);
                 txtpnTest.setForeground(new Color(60, 179, 113));
@@ -169,7 +169,7 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
             int addBites = str.getBytes("UTF-8").length;
             int currentBites = SText.getBytes("UTF-8").length;
             if (currentBites + addBites > 1024 * 3) {
-                // 3M以上は記録しない
+                // 3K以上は記録しない
                 SText = "";
             }
             
