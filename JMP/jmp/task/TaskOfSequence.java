@@ -10,8 +10,8 @@ import jmp.task.TaskPacket.PacketType;
  *
  */
 public class TaskOfSequence extends TaskOfBase {
-    public TaskOfSequence() {
-        super(100, true);
+    public TaskOfSequence(int priority) {
+        super(100, priority, true);
     }
 
     @Override

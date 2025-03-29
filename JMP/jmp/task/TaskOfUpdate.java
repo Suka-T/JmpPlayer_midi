@@ -28,8 +28,8 @@ public class TaskOfUpdate extends TaskOfBase {
     private boolean pastRunnableState = false;
     private boolean requestUpdateFlag = false;
 
-    public TaskOfUpdate() {
-        super(50, true);
+    public TaskOfUpdate(int priority) {
+        super(50, priority, true);
     }
 
     @Override

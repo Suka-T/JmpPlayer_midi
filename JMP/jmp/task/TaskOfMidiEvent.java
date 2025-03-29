@@ -13,7 +13,6 @@ import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.PluginManager;
 import jmp.core.WindowManager;
-import jmp.midi.MidiByteMessage;
 
 public class TaskOfMidiEvent extends TaskOfBase {
 
@@ -32,8 +31,8 @@ public class TaskOfMidiEvent extends TaskOfBase {
     private List<JmpMidiPacket> stack = null;
     private Object mutex = new Object();
 
-    public TaskOfMidiEvent() {
-        super(20, true);
+    public TaskOfMidiEvent(int priority) {
+        super(20, priority, true);
         stack = Collections.synchronizedList(new LinkedList<JmpMidiPacket>());
     }
 
@@ -44,9 +43,8 @@ public class TaskOfMidiEvent extends TaskOfBase {
             // 非同期にするため、MidiMessageをクローンする
             byte[] sMes = message.getMessage();
             byte[] dMes = Arrays.copyOf(sMes, sMes.length);
-            packet = new JmpMidiPacket(new MidiByteMessage(dMes), timeStamp, senderType);
-            // packet = new JmpMidiPacket((MidiMessage) message.clone(),
-            // timeStamp, senderType);
+//            packet = new JmpMidiPacket(new MidiByteMessage(dMes), timeStamp, senderType);
+            packet = new JmpMidiPacket((MidiMessage) message.clone(), timeStamp, senderType);
         }
         else {
             packet = new JmpMidiPacket(message, timeStamp, senderType);

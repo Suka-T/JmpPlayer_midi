@@ -106,6 +106,7 @@ public class JMPSequencer implements Sequencer {
             }
         }
 
+        // 実態のSequencerオブジェクトに対して開始命令を送る 
         abstractSequencer.start();
 
         JMPCore.getPluginManager().startSequencer();

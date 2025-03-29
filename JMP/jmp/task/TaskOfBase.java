@@ -85,7 +85,7 @@ public abstract class TaskOfBase implements ITask, Runnable {
     private long sleepTime = 100;
     private long waitTime = 0;
 
-    public TaskOfBase(long sleepTime, boolean isSyncQueue) {
+    public TaskOfBase(long sleepTime, int priority, boolean isSyncQueue) {
         if (isSyncQueue == true) {
             this.queue = new SynchronizedTaskQueue();
         }
@@ -96,6 +96,7 @@ public abstract class TaskOfBase implements ITask, Runnable {
         this.isRunnable = true;
         this.waitTime = 0;
         this.thread = new Thread(this);
+        this.thread.setPriority(priority);
     }
 
     @Override

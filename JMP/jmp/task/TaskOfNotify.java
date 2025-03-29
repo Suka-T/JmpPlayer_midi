@@ -10,8 +10,8 @@ public class TaskOfNotify extends TaskOfBase {
         UPDATE_CONFIG, UPDATE_SYSCOMMON, FILE_RESULT_BEGIN, FILE_RESULT_END
     }
 
-    public TaskOfNotify() {
-        super(100, true);
+    public TaskOfNotify(int priority) {
+        super(100, priority, true);
     }
 
     @Override

@@ -17,8 +17,8 @@ public class TaskOfTimer extends TaskOfBase {
     private ArrayList<CallbackPackage> callbackPackages = new ArrayList<CallbackPackage>();
     private Object mutex = new Object();
 
-    public TaskOfTimer() {
-        super(100, true);
+    public TaskOfTimer(int priority) {
+        super(100, priority, true);
     }
 
     public void addCallbackPackage(CallbackPackage pakage) {

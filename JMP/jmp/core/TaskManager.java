@@ -42,19 +42,19 @@ public class TaskManager extends AbstractManager {
         taskMap = new HashMap<TaskID, ITask>();
 
         // 更新タスク登録
-        taskMap.put(TaskID.UPDATE, new TaskOfUpdate());
+        taskMap.put(TaskID.UPDATE, new TaskOfUpdate(Thread.MIN_PRIORITY));
 
         // タイマータスク登録
-        taskMap.put(TaskID.TIMER, new TaskOfTimer());
+        taskMap.put(TaskID.TIMER, new TaskOfTimer(Thread.NORM_PRIORITY));
 
         // シーケンスタスク登録
-        taskMap.put(TaskID.SEQUENCE, new TaskOfSequence());
+        taskMap.put(TaskID.SEQUENCE, new TaskOfSequence(Thread.MAX_PRIORITY));
 
         // MIDIイベントタスク登録
-        taskMap.put(TaskID.MIDI, new TaskOfMidiEvent());
+        taskMap.put(TaskID.MIDI, new TaskOfMidiEvent(Thread.MAX_PRIORITY));
 
         // Notifyタスク登録
-        taskMap.put(TaskID.NOTIFY, new TaskOfNotify());
+        taskMap.put(TaskID.NOTIFY, new TaskOfNotify(9));
 
         // アプリケーション共通コールバック関数の登録
         registerCommonCallbackPackage();
