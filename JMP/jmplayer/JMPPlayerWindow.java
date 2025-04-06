@@ -186,6 +186,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
     private JSlider mntmVolumeSlider;
     private JMenuItem mntmPlayInit;
     private JMenuItem mntmOpenFilePicker;
+    private JMenuItem mntmMidiWavSync;
 
     /**
      * コンストラクタ(WindowBuilderによる自動生成)
@@ -279,11 +280,18 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         slider.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                if (JMPCore.getSoundManager().isValidSyncPlayer() == true) {
+                    return;
+                }
                 s_tmpSliderTick = slider.getValue();
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                if (JMPCore.getSoundManager().isValidSyncPlayer() == true) {
+                    return;
+                }
+                
                 long value = s_tmpSliderTick;
                 if (s_tmpSliderTick != -1) {
                     JMPCore.getSoundManager().getCurrentPlayer().setPosition(value);
@@ -294,6 +302,9 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         slider.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
+                if (JMPCore.getSoundManager().isValidSyncPlayer() == true) {
+                    return;
+                }
                 s_tmpSliderTick = slider.getValue();
             }
         });
@@ -306,6 +317,9 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
 
             @Override
             public void mousePressed(MouseEvent e) {
+                if (JMPCore.getSoundManager().isValidSyncPlayer() == true) {
+                    return;
+                }
                 JMPCore.getSoundManager().fastForward();
             }
         });
@@ -318,6 +332,9 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         prevButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                if (JMPCore.getSoundManager().isValidSyncPlayer() == true) {
+                    return;
+                }
                 JMPCore.getSoundManager().rewind();
             }
         });
@@ -341,6 +358,14 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
             }
         });
         fileMenu.add(openItem);
+        
+        mntmMidiWavSync = new JMenuItem("Synchronized MIDI and WAV playback");
+        mntmMidiWavSync.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                showChildWindow(WindowManager.WINDOW_NAME_MIDI_WAV_SYNC);
+            }
+        });
+        fileMenu.add(mntmMidiWavSync);
 
         endItem = new JMenuItem("終了");
         endItem.addActionListener(new ActionListener() {
@@ -512,6 +537,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 showChildWindow(WindowManager.WINDOW_NAME_MIDI_MONITOR);
             }
         });
+        
         menuBar.add(pluginMenu);
 
         addPluginMenuItem = new JMenuItem("プラグイン追加");
@@ -1539,6 +1565,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         wm.changeFont(mntmFFmpegConverter, LangID.FFmpeg_converter);
         wm.changeFont(mntmInitializeConfig, LangID.Initialize_setting);
         wm.changeFont(mntmPluginManager, LangID.Plugin_manager);
+        wm.changeFont(mntmMidiWavSync, LangID.Synchronized_MIDI_and_WAV_play);
 
         wm.changeFont(chckbxmntmLyricView, LangID.Lyrics_display);
         wm.changeFont(chckbxmntmSendSystemSetupBeforePlayback, LangID.Send_system_setup_before_playback);

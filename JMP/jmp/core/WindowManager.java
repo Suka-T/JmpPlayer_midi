@@ -23,6 +23,7 @@ import jmp.gui.LicenseReaderDialog;
 import jmp.gui.MidiDataTransportDialog;
 import jmp.gui.MidiFileListDialog;
 import jmp.gui.MidiMessageMonitor;
+import jmp.gui.MidiWavSynchronizerDialog;
 import jmp.gui.PluginManagerDialog;
 import jmp.gui.SelectLanguageDialog;
 import jmp.gui.SelectSynthsizerDialog;
@@ -56,6 +57,7 @@ public class WindowManager extends AbstractManager implements IWindowManager {
             WINDOW_NAME_YOUTUBEDL, //
             WINDOW_NAME_FILE_PICKUP, //
             WINDOW_NAME_CONSOLE, //
+            WINDOW_NAME_MIDI_WAV_SYNC, //
     };
 
     private WindowDatabase database = null;
@@ -88,6 +90,7 @@ public class WindowManager extends AbstractManager implements IWindowManager {
         register(WINDOW_NAME_YOUTUBEDL, new YoutubeConvertDialog());
         register(WINDOW_NAME_FILE_PICKUP, new FilePickupDialog());
         register(WINDOW_NAME_CONSOLE, SystemManager.console);
+        register(WINDOW_NAME_MIDI_WAV_SYNC, new MidiWavSynchronizerDialog());
 
         // メインウィンドウ登録
         registerMainWindow(new JMPPlayerWindow());

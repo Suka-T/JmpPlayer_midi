@@ -96,9 +96,6 @@ public class JMPSequencer implements Sequencer {
             return;
         }
 
-        // MidiPlayerに変更する
-        JMPCore.getSoundManager().changeMidiPlayer();
-
         // ロード時にシステムセットアップを送信する
         if (JMPCore.getDataManager().isSendMidiSystemSetup() == true) {
             if (getTickPosition() <= 0) {

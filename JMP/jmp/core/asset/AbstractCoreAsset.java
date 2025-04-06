@@ -4,6 +4,7 @@ public abstract class AbstractCoreAsset {
 
     public enum OperateType {
         FileLoad,
+        DualFileLoad,
     }
 
     protected OperateType opeType;

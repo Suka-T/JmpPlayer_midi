@@ -37,6 +37,7 @@ import jmp.JMPFlags;
 import jmp.core.FileManager.AutoPlayMode;
 import jmp.core.asset.AbstractCoreAsset;
 import jmp.core.asset.AbstractCoreAsset.OperateType;
+import jmp.core.asset.DualFileLoadCoreAsset;
 import jmp.core.asset.FileLoadCoreAsset;
 import jmp.file.PlaylistPickup;
 import jmp.lang.DefineLanguage.LangID;
@@ -44,6 +45,7 @@ import jmp.midi.JMPMidiFilter;
 import jmp.midi.MidiController;
 import jmp.midi.MidiUnit;
 import jmp.midi.toolkit.MidiToolkitManager;
+import jmp.player.DualPlayerSynchronizer;
 import jmp.player.DummyPlayer;
 import jmp.player.FFmpegPlayer;
 import jmp.player.IMoviePlayerModel;
@@ -86,6 +88,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     private Player SMusicMacloPlayer = null;
     private Player SFFmpegPlayer = null;
     private Player SMoviePlayer = null;
+    private DualPlayerSynchronizer SDualPlayerSynchronizer = null;
 
     // プレイヤーのインターフェース
     private IMoviePlayerModel moviePlayerModel = null;
@@ -185,6 +188,10 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         SFFmpegPlayer = new FFmpegPlayer(SWavPlayer);
         SFFmpegPlayer.setSupportExtentions("*");
         PlayerAccessor.register(SFFmpegPlayer);
+        
+        // Midi Wav 同時再生 
+        SDualPlayerSynchronizer = new DualPlayerSynchronizer(SMidiPlayer, SWavPlayer);
+        PlayerAccessor.registerDualPlayerSynchronizer(SDualPlayerSynchronizer);
 
         // デフォルトはMIDIプレイヤーにする
         PlayerAccessor.change(SMidiPlayer);
@@ -673,6 +680,52 @@ public class SoundManager extends AbstractManager implements ISoundManager {
 
             res = loadResult;
         }
+        else if (asset.getOperateType() == OperateType.DualFileLoad) {
+            /* ファイルロード処理 */
+            DualFileLoadCoreAsset fileAsset = (DualFileLoadCoreAsset) asset;
+            Player tmpPlayer = PlayerAccessor.getCurrent();
+            boolean loadResult = true;
+
+            try {
+                PlayerAccessor.changeDualPlayerSynchronizer();
+                if (tmpPlayer != PlayerAccessor.getCurrent()) {
+                    tmpPlayer.changingPlayer();
+                }
+
+                if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {
+                    loadResult = false;
+                }
+                
+                if (loadResult == true) {
+                    // ２つ目のファイルをロードする 
+                    DualPlayerSynchronizer syncPlayer = (DualPlayerSynchronizer)PlayerAccessor.getCurrent();
+                    loadResult = syncPlayer.loadSecondFile(fileAsset.subFile);
+                }
+            }
+            catch (Exception e) {
+                if (JMPFlags.DebugMode == true) {
+                    e.printStackTrace();
+                }
+                loadResult = false;
+            }
+            finally {
+                if (loadResult == false) {
+                    // ロードに失敗した場合は、プレイヤーを元に戻す
+                    PlayerAccessor.change(tmpPlayer);
+                }
+            }
+
+            fileAsset.result.status = loadResult;
+            if (fileAsset.result.status == false) {
+                /* ファイルオープンに例外が発生した場合、プレーヤーを切り替える */
+                changeMidiPlayer();
+                JMPCore.getWindowManager().getMainWindow().clearStatusMessage();
+                LanguageManager lm = JMPCore.getLanguageManager();
+                fileAsset.result.statusMsg = lm.getLanguageStr(LangID.FILE_ERROR_5);
+            }
+
+            res = loadResult;
+        }
         return res;
     }
 
@@ -1086,5 +1139,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
 
     public boolean executeMidiFilter(MidiMessage message, short senderType) {
         return midiUnit.filter(message, senderType);
+    }
+    
+    public boolean isValidSyncPlayer() {
+        return (PlayerAccessor.getCurrent() == SDualPlayerSynchronizer);
     }
 }

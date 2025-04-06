@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 import jmp.JMPFlags;
+import jmp.core.asset.DualFileLoadCoreAsset;
 import jmp.core.asset.FileLoadCoreAsset;
 import jmp.file.FileResult;
 import jmp.lang.DefineLanguage.LangID;
@@ -95,6 +96,12 @@ public class FileCallbackCreator {
             this.noneHistoryFlag = noneHistoryFlag;
             this.loadToPlayFlag = toPlay;
         }
+        
+        public FileLoadCoreAsset createFileLoadCoreAsset() {
+            endResult.status = true;
+            endResult.statusMsg = "";
+            return new FileLoadCoreAsset(file, endResult);
+        }
 
         @Override
         public void validatePreProcces() {
@@ -152,12 +159,8 @@ public class FileCallbackCreator {
 
             dm.clearCachedFiles(file);
 
-            /* ロード処理 */
-            endResult.status = true;
-            endResult.statusMsg = "";
-
             /* coreのOperateをコール */
-            FileLoadCoreAsset asset = new FileLoadCoreAsset(file, endResult);
+            FileLoadCoreAsset asset = createFileLoadCoreAsset();
             JMPCore.operate(asset, true);
 
             /* 事後処理 */
@@ -232,8 +235,30 @@ public class FileCallbackCreator {
             JMPFlags.NowLoadingFlag = false;
         }
     }
+    
+    private class DualFileLoadCallbackFunc extends LoadCallbackFunc {
+
+        File subFile = null;
+        public DualFileLoadCallbackFunc(File f, File sub, boolean noneHistoryFlag, boolean toPlay) {
+            super(f, noneHistoryFlag, toPlay);
+            
+            this.subFile = sub;
+        }
+        
+        @Override
+        public FileLoadCoreAsset createFileLoadCoreAsset() {
+            endResult.status = true;
+            endResult.statusMsg = "";
+            
+            return new DualFileLoadCoreAsset(file, endResult, subFile);
+        }
+    }
 
     public FileCallbackFunction createLoadCallback(File f, boolean toPlay) {
         return new LoadCallbackFunc(f, JMPFlags.NoneHistoryLoadFlag, toPlay);
+    }
+    
+    public FileCallbackFunction createDualLoadCallback(File f, File sub, boolean toPlay) {
+        return new DualFileLoadCallbackFunc(f, sub, JMPFlags.NoneHistoryLoadFlag, toPlay);
     }
 }

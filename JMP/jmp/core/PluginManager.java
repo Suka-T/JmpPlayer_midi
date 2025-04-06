@@ -864,7 +864,7 @@ public class PluginManager extends AbstractManager {
     @Override
     protected boolean operate(AbstractCoreAsset asset) {
         boolean res = super.operate(asset);
-        if (asset.getOperateType() == OperateType.FileLoad) {
+        if ((asset.getOperateType() == OperateType.FileLoad) || (asset.getOperateType() == OperateType.DualFileLoad)) {
             /* ファイルロード処理 */
             FileLoadCoreAsset fileAsset = (FileLoadCoreAsset) asset;
             try {

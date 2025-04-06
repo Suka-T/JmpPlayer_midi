@@ -5,8 +5,8 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/MKJMP"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/FFmpegWrapper"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JMSynthesizer"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/FlagMediaPlayer"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk8u352-full"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/FunctionLib_jmp"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/FlagMediaPlayer"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

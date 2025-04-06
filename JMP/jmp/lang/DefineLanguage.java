@@ -115,6 +115,10 @@ public class DefineLanguage {
         Dont_choose_a_synthesizer,//
         Random_playback,//
         Allow_window_size_change,//
+        Load,//
+        Midi_File,//
+        Wav_File,//
+        Synchronized_MIDI_and_WAV_play,//
     }//
     static LangMap langMap = new LangMap() {
         {
@@ -221,6 +225,10 @@ public class DefineLanguage {
             put(LangID.Dont_choose_a_synthesizer, new LanguageWords("Don't choose a synthesizer","シンセサイザーを選択しない","不要选择合成器","不要選擇合成器","신디사이저를 선택하지 마십시오","Не выбирайте синтезатор"));
             put(LangID.Random_playback, new LanguageWords("Random playback","ランダム再生","随机播放","隨機播放","랜덤 재생","Воспроизведение в случайном порядке"));
             put(LangID.Allow_window_size_change, new LanguageWords("Allow window size change","Windowサイズの変更を許可","允许更改窗口大小","允許更改窗口大小","창 크기 변경 허용","Разрешить изменение размера окна"));
+            put(LangID.Load, new LanguageWords("Load","読み込み","Load","Load","Load","Load"));
+            put(LangID.Midi_File, new LanguageWords("MIDI File","MIDIファイル","MIDI File","MIDI File","MIDI File","MIDI File"));
+            put(LangID.Wav_File, new LanguageWords("WAV File","WAVファイル","WAV File","WAV File","WAV File","WAV File"));
+            put(LangID.Synchronized_MIDI_and_WAV_play, new LanguageWords("Synchronized MIDI and WAV play","MIDI/WAV同期再生","Synchronized MIDI and WAV play","Synchronized MIDI and WAV play","Synchronized MIDI and WAV play","Synchronized MIDI and WAV play"));
         }
     };
 }
