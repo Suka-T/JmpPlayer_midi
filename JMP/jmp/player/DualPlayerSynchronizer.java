@@ -17,7 +17,9 @@ public class DualPlayerSynchronizer extends Player {
     @Override
     public void play() {
         // 同期再生は一時停止不可 
-        setPosition(0);
+        if (getPosition() > 0) {
+            setPosition(0);
+        }
         
         for (Player player : aPlayer) {
             player.play();
