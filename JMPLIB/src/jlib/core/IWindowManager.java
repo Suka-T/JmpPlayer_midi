@@ -18,6 +18,7 @@ public interface IWindowManager {
     public static final String WINDOW_NAME_YOUTUBEDL = "YOUTUBEDL";
     public static final String WINDOW_NAME_CONSOLE = "CONSOLE";
     public static final String WINDOW_NAME_MIDI_WAV_SYNC = "MIDI_WAV_SYNC";
+    public static final String WINDOW_NAME_NOTES_MONITOR = "NOTES_MONITOR";
 
     /**
      * MainWindow取得

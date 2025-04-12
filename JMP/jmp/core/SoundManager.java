@@ -30,6 +30,7 @@ import jlib.midi.IMidiController;
 import jlib.midi.IMidiEventListener;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.IMidiUnit;
+import jlib.midi.INotesMonitor;
 import jlib.midi.MidiByte;
 import jlib.player.IPlayer;
 import jlib.player.Player;
@@ -44,6 +45,7 @@ import jmp.lang.DefineLanguage.LangID;
 import jmp.midi.JMPMidiFilter;
 import jmp.midi.MidiController;
 import jmp.midi.MidiUnit;
+import jmp.midi.NotesMonitor;
 import jmp.midi.toolkit.MidiToolkitManager;
 import jmp.player.DualPlayerSynchronizer;
 import jmp.player.DummyPlayer;
@@ -103,6 +105,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     private IMidiController midiInController = null;
     private IMidiController midiOutController = null;
     private MidiUnit midiUnit = null;
+    private NotesMonitor notesMonitor = null;
 
     // Line情報
     private static Line.Info[] LineInfos = new Line.Info[] { Port.Info.SPEAKER, Port.Info.LINE_OUT, Port.Info.HEADPHONE };
@@ -220,6 +223,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         // プレイリストの候補作成
         playlistPickup = new PlaylistPickup();
         playlistPickup.remakePool();
+        
+        // ノーツ監視クラス 
+        notesMonitor = new NotesMonitor();
 
         super.initFunc();
         return true;
@@ -640,6 +646,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     @Override
     protected boolean operate(AbstractCoreAsset asset) {
         boolean res = super.operate(asset);
+        
+        getNotesMonitor().clearNumOfNotes();
+        
         if (asset.getOperateType() == OperateType.FileLoad) {
             /* ファイルロード処理 */
             FileLoadCoreAsset fileAsset = (FileLoadCoreAsset) asset;
@@ -726,6 +735,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
 
             res = loadResult;
         }
+        
+        getNotesMonitor().analyzeMidiSequence();
+        
         return res;
     }
 
@@ -810,6 +822,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         }
 
         player.setPosition(pos);
+        if (player.getPosition() <= 0) {
+            getNotesMonitor().reset();
+        }
 
         if (backupVisible == true) {
             JMPFlags.WindowAutomationPosFlag = false;
@@ -1143,5 +1158,10 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     
     public boolean isValidSyncPlayer() {
         return (PlayerAccessor.getCurrent() == SDualPlayerSynchronizer);
+    }
+
+    @Override
+    public INotesMonitor getNotesMonitor() {
+        return notesMonitor;
     }
 }

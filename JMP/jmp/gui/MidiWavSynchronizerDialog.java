@@ -248,8 +248,13 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
     
     public void executeLoadToPlay() {
         File f1 = new File(textFieldMidiPath.getText());
-        File f2 = new File(textFieldMediaFilePath.getText());
-        JMPCore.getFileManager().loadDualFileToPlay(f1, f2);
+        if (textFieldMediaFilePath.getText().isEmpty() == false) {
+            File f2 = new File(textFieldMediaFilePath.getText());
+            JMPCore.getFileManager().loadDualFileToPlay(f1, f2);
+        }
+        else {
+            JMPCore.getFileManager().loadFileToPlay(f1);
+        }
         
         hideWindow();
     }
@@ -257,9 +262,13 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
     
     public void executeLoad() {
         File f1 = new File(textFieldMidiPath.getText());
-        File f2 = new File(textFieldMediaFilePath.getText());
-        JMPCore.getFileManager().loadDualFile(f1, f2);
-        
+        if (textFieldMediaFilePath.getText().isEmpty() == false) {
+            File f2 = new File(textFieldMediaFilePath.getText());
+            JMPCore.getFileManager().loadDualFile(f1, f2);
+        }
+        else {
+            JMPCore.getFileManager().loadFile(f1);
+        }
         hideWindow();
     }
 

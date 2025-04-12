@@ -21,10 +21,10 @@ public class TaskOfUpdate extends TaskOfBase {
     private static final int CYCLIC_UPDATE_MSEC = 100;
     private static final int CYCLIC_REPAINT_MSEC = 5000;
     private static final int CYCLIC_REPAINT_MSEC_PLAY = 1000;
-    private static final int CYCLIC_REPAINT_BUILTIN_SYNTH_MSEC = 50;
+    private static final int CYCLIC_REPAINT_SHORT_MSEC = 50;
     private int cyclicUpdateCount = 0;
     private int cyclicRepaintCount = 0;
-    private int cyclicBuiltinRepaintCount = 0;
+    private int cyclicShortRepaintCount = 0;
     private boolean pastRunnableState = false;
     private boolean requestUpdateFlag = false;
 
@@ -36,7 +36,7 @@ public class TaskOfUpdate extends TaskOfBase {
     void begin() {
         cyclicUpdateCount = 0;
         cyclicRepaintCount = 0;
-        cyclicBuiltinRepaintCount = 0;
+        cyclicShortRepaintCount = 0;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class TaskOfUpdate extends TaskOfBase {
         boolean isUpdate = false;
         boolean isRepaint = false;
         boolean isRepaintMain = false;
-        boolean isRepaintBuiltin = false;
+        boolean isRepaintShort = false;
 
         // 再描画カウント
         if (JMPCore.getSoundManager().isPlay() == true) {
@@ -78,16 +78,16 @@ public class TaskOfUpdate extends TaskOfBase {
         if ((CYCLIC_UPDATE_MSEC / getSleepTime()) <= cyclicUpdateCount) {
             isUpdate = true;
         }
-        // 内蔵シンセ再描画
-        if ((CYCLIC_REPAINT_BUILTIN_SYNTH_MSEC / getSleepTime()) <= cyclicBuiltinRepaintCount) {
-            isRepaintBuiltin = true;
+        // 短い間隔の低周期再描画
+        if ((CYCLIC_REPAINT_SHORT_MSEC / getSleepTime()) <= cyclicShortRepaintCount) {
+            isRepaintShort = true;
         }
 
         // 強制再描画
         if (requestUpdateFlag == true) {
             isUpdate = true;
             isRepaint = true;
-            isRepaintBuiltin = true;
+            isRepaintShort = true;
             requestUpdateFlag = false;
         }
 
@@ -109,14 +109,17 @@ public class TaskOfUpdate extends TaskOfBase {
                 launch.repaint();
             }
         }
-        // 自作シンセ再描画
-        if (isRepaintBuiltin == true) {
+        if (isRepaintShort == true) {
+            if (wm.getWindow(WindowManager.WINDOW_NAME_NOTES_MONITOR).isWindowVisible() == true) {
+                wm.getWindow(WindowManager.WINDOW_NAME_NOTES_MONITOR).repaintWindow();
+            }
+            // 自作シンセ再描画
             wm.repaintBuiltinSynthFrame();
-            cyclicBuiltinRepaintCount = 0;
+            cyclicShortRepaintCount = 0;
         }
         cyclicRepaintCount++;
         cyclicUpdateCount++;
-        cyclicBuiltinRepaintCount++;
+        cyclicShortRepaintCount++;
 
         pastRunnableState = JMPCore.getSoundManager().isPlay();
 

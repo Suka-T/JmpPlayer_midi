@@ -11,6 +11,7 @@ import jlib.midi.IMidiEventListener;
 import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.PluginManager;
+import jmp.core.SoundManager;
 import jmp.core.WindowManager;
 
 public class TaskOfMidiEvent extends TaskOfBase {
@@ -68,7 +69,9 @@ public class TaskOfMidiEvent extends TaskOfBase {
     void loop() {
         WindowManager wm = JMPCore.getWindowManager();
         PluginManager pm = JMPCore.getPluginManager();
+        SoundManager sm = JMPCore.getSoundManager();
         IMidiEventListener midiEventMonitor = (IMidiEventListener) wm.getWindow(WindowManager.WINDOW_NAME_MIDI_MONITOR);
+        IMidiEventListener notesMonitor = (IMidiEventListener)sm.getNotesMonitor();
 
         synchronized (mutex) {
             // スタックされたパケットをプラグインに送信
@@ -80,6 +83,9 @@ public class TaskOfMidiEvent extends TaskOfBase {
                     pm.send(packet);
                     if (midiEventMonitor != null) {
                         midiEventMonitor.catchMidiEvent(packet.message, packet.timeStamp, packet.senderType);
+                    }
+                    if (notesMonitor != null) {
+                        notesMonitor.catchMidiEvent(packet.message, packet.timeStamp, packet.senderType);
                     }
                 }
 

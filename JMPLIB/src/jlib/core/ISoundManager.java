@@ -4,6 +4,7 @@ import jlib.midi.IMidiController;
 import jlib.midi.IMidiEventListener;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.IMidiUnit;
+import jlib.midi.INotesMonitor;
 
 public interface ISoundManager {
 
@@ -190,5 +191,12 @@ public interface ISoundManager {
      * @param transpose
      */
     abstract void setTranspose(int channel, int transpose);
+    
+    /**
+     * ノーツ監視クラス取得 
+     * 
+     * @return
+     */
+    abstract INotesMonitor getNotesMonitor();
 
 }

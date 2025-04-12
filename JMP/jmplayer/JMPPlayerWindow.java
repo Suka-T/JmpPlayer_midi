@@ -171,6 +171,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
     private JPanel panel_5;
     private JPanel panel_6;
     private JMenuItem mntmInitLayout;
+    private JMenuItem mntmToFrontAll;
     private JMenuItem mntmFFmpegConverter;
     private JMenu mnTool;
     private JMenuItem mntmInitializeConfig;
@@ -203,6 +204,16 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         this.addWindowListener(this);
         this.setTransferHandler(new DropFileCallbackHandler(this));
         this.setBounds(WindowManager.DEFAULT_PLAYER_WINDOW_SIZE);
+        
+        this.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+        });
 
         getContentPane().setLayout(new BorderLayout(0, 0));
 
@@ -413,6 +424,18 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 JMPCore.getWindowManager().setVisibleAll(false);
             }
         });
+        
+        mntmToFrontAll = new JMenuItem("To Front");
+        mntmToFrontAll.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                for (String name : JMPCore.getWindowManager().getWindowNameList()) {
+                    if (name != WindowManager.WINDOW_NAME_MAIN) {
+                        JMPCore.getWindowManager().toFront(name);
+                    }
+                    JMPCore.getWindowManager().toFront(WindowManager.WINDOW_NAME_MAIN);
+                }
+            }
+        });
 
         chckbxmntmWindowResizeble = new JCheckBoxMenuItem("Windowサイズの変更を許可");
         chckbxmntmWindowResizeble.addChangeListener(new ChangeListener() {
@@ -422,6 +445,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         });
         windowMenu.add(chckbxmntmWindowResizeble);
         windowMenu.add(mntmInitLayout);
+        windowMenu.add(mntmToFrontAll);
 
         playerMenu = new JMenu("プレイヤー");
         playerMenu.addMenuListener(new JmpMenuListener());

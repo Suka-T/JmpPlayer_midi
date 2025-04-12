@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.swing.AbstractButton;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -24,6 +26,7 @@ import jmp.gui.MidiDataTransportDialog;
 import jmp.gui.MidiFileListDialog;
 import jmp.gui.MidiMessageMonitor;
 import jmp.gui.MidiWavSynchronizerDialog;
+import jmp.gui.NotesMonitorDialog;
 import jmp.gui.PluginManagerDialog;
 import jmp.gui.SelectLanguageDialog;
 import jmp.gui.SelectSynthsizerDialog;
@@ -58,6 +61,7 @@ public class WindowManager extends AbstractManager implements IWindowManager {
             WINDOW_NAME_FILE_PICKUP, //
             WINDOW_NAME_CONSOLE, //
             WINDOW_NAME_MIDI_WAV_SYNC, //
+            WINDOW_NAME_NOTES_MONITOR, //
     };
 
     private WindowDatabase database = null;
@@ -91,6 +95,7 @@ public class WindowManager extends AbstractManager implements IWindowManager {
         register(WINDOW_NAME_FILE_PICKUP, new FilePickupDialog());
         register(WINDOW_NAME_CONSOLE, SystemManager.console);
         register(WINDOW_NAME_MIDI_WAV_SYNC, new MidiWavSynchronizerDialog());
+        register(WINDOW_NAME_NOTES_MONITOR, new NotesMonitorDialog());
 
         // メインウィンドウ登録
         registerMainWindow(new JMPPlayerWindow());
@@ -280,6 +285,18 @@ public class WindowManager extends AbstractManager implements IWindowManager {
             PluginWrapper plg = pm.getPluginWrapper(pname);
             if (plg != null) {
                 plg.close();
+            }
+        }
+    }
+    
+    public void toFront(String name) {
+        IJmpWindow win = getWindow(name);
+        if (win.isWindowVisible() == true) {
+            if (win instanceof JFrame) {
+                ((JFrame)win).toFront();
+            }
+            else if (win instanceof JDialog) {
+                ((JDialog)win).toFront();
             }
         }
     }
