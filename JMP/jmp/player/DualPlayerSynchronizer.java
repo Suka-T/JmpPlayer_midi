@@ -13,6 +13,10 @@ public class DualPlayerSynchronizer extends Player {
         aPlayer[0] = primeFile;
         aPlayer[1] = secondPlayer;
     }
+    
+    protected Player getTarget() {
+        return aPlayer[0].getLength() >= aPlayer[1].getLength() ? aPlayer[0] : aPlayer[1];
+    }
 
     @Override
     public void play() {
@@ -35,7 +39,7 @@ public class DualPlayerSynchronizer extends Player {
 
     @Override
     public boolean isRunnable() {
-        return this.aPlayer[0].isRunnable();
+        return getTarget().isRunnable();
     }
 
     @Override
@@ -47,27 +51,27 @@ public class DualPlayerSynchronizer extends Player {
 
     @Override
     public long getPosition() {
-        return this.aPlayer[0].getPosition();
+        return getTarget().getPosition();
     }
 
     @Override
     public long getLength() {
-        return this.aPlayer[0].getLength();
+        return getTarget().getLength();
     }
 
     @Override
     public boolean isValid() {
-        return this.aPlayer[0].isValid();
+        return getTarget().isValid();
     }
 
     @Override
     public int getPositionSecond() {
-        return this.aPlayer[0].getPositionSecond();
+        return getTarget().getPositionSecond();
     }
 
     @Override
     public int getLengthSecond() {
-        return this.aPlayer[0].getLengthSecond();
+        return getTarget().getLengthSecond();
     }
 
     @Override
@@ -79,7 +83,7 @@ public class DualPlayerSynchronizer extends Player {
 
     @Override
     public float getVolume() {
-        return this.aPlayer[0].getVolume();
+        return getTarget().getVolume();
     }
 
     @Override

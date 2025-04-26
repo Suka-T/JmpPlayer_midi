@@ -102,5 +102,8 @@ public class JMPFlags {
 
     /** 次の曲再生検索フラグ */
     public static boolean NextPlayFlag = false;
+    
+    /** MidiEventのキャッシュを作成するフラグ */
+    public static boolean MakeNativeMidiEventFlag = true;
 
 }

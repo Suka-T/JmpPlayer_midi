@@ -42,6 +42,7 @@ import javax.swing.event.MenuListener;
 import function.Platform;
 import function.Platform.KindOfPlatform;
 import function.Utility;
+import jlib.core.ISystemManager;
 import jlib.gui.IJmpMainWindow;
 import jlib.gui.IJmpWindow;
 import jmp.ErrorDef;
@@ -1602,6 +1603,25 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         }
     }
 
+    @Override
+    public void catchDropMultiFile(List<File> files) {
+        // 一番先頭のファイルを取得
+        if ((files != null) && (files.size() >= 2)) {
+            String exMidi = JMPCore.getSystemManager().getCommonRegisterValue(ISystemManager.COMMON_REGKEY_NO_EXTENSION_MIDI);
+            String path1 = files.get(0).getPath();
+            String path2 = files.get(1).getPath();
+            if (Utility.checkExtensions(path1, exMidi.split(",")) == true) {
+                JMPCore.getFileManager().loadDualFile(path1, path2);
+                return;
+            }
+            else if (Utility.checkExtensions(path2, exMidi.split(",")) == true) {
+                JMPCore.getFileManager().loadDualFile(path2, path1);
+                return;
+            }
+        }
+        IDropFileCallback.super.catchDropMultiFile(files);
+    }
+    
     @Override
     public void catchDropFile(File file) {
         WindowManager wm = JMPCore.getWindowManager();

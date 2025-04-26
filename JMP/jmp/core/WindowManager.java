@@ -13,6 +13,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jlib.core.IWindowManager;
 import jlib.gui.IJmpMainWindow;
@@ -81,24 +82,32 @@ public class WindowManager extends AbstractManager implements IWindowManager {
     @Override
     protected boolean initFunc() {
 
-        // Windowインスタンス作成
-        register(WINDOW_NAME_LICENSE, new LicenseReaderDialog());
-        register(WINDOW_NAME_MIDI_MONITOR, new MidiMessageMonitor());
-        register(WINDOW_NAME_MIDI_SENDER, new MidiDataTransportDialog());
-        register(WINDOW_NAME_LANGUAGE, new SelectLanguageDialog());
-        register(WINDOW_NAME_HISTORY, new HistoryDialog());
-        register(WINDOW_NAME_FILE_LIST, new MidiFileListDialog());
-        register(WINDOW_NAME_PLUGIN_MANAGER, new PluginManagerDialog());
-        register(WINDOW_NAME_FFMPEG, new FFmpegConvertDialog());
-        register(WINDOW_NAME_MIDI_SETUP, new SelectSynthsizerDialog(true, true));
-        register(WINDOW_NAME_YOUTUBEDL, new YoutubeConvertDialog());
-        register(WINDOW_NAME_FILE_PICKUP, new FilePickupDialog());
-        register(WINDOW_NAME_CONSOLE, SystemManager.console);
-        register(WINDOW_NAME_MIDI_WAV_SYNC, new MidiWavSynchronizerDialog());
-        register(WINDOW_NAME_NOTES_MONITOR, new NotesMonitorDialog());
-
         // メインウィンドウ登録
-        registerMainWindow(new JMPPlayerWindow());
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                // Windowインスタンス作成
+                register(WINDOW_NAME_LICENSE, new LicenseReaderDialog());
+                register(WINDOW_NAME_MIDI_MONITOR, new MidiMessageMonitor());
+                register(WINDOW_NAME_MIDI_SENDER, new MidiDataTransportDialog());
+                register(WINDOW_NAME_LANGUAGE, new SelectLanguageDialog());
+                register(WINDOW_NAME_HISTORY, new HistoryDialog());
+                register(WINDOW_NAME_FILE_LIST, new MidiFileListDialog());
+                register(WINDOW_NAME_PLUGIN_MANAGER, new PluginManagerDialog());
+                register(WINDOW_NAME_FFMPEG, new FFmpegConvertDialog());
+                register(WINDOW_NAME_MIDI_SETUP, new SelectSynthsizerDialog(true, true));
+                register(WINDOW_NAME_YOUTUBEDL, new YoutubeConvertDialog());
+                register(WINDOW_NAME_FILE_PICKUP, new FilePickupDialog());
+                register(WINDOW_NAME_CONSOLE, SystemManager.console);
+                register(WINDOW_NAME_MIDI_WAV_SYNC, new MidiWavSynchronizerDialog());
+                register(WINDOW_NAME_NOTES_MONITOR, new NotesMonitorDialog());
+                
+                registerMainWindow(new JMPPlayerWindow());
+            });
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
 
         return super.initFunc();
     }

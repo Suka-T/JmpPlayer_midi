@@ -100,6 +100,10 @@ public interface ISystemManager {
     public static final int COMMON_REGKEY_NO_AUTOPLAY_FUNC = 31;
     /** cregキー数 */
     public static final int NUMBER_OF_COMMON_REGKEY = 32;
+    
+    // Status 
+    /** File load中ステータス */
+    public static final int SYSTEM_STATUS_ID_FILE_LOADING = 0;
 
     /**
      * スタンドアロンモードか
@@ -208,4 +212,13 @@ public interface ISystemManager {
      * @return 言語コード(配列に格納)
      */
     abstract String[] getSupportedLanguageCode();
+    
+    /**
+     * アプリケーションのステータスを取得 
+     * 
+     * @param statusId
+     *               ステータスID
+     * @return ステータス 
+     */
+    abstract boolean getStatus(int statusId);
 }

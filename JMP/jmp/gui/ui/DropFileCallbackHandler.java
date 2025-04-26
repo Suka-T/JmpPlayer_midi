@@ -54,11 +54,7 @@ public class DropFileCallbackHandler extends TransferHandler {
             List<File> files = (List<File>) item;
 
             // 一番先頭のファイルを取得
-            if ((files != null) && (files.size() > 0)) {
-                String path = files.get(0).getPath();
-                File file = new File(path);
-                this.callback.catchDropFile(file);
-            }
+            this.callback.catchDropMultiFile(files);
             return true;
         }
         catch (Exception e) {

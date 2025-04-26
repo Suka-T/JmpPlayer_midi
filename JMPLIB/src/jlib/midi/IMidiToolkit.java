@@ -411,4 +411,23 @@ public interface IMidiToolkit {
     default MidiEvent createTempoEvent(long position, float bpm) throws InvalidMidiDataException {
         return createMidiEvent(createTempoMessage(bpm), position);
     }
+    
+    /**
+     * Expressionイベントか判定
+     *
+     * @param mes
+     * @return
+     */
+    default boolean isExpression(MidiMessage mes) {
+        if (mes.getLength() < 3) {
+            return false;
+        }
+
+        int command = MidiByte.getCommand(mes.getMessage(), mes.getLength());
+        int data1 = MidiByte.getData2(mes.getMessage(), mes.getLength());
+        if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.CONTROL_CHANGE) && data1 == DefineControlChange.EXPRESSION) {
+            return true;
+        }
+        return false;
+    }
 }

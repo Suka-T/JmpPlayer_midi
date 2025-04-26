@@ -227,8 +227,8 @@ public class PluginWrapper implements IPlugin, IPlayerListener, IMidiEventListen
     public void open() {
         plugin.open();
     }
-
     @Override
+    
     public void close() {
         plugin.close();
     }
