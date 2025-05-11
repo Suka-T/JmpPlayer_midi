@@ -2,8 +2,6 @@ package fmp;
 
 import java.awt.event.MouseEvent;
 
-import com.sun.javafx.geom.Rectangle;
-
 import javafx.scene.media.MediaPlayer;
 
 public class StopToJumpFlagMediaEvent extends FlagMediaEvent {
@@ -13,14 +11,14 @@ public class StopToJumpFlagMediaEvent extends FlagMediaEvent {
     protected double sTick = -1;
     protected double eTick = -1;
     protected double jTick = -1;
-    protected Rectangle rect;
+    //protected Rectangle rect;
 
-    public StopToJumpFlagMediaEvent(double startTick, double endTick, double jumpTick, Rectangle rect) {
+    public StopToJumpFlagMediaEvent(double startTick, double endTick, double jumpTick/*, Rectangle rect*/) {
         super();
         sTick = startTick;
         eTick = endTick;
         jTick = jumpTick;
-        this.rect = rect;
+        //this.rect = rect;
     }
 
     @Override
@@ -59,9 +57,9 @@ public class StopToJumpFlagMediaEvent extends FlagMediaEvent {
 
     @Override
     public void onMouseEvent(MouseEvent e) {
-        if (rect.x <= e.getX() && e.getX() <= (rect.x + rect.width - 1) && rect.y <= e.getY() && e.getY() <= (rect.y + rect.height - 1)) {
-            isTrriger = true;
-        }
+//        if (rect.x <= e.getX() && e.getX() <= (rect.x + rect.width - 1) && rect.y <= e.getY() && e.getY() <= (rect.y + rect.height - 1)) {
+//            isTrriger = true;
+//        }
     }
 
 }

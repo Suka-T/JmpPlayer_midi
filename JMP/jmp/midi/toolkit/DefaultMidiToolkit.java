@@ -20,6 +20,7 @@ import javax.sound.midi.SysexMessage;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.MidiByte;
 import jmp.midi.JMPBuiltinSynthMidiDevice;
+import jmp.midi.JmpMidiFileReader;
 import jmp.midi.MidiByteMessage;
 
 public class DefaultMidiToolkit implements IMidiToolkit {
@@ -51,7 +52,9 @@ public class DefaultMidiToolkit implements IMidiToolkit {
     
     @Override
     public Sequence readMidiFile(File file) throws InvalidMidiDataException, IOException {
-        return MidiSystem.getSequence(file);
+    	JmpMidiFileReader reader = new JmpMidiFileReader();
+    	return reader.getSequence(file);
+        //return MidiSystem.getSequence(file);
     }
 
     @Override
