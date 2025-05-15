@@ -114,6 +114,8 @@ public class JMPSequencer implements Sequencer {
         abstractSequencer.stop();
 
         JMPCore.getPluginManager().stopSequencer();
+        
+        JMPCore.getSoundManager().getNotesMonitor().resetNoteMonitor();
     }
 
     @Override

@@ -140,12 +140,19 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
         for (int i = 0; i < 16; i++) {
             expressionMonitor[i] = 127;
             pitchBendMonitor[i] = 0;
+        }
+        
+        resetNoteMonitor();
+    }
+    
+    @Override
+    public void resetNoteMonitor() {
+        for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 128; j++) {
                 noteOnMonitorChannel[i][j] = 0;
                 noteOnMonitorChannelTop[j].reset();
             }
         }
-        
         for (int i = 0; i < NUM_OF_TRACK; i++) {
         	for (int j = 0; j < 128; j++) {
         		noteOnMonitorTrack[i][j] = 0;

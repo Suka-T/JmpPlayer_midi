@@ -4,6 +4,7 @@ import javax.sound.midi.MidiEvent;
 
 public interface INotesMonitor {
     abstract void reset();
+    abstract void resetNoteMonitor();
     abstract void clearNumOfNotes();
     abstract void analyzeMidiSequence();
     abstract long getNotesCount();

@@ -23,6 +23,7 @@ import jlib.player.Player;
 import jmp.JMPFlags;
 import jmp.core.DataManager;
 import jmp.core.JMPCore;
+import jmp.core.SoundManager;
 import jmp.core.SystemManager;
 import jmp.core.WindowManager;
 import jmp.midi.JMPSequencer;
@@ -247,27 +248,77 @@ public class MidiPlayer extends Player {
     @Override
     public boolean open() {
         boolean result = true;
-        // Midiシーケンサー取得
-        try {
-        	sequencer = new JMPSequencer(new LightweightSequencer());
-            //sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
-            if (sequencer.isOpen() == true) {
-                sequencer.close();
-            }
 
-            /* MIDIOUT用ReceiverオブジェクトをSequencerに設定 */
-            receiverWrapper = new ReceiverWrapper();
+        /* MIDIOUT用ReceiverオブジェクトをSequencerに設定 */
+        receiverWrapper = new ReceiverWrapper();
+
+        /* MIDIIN用TransmitterオブジェクトをSequencerに設定 */
+        transmitterWrapper = new TransmitterWrapper();
+        transmitterWrapper.setConnectedReceiver(receiverWrapper);
+
+        currentReceiver = receiverWrapper;
+        currentTransmitter = transmitterWrapper;
+        
+        return result;
+    }
+
+    private static final String NO_CACHE = "NO_CACHE";
+    private String cachedMidiOutName = NO_CACHE;
+    private String cachedMidiInName = NO_CACHE;
+
+    public boolean updateMidiOut(String name) {
+        
+        if (cachedMidiOutName.equals(NO_CACHE) == false && cachedMidiOutName.equals(name) == true) {
+            // 同名は処理しない
+            return false;
+        }
+
+        boolean state = false;
+
+        Receiver receiver = null;
+        try {
+            
+            receiverWrapper.close();
+
+            /* Receiverインスタンス生成 */
+            ReceiverFactory factory = new ReceiverFactory();
+            ReceiverCreator creator = factory.create(name);
+            receiver = creator.getReciever();
+
+            receiverWrapper.changeAbsReceiver(receiver);
+            currentReceiver = receiverWrapper;
+            
+            Sequence oldSequence = null;
+        	if (sequencer != null) {
+        		oldSequence = sequencer.getSequence();
+        		if (sequencer.isOpen() == true) {
+        			sequencer.close();
+        		}
+        	}
+        	
+        	if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
+        		sequencer = new JMPSequencer(new LightweightSequencer());
+        	}
+        	else {
+        		sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
+        	}
+        	
+        	if (oldSequence != null) {
+        		try {
+					sequencer.setSequence(oldSequence);
+					
+					//全プレイヤーを更新するためinitPositionを呼ぶ
+					JMPCore.getSoundManager().initPosition(); 
+					
+				} catch (InvalidMidiDataException e) {
+					e.printStackTrace();
+				}
+        	}
+            
             if (getSequencer().getTransmitter() != null) {
             	getSequencer().getTransmitter().setReceiver(receiverWrapper);
             }
-
-            /* MIDIIN用TransmitterオブジェクトをSequencerに設定 */
-            transmitterWrapper = new TransmitterWrapper();
-            transmitterWrapper.setConnectedReceiver(receiverWrapper);
-
-            currentReceiver = receiverWrapper;
-            currentTransmitter = transmitterWrapper;
-
+            
             sequencer.addMetaEventListener(new MetaEventListener() {
 
                 @Override
@@ -291,39 +342,7 @@ public class MidiPlayer extends Player {
                     }
                 }
             });
-
             sequencer.open();
-        }
-        catch (MidiUnavailableException e) {
-            result = false;
-            return result;
-        }
-        return result;
-    }
-
-    private static final String NO_CACHE = "NO_CACHE";
-    private String cachedMidiOutName = NO_CACHE;
-    private String cachedMidiInName = NO_CACHE;
-
-    public boolean updateMidiOut(String name) {
-        if (cachedMidiOutName.equals(NO_CACHE) == false && cachedMidiOutName.equals(name) == true) {
-            // 同名は処理しない
-            return false;
-        }
-
-        boolean state = false;
-
-        Receiver receiver = null;
-        try {
-            receiverWrapper.close();
-
-            /* Receiverインスタンス生成 */
-            ReceiverFactory factory = new ReceiverFactory();
-            ReceiverCreator creator = factory.create(name);
-            receiver = creator.getReciever();
-
-            receiverWrapper.changeAbsReceiver(receiver);
-            currentReceiver = receiverWrapper;
 
             cachedMidiOutName = new String(name);
 

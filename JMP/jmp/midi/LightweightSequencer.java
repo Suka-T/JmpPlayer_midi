@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,35 +29,41 @@ public class LightweightSequencer implements Sequencer {
 
 	private Sequence sequence;
 	private Thread playThread;
+	private Thread dumpThread;
 	private AtomicBoolean running = new AtomicBoolean(false);
 	private AtomicBoolean paused = new AtomicBoolean(false);
-
-	private class lwTransmitter implements Transmitter {
-
-		Receiver lwReceiver = null;
-
-		private lwTransmitter() {
-
-		}
-
-		@Override
-		public void setReceiver(Receiver receiver) {
-			lwReceiver = receiver;
-		}
-
-		@Override
-		public Receiver getReceiver() {
-			return lwReceiver;
-		}
-
-		@Override
-		public void close() {
-			lwReceiver.close();
-		}
-	}
-
-	private lwTransmitter lwTransmitter = new lwTransmitter();
+	private long lastTimeNs = System.nanoTime();
+	private double tickRemainder = 0.0;
+	private boolean isOpen = false;
+	
+	private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
 	private TreeMap<Long, List<MidiEvent>> eventMap = new TreeMap<>();
+	
+	private LwTransmitter lwTransmitter = new LwTransmitter();
+	private MidiMessagePump midiMsgPump;
+
+	private void parseTempoEvents(Sequence seq) {
+	    tempoChanges.clear();
+	    for (Track track : seq.getTracks()) {
+	        for (int i = 0; i < track.size(); i++) {
+	            MidiEvent event = track.get(i);
+	            MidiMessage msg = event.getMessage();
+	            if (msg instanceof MetaMessage) {
+	                MetaMessage mm = (MetaMessage) msg;
+	                if (mm.getType() == 0x51) {
+	                    byte[] data = mm.getData();
+	                    if (data.length == 3) {
+	                        int mpq = ((data[0] & 0xFF) << 16) |
+	                                  ((data[1] & 0xFF) << 8) |
+	                                  (data[2] & 0xFF);
+	                        float bpm = 60_000_000f / mpq;
+	                        tempoChanges.put(event.getTick(), bpm);
+	                    }
+	                }
+	            }
+	        }
+	    }
+	}
 
 	private void indexEvents(Sequence seq) {
 		eventMap.clear();
@@ -68,9 +75,6 @@ public class LightweightSequencer implements Sequencer {
 			}
 		}
 	}
-
-	long lastTimeNs = System.nanoTime();
-	private double tickRemainder = 0.0;
 	
 	// 再生処理スレッド
 	private void runLoop() {
@@ -103,12 +107,17 @@ public class LightweightSequencer implements Sequencer {
 			tickRemainder -= ticksToAdvance;
 
 			for (i = 0; i < ticksToAdvance; i++) {
-				onTick(tickPosition++);
-				if (tickPosition >= getTickLength()) {
-					stop();
-					break;
-				}
+				if (tempoChanges.containsKey(tickPosition)) {
+			        float newTempo = tempoChanges.get(tickPosition);
+			        setTempoInBPM(newTempo);
+			        
+			        // microPerQuarter を更新
+			        microPerQuarter = 60_000_000.0 / tempoBPM;
+			    }
+				tickPosition++;
 			}
+			
+			midiMsgPump.nextTick(tickPosition);
 
 			try {
 				Thread.sleep(1);
@@ -120,22 +129,24 @@ public class LightweightSequencer implements Sequencer {
 	}
 
 	protected void onTick(long tick) {
+		
 		// Note On / Off 処理
 		List<MidiEvent> events = eventMap.get(tick);
 		if (events != null && lwTransmitter.getReceiver() != null) {
 			for (MidiEvent event : events) {
+			    
 				MidiMessage msg = event.getMessage();
 				if (msg instanceof MetaMessage) {
-                    MetaMessage mm = (MetaMessage) msg;
-                    if (mm.getType() == 0x51) { // テンポ変更
-                        byte[] data = mm.getData();
-                        int mpq = ((data[0] & 0xFF) << 16)
-                                | ((data[1] & 0xFF) << 8)
-                                | (data[2] & 0xFF);
-                        setTempoInBPM(60000000f / mpq);
-                    }
+//                    MetaMessage mm = (MetaMessage) msg;
+//                    if (mm.getType() == 0x51) { // テンポ変更
+//                        byte[] data = mm.getData();
+//                        int mpq = ((data[0] & 0xFF) << 16)
+//                                | ((data[1] & 0xFF) << 8)
+//                                | (data[2] & 0xFF);
+//                        setTempoInBPM(60000000f / mpq);
+//                    }
                 }
-				else if (msg instanceof ShortMessage) {
+				else {
 					sendMidiEvent(msg, -1); // 即時送信
 				}
 			}
@@ -158,10 +169,10 @@ public class LightweightSequencer implements Sequencer {
 		    }
 		    
 		    for (int i = 0; i < 128; i++) {
-		    	ShortMessage noteoff = new ShortMessage();
 		    	try {
-					noteoff.setMessage(ShortMessage.NOTE_OFF, channel, i, 0);
-					sendMidiEvent(noteoff, -1);
+		    		ShortMessage ss = new ShortMessage();
+			    	ss.setMessage(ShortMessage.NOTE_OFF, channel, i, 0);
+					sendMidiEvent(ss, -1);
 				} catch (InvalidMidiDataException e) {
 					// TODO 自動生成された catch ブロック
 					e.printStackTrace();
@@ -169,12 +180,13 @@ public class LightweightSequencer implements Sequencer {
 		    }
 		}
 	}
-
-	private boolean isOpen = false;
-
+	
 	@Override
 	public void open() {
 		isOpen = true;
+		midiMsgPump = new MidiMessagePump();
+		
+		System.out.println("open LightweitSequencer.");
 	}
 
 	@Override
@@ -210,14 +222,16 @@ public class LightweightSequencer implements Sequencer {
 		} else {
 			playThread = new Thread(this::runLoop);
 			playThread.start();
+			
+			dumpThread = new Thread(midiMsgPump);
+			dumpThread.start();
+			midiMsgPump.reset();
+			
+			running.set(true);
+			paused.set(false);
+			lastTimeNs = System.nanoTime();
+			tickRemainder = 0.0;
 		}
-
-		if (running.get())
-			return;
-		running.set(true);
-		paused.set(false);
-		lastTimeNs = System.nanoTime();
-		tickRemainder = 0.0;
 	}
 
 	@Override
@@ -260,6 +274,7 @@ public class LightweightSequencer implements Sequencer {
 	public void setSequence(Sequence sequence) {
 		this.sequence = sequence;
 		this.resolution = sequence.getResolution();
+		parseTempoEvents(sequence);
 		indexEvents(sequence);
 		this.tickPosition = 0;
 	}
@@ -284,7 +299,38 @@ public class LightweightSequencer implements Sequencer {
 	public void resume() {
 		if (running.get() && paused.get()) {
 			paused.set(false);
+			lastTimeNs = System.nanoTime();
+			tickRemainder = 0.0;
 		}
+	}
+	
+	public long getMicrosecondsFromTick(long tick) {
+	    long totalMicroseconds = 0;
+	    long previousTick = 0;
+	    float currentTempoBPM = 120.0f; // 初期テンポ
+	    double currentMicroPerQuarter = 60_000_000.0 / currentTempoBPM;
+
+	    for (Map.Entry<Long, Float> entry : tempoChanges.entrySet()) {
+	        long changeTick = entry.getKey();
+
+	        if (changeTick >= tick) break;
+
+	        long deltaTick = changeTick - previousTick;
+
+	        // μs = Δtick × μs/拍 ÷ resolution
+	        totalMicroseconds += (long)((deltaTick * currentMicroPerQuarter) / resolution);
+
+	        // テンポを更新
+	        currentTempoBPM = entry.getValue();
+	        currentMicroPerQuarter = 60_000_000.0 / currentTempoBPM;
+	        previousTick = changeTick;
+	    }
+
+	    // 最後の区間の μs を追加
+	    long remainingTick = tick - previousTick;
+	    totalMicroseconds += (long)((remainingTick * currentMicroPerQuarter) / resolution);
+
+	    return totalMicroseconds;
 	}
 
 	@Override
@@ -294,12 +340,12 @@ public class LightweightSequencer implements Sequencer {
 
 	@Override
 	public long getMicrosecondPosition() {
-		return 0;
+		return getMicrosecondsFromTick(getTickPosition());
 	}
 
 	@Override
 	public long getMicrosecondLength() {
-		return 0;
+		return getMicrosecondsFromTick(getTickLength());
 	}
 
 	// 以下のメソッドは未対応（必要に応じて実装）
@@ -507,4 +553,83 @@ public class LightweightSequencer implements Sequencer {
 		// TODO 自動生成されたメソッド・スタブ
 		return 0;
 	}
-}
+	
+	private class LwTransmitter implements Transmitter {
+
+		Receiver lwReceiver = null;
+
+		private LwTransmitter() {
+
+		}
+
+		@Override
+		public void setReceiver(Receiver receiver) {
+			lwReceiver = receiver;
+		}
+
+		@Override
+		public Receiver getReceiver() {
+			return lwReceiver;
+		}
+
+		@Override
+		public void close() {
+			lwReceiver.close();
+		}
+	}
+	
+	private class MidiMessagePump implements Runnable {
+		private AtomicBoolean waitFlag = new AtomicBoolean(true);
+		private long curTickPosition = 0;
+		private long nextTickPosition = 0;
+		
+		MidiMessagePump() {
+			curTickPosition = 0;
+			nextTickPosition = 0;
+		}
+		
+		void reset() {
+			curTickPosition = 0;
+			nextTickPosition = 0;
+			waitFlag.set(true);
+		}
+		
+		void nextTick(long tickPos) {
+			nextTickPosition = tickPos;
+			waitFlag.set(false);
+		}
+
+		@Override
+		public void run() {
+			long cur = 0;
+			long next = 0;
+			long t = 0;
+			while(running.get()) {
+				if (waitFlag.get() == false) {
+					cur = curTickPosition;
+					next = nextTickPosition;
+					for (t = cur; t < next; t++) {
+						onTick(t);
+						if (t >= getTickLength()) {
+							stop();
+							break;
+						}
+					}
+					curTickPosition = next;
+					if (nextTickPosition == next) {
+						waitFlag.set(true);
+					}
+				}
+				
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					// TODO 自動生成された catch ブロック
+					e.printStackTrace();
+				} // スムーズなCPU制御
+			}
+		}
+	}
+} /* LightweightSequencer class end */
+
+
