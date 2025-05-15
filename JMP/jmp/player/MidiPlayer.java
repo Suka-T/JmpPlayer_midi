@@ -26,6 +26,7 @@ import jmp.core.JMPCore;
 import jmp.core.SystemManager;
 import jmp.core.WindowManager;
 import jmp.midi.JMPSequencer;
+import jmp.midi.LightweightSequencer;
 import jmp.midi.ReceiverWrapper;
 import jmp.midi.TransmitterWrapper;
 import jmp.midi.receiver.ReceiverCreator;
@@ -248,14 +249,17 @@ public class MidiPlayer extends Player {
         boolean result = true;
         // Midiシーケンサー取得
         try {
-            sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
+        	sequencer = new JMPSequencer(new LightweightSequencer());
+            //sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
             if (sequencer.isOpen() == true) {
                 sequencer.close();
             }
 
             /* MIDIOUT用ReceiverオブジェクトをSequencerに設定 */
             receiverWrapper = new ReceiverWrapper();
-            getSequencer().getTransmitter().setReceiver(receiverWrapper);
+            if (getSequencer().getTransmitter() != null) {
+            	getSequencer().getTransmitter().setReceiver(receiverWrapper);
+            }
 
             /* MIDIIN用TransmitterオブジェクトをSequencerに設定 */
             transmitterWrapper = new TransmitterWrapper();

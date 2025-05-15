@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="source"/>
+	<classpathentry excluding="jmp/midi/sequencer/" kind="src" path="source"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/JMPLIB"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/MKJMP"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/FFmpegWrapper"/>
