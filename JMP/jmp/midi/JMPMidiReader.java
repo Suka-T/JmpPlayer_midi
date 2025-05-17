@@ -1,263 +1,174 @@
 package jmp.midi;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiEvent;
 import javax.sound.midi.Sequence;
+import javax.sound.midi.SysexMessage;
+import javax.sound.midi.Track;
 
-import function.Utility;
+import jlib.midi.LightweightShortMessage;
 
-// 仮実装
-@SuppressWarnings("unused")
 public class JMPMidiReader {
 
-    public class ModeSet {
-        public int mode = 0;
-        public int len = 0;
+	public static Sequence parseSmf(File file) throws Exception {
+		try (DataInputStream in = new DataInputStream(
+				new BufferedInputStream(new FileInputStream(file), 256 * 1024))) {
 
-        public ModeSet(int mode, int len) {
-            this.mode = mode;
-            this.len = len;
-        }
-    }
+			if (!readString(in, 4).equals("MThd"))
+				throw new IOException("Not a valid MIDI file");
 
-    /* サーチモードタイプ */
-    private static final int SEARCH_MODE_CHUNK_LEN = 4;
-    private static final int SEARCH_MODE_HEAD_CHUNK = 1000;
-    private static final int SEARCH_MODE_TRACK_CHUNK = 1001;
-    // ヘッダチャンク
-    private static final int SEARCH_MODE_HEAD_LENGTH = 0;
-    private static final int SEARCH_MODE_HEAD_FORMAT = 1;
-    private static final int SEARCH_MODE_HEAD_NUM_OF_TRACK = 2;
-    private static final int SEARCH_MODE_HEAD_RESOLUTION = 3;
+			int headerLength = in.readInt();
+			int format = in.readUnsignedShort();
+			int numTracks = in.readUnsignedShort();
+			int division = in.readUnsignedShort();
 
-    // トラックチャンク
-    private static final int SEARCH_MODE_TRACK_LENGTH = 100;
-    private static final int SEARCH_MODE_TRACK_DATA = 101;
+			Sequence sequence = new Sequence(Sequence.PPQ, division);
 
-    private static final int SEARCH_MODE_END = -1;
+			int coreCount = Runtime.getRuntime().availableProcessors();
+			ExecutorService executor = Executors.newFixedThreadPool(coreCount, r -> {
+				Thread t = new Thread(r);
+				t.setName("TrackParserThread");
+				t.setPriority(Thread.NORM_PRIORITY - 1);
+				return t;
+			});
 
-    private ModeSet searchMode_head[] = {
-            // 検索モード, 検索バイト長
-            new ModeSet(SEARCH_MODE_HEAD_LENGTH, 4), // データ長
-            new ModeSet(SEARCH_MODE_HEAD_FORMAT, 2), // フォーマット
-            new ModeSet(SEARCH_MODE_HEAD_NUM_OF_TRACK, 2), // トラック数
-            new ModeSet(SEARCH_MODE_HEAD_RESOLUTION, 2), // 分解能
-            new ModeSet(SEARCH_MODE_END, 0), // 分解能
-    };
-    private ModeSet searchMode_track[] = {
-            // 検索モード, 検索バイト長
-            new ModeSet(SEARCH_MODE_TRACK_LENGTH, 4), // データ長
-            new ModeSet(SEARCH_MODE_TRACK_DATA, -1), // データ本体可変
-            new ModeSet(SEARCH_MODE_END, 0), // 分解能
-    };
+			@SuppressWarnings("unchecked")
+			Future<List<MidiEvent>>[] futures = new Future[numTracks];
 
-    private File midiFile = null;
+			for (int i = 0; i < numTracks; i++) {
+				String chunkType = readString(in, 4);
+				if (!chunkType.equals("MTrk"))
+					throw new IOException("Track " + i + ": missing MTrk");
 
-    //
-    private boolean isReadDeltaTime = true;
-    private int curByteCount = 0;
-    private List<Byte> curByteBuf = null;
-    private int curTrackIndex = 0;
+				int trackLength = in.readInt();
+				if (trackLength <= 0 || trackLength > 100_000_000) {
+					throw new IOException("Track " + i + " has invalid length: " + trackLength);
+				}
 
-    public JMPMidiReader(File file) {
-        this.midiFile = file;
-    }
+				byte[] trackData = new byte[trackLength];
+				in.readFully(trackData);
 
-    public Sequence read() throws InvalidMidiDataException, IOException {
-        Sequence sequence = null;
-        curByteBuf = new LinkedList<Byte>();
-        curByteCount = 0;
+				final byte[] trackCopy = trackData;
+				final short trackIndex = (short) i;
 
-        // 格納変数
-        float divisionType = 0.0f;
-        int format = 0;
-        int resolution = 0;
-        int numTracks = 0;
+				futures[i] = executor.submit(() -> parseTrackData(trackCopy, trackIndex));
+			}
+			executor.shutdown();
 
-        byte[] data = Utility.getBinaryContents(midiFile);
+			// 1. すべてのイベントリストを収集（並列結果の取得）
+			List<List<MidiEvent>> allEventLists = new ArrayList<>(numTracks);
+			for (int i = 0; i < numTracks; i++) {
+				try {
+					allEventLists.add(futures[i].get());
+				} catch (Exception e) {
+					System.err.println("Track " + i + " failed to parse: " + e.getMessage());
+					e.printStackTrace();
+					allEventLists.add(Collections.emptyList());
+				}
+			}
+			
+			System.out.println("build sequence...");
 
-        int iMode = 0;
+			// 2. Sequence に Track を追加（スレッドセーフ）
+			for (List<MidiEvent> events : allEventLists) {
+				Track track = sequence.createTrack();
+				for (MidiEvent event : events) {
+					track.add(event);
+				}
+			}
+			System.out.println("complited");
 
-        boolean isNext = false;
+			return sequence;
+		}
+	}
 
-        ModeSet[] curModeSet = null;
-        int curChunk = -1;
-        int curMode = 0;
-        int curLen = SEARCH_MODE_CHUNK_LEN;
-        _debugPrint("read");
-        for (int i = 0; i < data.length; i += curLen) {
+	private static List<MidiEvent> parseTrackData(byte[] data, short trkIndex) throws Exception {
+		ByteArrayInputStream bais = new ByteArrayInputStream(data);
+		PushbackInputStream pbis = new PushbackInputStream(bais, 1);
+		DataInputStream in = new DataInputStream(pbis);
 
-            if (curChunk == -1) {
-                curLen = SEARCH_MODE_CHUNK_LEN;
-            }
-            else {
-                curMode = curModeSet[iMode].mode;
-                curLen = curModeSet[iMode].len;
-                if (curLen == -1 || curMode == SEARCH_MODE_TRACK_DATA) {
-                    curLen = 1;
-                }
-            }
+		List<MidiEvent> events = new ArrayList<>();
+		int tick = 0;
+		int lastStatus = 0;
 
-            byte[] word = new byte[curLen];
-            int si = i;
-            for (int wi = 0; wi < curLen; wi++) {
-                word[wi] = data[si];
-                si++;
-                if (si >= data.length) {
-                    si = data.length - 1;
-                }
-            }
+		while (in.available() > 0) {
+			int delta = readVariableLength(pbis);
+			tick += delta;
 
-            if (curChunk == -1) {
-                if (equalsByte(word, new byte[] { 0x4d, 0x54, 0x68, 0x64 }) == true) {
-                    // ヘッダチャンク
-                    curModeSet = searchMode_head;
-                    curChunk = SEARCH_MODE_HEAD_CHUNK;
-                    curLen = SEARCH_MODE_CHUNK_LEN;
-                    iMode = 0;
-                    _debugPrint("HEAD_CHUNK");
-                }
-                else if (equalsByte(word, new byte[] { 0x4d, 0x54, 0x72, 0x6b }) == true) {
-                    // トラックチャンク
-                    curModeSet = searchMode_track;
-                    curChunk = SEARCH_MODE_TRACK_CHUNK;
-                    curLen = SEARCH_MODE_CHUNK_LEN;
-                    iMode = 0;
-                    _debugPrint("TRACK_CHUNK");
-                }
-                else {
-                    curLen = 1;
-                }
-                continue;
-            }
+			int statusByte = in.readUnsignedByte();
+			if (statusByte < 0x80) {
+				if (lastStatus == 0)
+					throw new IOException("Invalid running status");
+				pbis.unread(statusByte);
+				statusByte = lastStatus;
+			} else {
+				lastStatus = statusByte;
+			}
 
-            // 上から順番に実行
-            switch (curMode) {
+			if (statusByte == 0xFF) {
+				int type = in.readUnsignedByte();
+				int length = readVariableLength(pbis);
+				byte[] metaData = new byte[length];
+				in.readFully(metaData);
+				MetaMessage meta = new MetaMessage();
+				meta.setMessage(type, metaData, length);
+				events.add(new MidiEvent(meta, tick));
+			} else if (0x80 <= statusByte && statusByte <= 0xEF) {
+				int command = statusByte & 0xF0;
+				int data1 = in.readUnsignedByte();
+				int data2 = (command != 0xC0 && command != 0xD0) ? in.readUnsignedByte() : 0;
+				//if (command == ShortMessage.NOTE_OFF || command == ShortMessage.NOTE_ON || command == ShortMessage.PITCH_BEND) {
+				LightweightShortMessage sm = new LightweightShortMessage(statusByte | (data1 << 8) | (data2 << 16),
+						trkIndex);
+				events.add(new MidiEvent(sm, tick));
+				//}
+			} else if (statusByte == 0xF0 || statusByte == 0xF7) {
+				int length = readVariableLength(pbis);
+				byte[] sysexData = new byte[length];
+				in.readFully(sysexData);
+				SysexMessage sx = new SysexMessage();
+				sx.setMessage(statusByte, sysexData, length);
+				events.add(new MidiEvent(sx, tick));
+			} else {
+				throw new IOException("Unknown status byte: " + statusByte);
+			}
+		}
 
-                case SEARCH_MODE_HEAD_LENGTH: {
-                    int headLen = convertToInt(word);
-                    isNext = true;
+		System.out.println("parsed track" + (trkIndex + 1));
+		return events;
+	}
 
-                    _debugPrint("len:" + headLen);
-                }
-                    break;
+	private static int readVariableLength(InputStream in) throws IOException {
+		int value = 0;
+		int b;
+		do {
+			b = in.read();
+			if (b == -1)
+				throw new EOFException();
+			value = (value << 7) | (b & 0x7F);
+		} while ((b & 0x80) != 0);
+		return value;
+	}
 
-                case SEARCH_MODE_HEAD_FORMAT: {
-                    format = convertToShort(word);
-                    isNext = true;
-
-                    _debugPrint("format:" + format);
-                }
-                    break;
-
-                case SEARCH_MODE_HEAD_NUM_OF_TRACK: {
-                    numTracks = convertToShort(word);
-                    isNext = true;
-
-                    _debugPrint("numTracks:" + numTracks);
-                }
-                    break;
-
-                case SEARCH_MODE_HEAD_RESOLUTION: {
-                    resolution = convertToShort(word);
-                    isNext = true;
-
-                    _debugPrint("resolution:" + resolution);
-                }
-                    break;
-
-                case SEARCH_MODE_TRACK_LENGTH: {
-                    int trackLen = convertToInt(word);
-                    isNext = true;
-
-                    _debugPrint("trackLen:" + trackLen);
-                    sequence = new Sequence(divisionType, resolution, numTracks);
-                    curByteBuf = new LinkedList<Byte>();
-                    curByteCount = 0;
-                    isReadDeltaTime = true;
-                }
-                    break;
-
-                case SEARCH_MODE_TRACK_DATA: {
-                    byte td = word[0];
-                    if (isReadDeltaTime == true) {
-                        boolean endFlag = false;
-                        if ((td & 0x80) == 0x80) {
-                            // 繰り上げフラグあり
-                            endFlag = false;
-                        }
-                        else {
-                            endFlag = true;
-                        }
-                        curByteBuf.add(td);
-
-                        if (endFlag == true) {
-                            byte[] aBuf = new byte[curByteBuf.size()];
-                            for (int ii = 0; ii < aBuf.length; ii++) {
-                                // aBuf[ii] = curByteBuf
-                            }
-                        }
-                    }
-                    int trackLen = convertToInt(word);
-                    isNext = false;
-
-                    _debugPrint("trackData:" + trackLen);
-                }
-                    break;
-
-                case SEARCH_MODE_END:
-                default: {
-                    isNext = false;
-                    curChunk = -1;
-                    curLen = 1;
-                }
-                    break;
-            }
-
-            if (isNext == true) {
-                iMode++;
-                isNext = false;
-            }
-        }
-        return sequence;
-    }
-
-    private boolean equalsByte(byte[] d1, byte[] d2) {
-        if (d1.length != d2.length) {
-            return false;
-        }
-
-        boolean ret = true;
-        for (int i = 0; i < d1.length; i++) {
-            if (d1[i] != d2[i]) {
-                ret = false;
-                break;
-            }
-        }
-        return ret;
-    }
-
-    private short convertToShort(byte[] d) {
-        short ret = 0;
-        for (byte b : d) {
-            ret = (short) ((ret << 2) + (b & 0xff));
-        }
-        return ret;
-    }
-
-    private int convertToInt(byte[] d) {
-        int ret = 0;
-        for (byte b : d) {
-            ret = (ret << 4) + (b & 0xff);
-        }
-        return ret;
-    }
-
-    private void _debugPrint(String str) {
-        System.out.println(str);
-    }
+	private static String readString(DataInputStream in, int length) throws IOException {
+		byte[] buf = new byte[length];
+		in.readFully(buf);
+		return new String(buf, "US-ASCII");
+	}
 }

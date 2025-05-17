@@ -764,6 +764,10 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         if (player.isValid() == false) {
             return;
         }
+        
+        if (JMPFlags.NowLoadingFlag == true) {
+        	return;
+        }
 
         JMPCore.getWindowManager().processingBeforePlay();
 
