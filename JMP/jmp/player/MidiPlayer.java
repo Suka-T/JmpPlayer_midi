@@ -23,7 +23,6 @@ import jlib.player.Player;
 import jmp.JMPFlags;
 import jmp.core.DataManager;
 import jmp.core.JMPCore;
-import jmp.core.SoundManager;
 import jmp.core.SystemManager;
 import jmp.core.WindowManager;
 import jmp.midi.JMPSequencer;
@@ -296,12 +295,13 @@ public class MidiPlayer extends Player {
         		}
         	}
         	
-        	if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
-        		sequencer = new JMPSequencer(new LightweightSequencer());
-        	}
-        	else {
-        		sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
-        	}
+        	sequencer = new JMPSequencer(new LightweightSequencer());
+//        	if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
+//        		sequencer = new JMPSequencer(new LightweightSequencer());
+//        	}
+//        	else {
+//        		sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
+//        	}
         	
         	if (oldSequence != null) {
         		try {
@@ -309,6 +309,7 @@ public class MidiPlayer extends Player {
 					
 					//全プレイヤーを更新するためinitPositionを呼ぶ
 					JMPCore.getSoundManager().initPosition(); 
+					JMPCore.getPluginManager().updateSequencer();
 					
 				} catch (InvalidMidiDataException e) {
 					e.printStackTrace();

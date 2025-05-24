@@ -851,6 +851,10 @@ public class PluginManager extends AbstractManager {
     public void updateTickPosition(long before, long after) {
         observers.updateTickPosition(before, after);
     }
+    
+    public void updateSequencer() {
+        observers.updateSequencer();
+    }
 
     public void catchMidiEvent(MidiMessage message, long timeStamp, short senderType) {
         // Midiイベント受信後の処理は別スレッドに委譲する
