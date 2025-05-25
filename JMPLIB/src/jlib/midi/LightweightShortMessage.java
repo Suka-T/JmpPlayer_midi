@@ -33,7 +33,7 @@ import javax.sound.midi.ShortMessage;
  *
  * @author Suka-T
  */
-public class LightweightShortMessage extends ShortMessage {
+public class LightweightShortMessage extends ShortMessage implements ITrackMidiMessage {
     private int packedMsg;
     private short trackIndex = 0;
 
@@ -168,6 +168,7 @@ public class LightweightShortMessage extends ShortMessage {
         return null;
     }
 
+    @Override
 	public short getTrackIndex() {
 		return trackIndex;
 	}
