@@ -7,16 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.sound.midi.ControllerEventListener;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaEventListener;
-import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiUnavailableException;
@@ -27,9 +25,14 @@ import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.Transmitter;
 
+import jlib.midi.LightweightShortMessage;
+import jlib.midi.MappedParseFunc;
+import jlib.midi.MappedSequence;
+import jlib.midi.MidiByte;
 import jmp.JMPFlags;
 
 public class LightweightSequencer implements Sequencer {
+	public static final int BLOCK_TICK = 20000;
 	private float tempoBPM = 120.0f;
 	private int resolution = 480;
 	private long tickPosition = 0;
@@ -45,85 +48,183 @@ public class LightweightSequencer implements Sequencer {
 
 	private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
 	private TreeMap<Long, List<MidiEvent>> eventMap = new TreeMap<>();
-
+	private TreeMap<Long, List<MidiEvent>> offEventMap = new TreeMap<>();
+	
 	private LwTransmitter lwTransmitter = new LwTransmitter();
 	private MidiMessagePump midiMsgPump;
+	private boolean isRenderOnly = false;
 
-	private void analyzeSequence(Sequence seq) {
-		tempoChanges.clear(); // TreeMap<Long, Float>
-		eventMap.clear(); // TreeMap<Long, List<MidiEvent>>
+	// タスク定義：1トラックごとにテンポ & イベントを収集
+	class TrackResult {
+		final Map<Long, Float> tempoMap;
+		final Map<Long, List<MidiEvent>> events;
+		int notesCount = 0;
+		int maxTick = 0;
 
-		Track[] tracks = seq.getTracks();
-		if (tracks == null || tracks.length == 0)
-			return;
+		TrackResult(Map<Long, Float> tempoMap, Map<Long, List<MidiEvent>> events) {
+			this.tempoMap = tempoMap;
+			this.events = events;
+		}
+	}
+	
+	public LightweightSequencer(boolean isRenderOnly) {
+		this.isRenderOnly = isRenderOnly;
+	}
+
+	private void extractMidiEvent(TreeMap<Long, List<MidiEvent>> map, long startTick, long endTick) {
+		MappedSequence seq = (MappedSequence) this.sequence;
+		map.clear();
 
 		int coreCount = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
-		// タスク定義：1トラックごとにテンポ & イベントを収集
-		class TrackResult {
-			final Map<Long, Float> tempoMap;
-			final Map<Long, List<MidiEvent>> events;
+		List<TrackResult> results = new ArrayList<>();
 
-			TrackResult(Map<Long, Float> tempoMap, Map<Long, List<MidiEvent>> events) {
-				this.tempoMap = tempoMap;
-				this.events = events;
-			}
-		}
+		for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
+			final short index = trkIndex;
+			Map<Long, List<MidiEvent>> localEvents = new HashMap<>();
+			results.add(new TrackResult(null, localEvents));
 
-		List<Future<TrackResult>> futures = new ArrayList<>();
+			executor.submit(() -> {
+				try {
+					seq.parse(index, new MappedParseFunc(startTick, endTick) {
 
-		for (Track track : tracks) {
-			futures.add(executor.submit(() -> {
-				Map<Long, Float> tempoMap = new HashMap<>();
-				Map<Long, List<MidiEvent>> localEvents = new HashMap<>();
+						@Override
+						public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
+							// TODO 自動生成されたメソッド・スタブ
 
-				for (int i = 0; i < track.size(); i++) {
-					MidiEvent event = track.get(i);
-					MidiMessage msg = event.getMessage();
-					long tick = event.getTick();
-
-					// イベント登録
-					localEvents.computeIfAbsent(tick, k -> new ArrayList<>()).add(event);
-
-					// テンポイベント検出
-					if (msg instanceof MetaMessage mm && mm.getType() == 0x51) {
-						byte[] data = mm.getData();
-						if (data.length == 3) {
-							int mpq = ((data[0] & 0xFF) << 16) |
-									((data[1] & 0xFF) << 8) |
-									(data[2] & 0xFF);
-							float bpm = 60_000_000f / mpq;
-							tempoMap.put(tick, bpm);
 						}
-					}
-				}
 
-				return new TrackResult(tempoMap, localEvents);
-			}));
+						@Override
+						public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
+							LightweightShortMessage sm;
+							try {
+								sm = new LightweightShortMessage(
+										statusByte | (data1 << 8) | (data2 << 16), (short) trk);
+								results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>())
+										.add(new MidiEvent(sm, tick));
+							} catch (InvalidMidiDataException e) {
+								// TODO 自動生成された catch ブロック
+								e.printStackTrace();
+							}
+						}
+
+						@Override
+						public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
+						}
+					});
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
 		}
-		
+
+		// 終了を待つ
 		executor.shutdown();
+		try {
+			executor.awaitTermination(1, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
 
 		// 結果をマージ
-		for (Future<TrackResult> future : futures) {
-			try {
-				TrackResult result = future.get();
-
-				// tempoChanges へ統合
-				tempoChanges.putAll(result.tempoMap);
-
-				// eventMap へ統合
-				for (Map.Entry<Long, List<MidiEvent>> entry : result.events.entrySet()) {
-					eventMap
-							.computeIfAbsent(entry.getKey(), k -> new ArrayList<>())
-							.addAll(entry.getValue());
-				}
-
-			} catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
+		for (TrackResult result : results) {
+			// eventMap へ統合
+			for (Map.Entry<Long, List<MidiEvent>> entry : result.events.entrySet()) {
+				map
+						.computeIfAbsent(entry.getKey(), k -> new ArrayList<>())
+						.addAll(entry.getValue());
 			}
 		}
+	}
+
+	private void analyzeSequence(MappedSequence seq) {
+		tempoChanges.clear(); // TreeMap<Long, Float>
+		eventMap.clear(); // TreeMap<Long, List<MidiEvent>>
+		offEventMap.clear();
+
+		int coreCount = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
+
+		List<TrackResult> results = new ArrayList<>();
+
+		for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
+			final short index = trkIndex;
+			Map<Long, Float> tempoMap = new HashMap<>();
+			Map<Long, List<MidiEvent>> localEvents = new HashMap<>();
+			results.add(new TrackResult(tempoMap, localEvents));
+
+			executor.submit(() -> {
+				try {
+					seq.parse(index, new MappedParseFunc() {
+						
+						@Override
+						public void calcTick(int trk, int tick) {
+							if (results.get(trk).maxTick < tick) {
+								results.get(trk).maxTick = tick;
+							}
+						}
+
+						@Override
+						public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
+							// TODO 自動生成されたメソッド・スタブ
+
+						}
+
+						@Override
+						public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
+							int command = statusByte & 0xF0;
+							if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
+									|| (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
+								results.get(trk).notesCount++;
+							}
+						}
+
+						@Override
+						public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
+							// テンポイベント検出
+							if (type == 0x51) {
+								if (length == 3) {
+									int mpq = ((metaData[0] & 0xFF) << 16) |
+											((metaData[1] & 0xFF) << 8) |
+											(metaData[2] & 0xFF);
+									float bpm = 60_000_000f / mpq;
+									results.get(trk).tempoMap.put(tick, bpm);
+								}
+							}
+						}
+					});
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			});
+		}
+
+		// 終了を待つ
+		executor.shutdown();
+		try {
+			executor.awaitTermination(1, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
+
+		// 結果をマージ
+		int maxTick = 0;
+		int notesCount = 0;
+		for (TrackResult result : results) {
+			// tempoChanges へ統合
+			tempoChanges.putAll(result.tempoMap);
+
+			notesCount += result.notesCount;
+			
+			if (maxTick < result.maxTick) {
+				maxTick = result.maxTick;
+			}
+		}
+		seq.setTickLength(maxTick);
+		seq.setNumOfNotes(notesCount);
 	}
 
 	// 再生処理スレッド
@@ -192,7 +293,9 @@ public class LightweightSequencer implements Sequencer {
 	}
 
 	private void sendMidiEvent(MidiMessage msg, int timeStamp) {
-		lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
+		if (lwTransmitter.getReceiver() != null) {
+			lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
+		}
 	}
 
 	private void allSoundOff() {
@@ -246,7 +349,7 @@ public class LightweightSequencer implements Sequencer {
 
 	@Override
 	public void start() {
-		System.out.println("LightweitSequencer RUN");
+		System.out.println("lwSequencer RUN");
 		if (playThread != null) {
 			if (paused.get()) {
 				if (getTickLength() <= tickPosition) {
@@ -259,7 +362,7 @@ public class LightweightSequencer implements Sequencer {
 		} else {
 			playThread = new Thread(this::runLoop);
 			playThread.start();
-
+			
 			dumpThread = new Thread(midiMsgPump);
 			dumpThread.start();
 			midiMsgPump.reset();
@@ -301,6 +404,10 @@ public class LightweightSequencer implements Sequencer {
 		}
 		lastTimeNs = System.nanoTime();
 		tickRemainder = 0.0;
+		if (midiMsgPump != null) {
+			midiMsgPump.reset();
+		}
+		allSoundOff();
 	}
 
 	@Override
@@ -311,7 +418,7 @@ public class LightweightSequencer implements Sequencer {
 	public void setSequence(Sequence sequence) {
 		this.sequence = sequence;
 		this.resolution = sequence.getResolution();
-		analyzeSequence(sequence);
+		analyzeSequence((MappedSequence) sequence);
 		this.tickPosition = 0;
 	}
 
@@ -622,20 +729,27 @@ public class LightweightSequencer implements Sequencer {
 		private AtomicBoolean waitFlag = new AtomicBoolean(true);
 		private long curTickPosition = 0;
 		private long nextTickPosition = 0;
+		private int curBlockIndex = 0;
+		private int oldBlockIndex = -1;
 
 		MidiMessagePump() {
 			curTickPosition = 0;
 			nextTickPosition = 0;
+			curBlockIndex = 0;
+			oldBlockIndex = -1;
 		}
 
 		void reset() {
 			curTickPosition = 0;
 			nextTickPosition = 0;
+			curBlockIndex = 0;
+			oldBlockIndex = -1;
 			waitFlag.set(true);
 		}
 
 		void nextTick(long tickPos) {
 			nextTickPosition = tickPos;
+			curBlockIndex = (int) (nextTickPosition / BLOCK_TICK);
 			waitFlag.set(false);
 		}
 
@@ -645,10 +759,33 @@ public class LightweightSequencer implements Sequencer {
 			long next = 0;
 			long t = 0;
 			while (running.get()) {
+				if (isRenderOnly == true) {
+					// レンダリングモードは音声出力しない
+					if (eventMap.isEmpty() == false) {
+						eventMap.clear();
+					}
+					
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					continue;
+				}
+				
 				if (waitFlag.get() == false) {
 					cur = curTickPosition;
 					next = nextTickPosition;
+					
+					if (curBlockIndex != oldBlockIndex) {
+						System.out.println("extract event block: " + curBlockIndex);
+						oldBlockIndex = curBlockIndex;
+						eventMap.clear();
+						extractMidiEvent(eventMap, BLOCK_TICK * curBlockIndex, (BLOCK_TICK * (curBlockIndex + 1)) - 1);
+					}
+					
 					for (t = cur; t < next; t++) {
+						
 						onTick(t);
 						if (t >= getTickLength()) {
 							stop();
@@ -669,5 +806,13 @@ public class LightweightSequencer implements Sequencer {
 				} // スムーズなCPU制御
 			}
 		}
+	}
+	
+	public void setRenderOnly(boolean b) {
+		isRenderOnly = b;
+	}
+	
+	public boolean isRenderOnly() {
+		return isRenderOnly;
 	}
 } /* LightweightSequencer class end */

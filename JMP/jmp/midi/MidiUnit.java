@@ -108,4 +108,8 @@ public class MidiUnit implements IMidiUnit {
         return getSequencer().getMicrosecondLength();
     }
 
+    @Override
+    public boolean isRenderingOnlyMode() {
+    	return getMidiPlayer().isRenderingOnly();
+    }
 }

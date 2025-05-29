@@ -21,6 +21,7 @@ import javax.swing.border.EmptyBorder;
 
 import function.Utility;
 import jmp.JMPFlags;
+import jmp.JMPLoader;
 import jmp.core.DataManager;
 import jmp.core.JMPCore;
 import jmp.core.LanguageManager;
@@ -28,6 +29,7 @@ import jmp.core.SoundManager;
 import jmp.core.WindowManager;
 import jmp.gui.ui.JMPDialog;
 import jmp.lang.DefineLanguage.LangID;
+import jmp.midi.receiver.AutoSelectSynthReceiverCreator;
 
 public class SelectSynthsizerDialog extends JMPDialog {
     public static final int MAX_ROW_COUNT = 15;
@@ -58,7 +60,8 @@ public class SelectSynthsizerDialog extends JMPDialog {
 
     public static final int INDEX_OF_AUTO_SELECTION = 0;
     public static final int INDEX_OF_NONE = 1;
-    public static final int NUMBER_OF_CUSTOM_SYNTH = 2;
+    public static final int INDEX_OF_RENDER_ONLY = 2;
+    public static final int NUMBER_OF_CUSTOM_SYNTH = 3;
 
     private JLabel labelDevelop;
     private JCheckBox chckbxStartupShowDialog;
@@ -200,7 +203,7 @@ public class SelectSynthsizerDialog extends JMPDialog {
 
                         String vendor = "Vendor : ";
                         String version = "Version : ";
-                        String description = "";
+                        String description = "<html>";
                         String port = "";
 
                         MidiDevice.Info info = null;
@@ -208,12 +211,18 @@ public class SelectSynthsizerDialog extends JMPDialog {
                         if (comboRecvMode.getSelectedIndex() == INDEX_OF_AUTO_SELECTION) {
                             vendor += "";
                             version += "";
-                            description += "Automatically select an available synthesizer.";
+                            description += "Automatically select an available synthesizer.<br>";
+                            description += "Select : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName() + "</font>";
                         }
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_NONE) {
                             vendor += "";
                             version += "";
                             description += "Don't use synthesizer.";
+                        }
+                        else if (comboRecvMode.getSelectedIndex() == INDEX_OF_RENDER_ONLY) {
+                            vendor += "";
+                            version += "";
+                            description += "Don't send midi event.";
                         }
                         else {
                             info = infosOfRecv[devIndex];
@@ -224,6 +233,8 @@ public class SelectSynthsizerDialog extends JMPDialog {
                             version += info.getVersion();
                             description += info.getDescription();
                         }
+                        
+                        description += "</html>";
 
                         lblVendorOfRecv.setText(vendor);
                         lblVersionOfRecv.setText(version);
@@ -303,6 +314,7 @@ public class SelectSynthsizerDialog extends JMPDialog {
                 if (JMPCore.getSoundManager().isPlay() == true) {
                     JMPCore.getSoundManager().stop();
                 }
+                
                 if (JMPCore.isEnableStandAlonePlugin() == true || JMPFlags.LibraryMode == true) {
                     // スタンドアロン・ライブラリは非表示
                     chckbxStartupShowDialog.setVisible(false);
@@ -311,6 +323,16 @@ public class SelectSynthsizerDialog extends JMPDialog {
                     chckbxStartupShowDialog.setVisible(true);
                 }
                 chckbxStartupShowDialog.setSelected(JMPCore.getDataManager().isShowStartupDeviceSetup());
+            }
+            else {
+            	if (JMPCore.isEnableStandAlonePlugin() == true || JMPFlags.LibraryMode == true) {
+                    // スタンドアロン・ライブラリは非表示
+                    chckbxStartupShowDialog.setVisible(false);
+                }
+            }
+            
+            if (JMPLoader.UseConfigFile == false) {
+            	chckbxStartupShowDialog.setVisible(false);
             }
             updateLanguage();
         }
@@ -346,12 +368,14 @@ public class SelectSynthsizerDialog extends JMPDialog {
         LanguageManager lm = JMPCore.getLanguageManager();
         String itemListNameDefault = "● " + lm.getLanguageStr(LangID.Automatic_selection);
         String itemListNameNone = "● " + lm.getLanguageStr(LangID.Dont_choose_a_synthesizer);
+        String itemListNameRender = "● Rendering Only";
 
         // レシーバー
         comboRecvMode.removeAllItems();
         infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
         comboRecvMode.addItem(itemListNameDefault);
         comboRecvMode.addItem(itemListNameNone);
+        comboRecvMode.addItem(itemListNameRender);
         for (int i = 0; i < infosOfRecv.length; i++) {
             String line = createItemName(i, infosOfRecv[i].getName());
             comboRecvMode.addItem(line);
@@ -373,6 +397,9 @@ public class SelectSynthsizerDialog extends JMPDialog {
                 comboRecvMode.setSelectedIndex(0);
                 if (saveInfoOfRecv.equals(SoundManager.NULL_RECEIVER_NAME) == true) {
                     comboRecvMode.setSelectedIndex(INDEX_OF_NONE);
+                }
+                else if (saveInfoOfRecv.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
+                    comboRecvMode.setSelectedIndex(INDEX_OF_RENDER_ONLY);
                 }
                 else {
                     for (int i = 0; i < infosOfRecv.length; i++) {
@@ -423,6 +450,10 @@ public class SelectSynthsizerDialog extends JMPDialog {
             case INDEX_OF_NONE:
                 // NULLシンセ
                 midiOutName = SoundManager.NULL_RECEIVER_NAME;
+                break;
+            case INDEX_OF_RENDER_ONLY:
+                // NULLシンセ
+                midiOutName = SoundManager.RENDER_ONLY_RECEIVER_NAME;
                 break;
             default:
                 midiOutName = getOrgDeviceName(comboRecvMode.getSelectedItem().toString().trim());

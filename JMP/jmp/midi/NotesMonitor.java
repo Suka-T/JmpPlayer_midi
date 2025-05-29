@@ -1,16 +1,14 @@
 package jmp.midi;
 
-import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.Track;
 
 import jlib.midi.IMidiEventListener;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.LightweightShortMessage;
+import jlib.midi.MappedSequence;
 import jlib.midi.MidiByte;
-import jmp.JMPFlags;
 import jmp.core.JMPCore;
 
 public class NotesMonitor implements IMidiEventListener, INotesMonitor {
@@ -40,8 +38,6 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     private KeyStateMonitor[] noteOnMonitorChannelTop = null;
     private int[] pitchBendMonitor = null;
     private int[] expressionMonitor = null;
-    
-    private MidiEvent[][] nativeTracks = null;
 
     public NotesMonitor() {
         noteOnMonitorChannel = new int[16][128];
@@ -175,31 +171,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             return;
         }
 
-        Track[] tracks = sequence.getTracks();
-        if (tracks == null) {
-            return;
-        }
-
-        IMidiToolkit midiToolkit = JMPCore.getSoundManager().getMidiToolkit();
-        for (int trkCount = 0; trkCount < tracks.length; trkCount++) {
-            for (int i = 0; i < tracks[trkCount].size(); i++) {
-                MidiMessage message = tracks[trkCount].get(i).getMessage();
-                if (midiToolkit.isNoteOn(message) == true) {
-                    numOfNotes++;
-                }
-            }
-        }
-        
-        nativeTracks = null;
-        if (JMPFlags.MakeNativeMidiEventFlag == true) {
-            nativeTracks = new MidiEvent[tracks.length][];
-            for (int trkCount = 0; trkCount < tracks.length; trkCount++) {
-                nativeTracks[trkCount] = new MidiEvent[tracks[trkCount].size()];
-                for (int i = 0; i < nativeTracks[trkCount].length; i++) {
-                    nativeTracks[trkCount][i] = tracks[trkCount].get(i);
-                }
-            }
-        }
+        numOfNotes = ((MappedSequence)sequence).getNumOfNotes();
     }
 
     public void timerEvent() {
@@ -264,52 +236,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
         if (sequence == null) {
             return 0;
         }
-        
-        if (JMPFlags.MakeNativeMidiEventFlag == true) {
-            if (nativeTracks == null) {
-                return 0;
-            }
-            return nativeTracks.length;
-        }
-        else {
-            return sequence.getTracks().length;
-        }
-    }
-    
-    @Override
-    public int getNumOfTrackEvent(int trackIndex) {
-        Sequence sequence = JMPCore.getSoundManager().getMidiUnit().getSequence();
-        if (sequence == null) {
-            return 0;
-        }
-        
-        if (JMPFlags.MakeNativeMidiEventFlag == true) {
-            if (nativeTracks == null || nativeTracks[trackIndex] == null) {
-                return 0;
-            }
-            return nativeTracks[trackIndex].length;
-        }
-        else {
-            return sequence.getTracks()[trackIndex].size();
-        }
-    }
-    
-    @Override
-    public final MidiEvent getTrackEvent(int trackIndex, int eventIndex) {
-        Sequence sequence = JMPCore.getSoundManager().getMidiUnit().getSequence();
-        if (sequence == null) {
-            return null;
-        }
-        
-        if (JMPFlags.MakeNativeMidiEventFlag == true) {
-            if (nativeTracks == null || nativeTracks[trackIndex] == null) {
-                return null;
-            }
-            return nativeTracks[trackIndex][eventIndex];
-        }
-        else {
-            return sequence.getTracks()[trackIndex].get(eventIndex);
-        }
+        return sequence.getTracks().length;
     }
     
     @Override

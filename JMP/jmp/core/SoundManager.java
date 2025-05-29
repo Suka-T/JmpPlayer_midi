@@ -23,6 +23,7 @@ import javax.swing.JList;
 
 import function.Platform;
 import function.Utility;
+import jlib.core.IDataManager;
 import jlib.core.ISoundManager;
 import jlib.gui.IJmpMainWindow;
 import jlib.gui.IJmpWindow;
@@ -67,9 +68,6 @@ import jmp.util.JmpUtil;
  *
  */
 public class SoundManager extends AbstractManager implements ISoundManager {
-
-    /** NULLレシーバー */
-    public static final String NULL_RECEIVER_NAME = "NULL";
 
     public static final String PLAYLIST_FILE_EXTENTION = "plst";
     public static final String BACKUP_PLAYLIST_FILE_NAME = "backup." + PLAYLIST_FILE_EXTENTION;
@@ -660,6 +658,12 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 if (tmpPlayer != PlayerAccessor.getCurrent()) {
                     tmpPlayer.changingPlayer();
                 }
+                
+                if (PlayerAccessor.getCurrent() instanceof MidiPlayer) {
+                    if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
+                    	SMidiPlayer.setRenderingOnly(false);
+                    }
+                }
 
                 if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {
                     loadResult = false;
@@ -699,6 +703,10 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 PlayerAccessor.changeDualPlayerSynchronizer();
                 if (tmpPlayer != PlayerAccessor.getCurrent()) {
                     tmpPlayer.changingPlayer();
+                }
+                
+                if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
+                	SMidiPlayer.setRenderingOnly(true);
                 }
 
                 if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {

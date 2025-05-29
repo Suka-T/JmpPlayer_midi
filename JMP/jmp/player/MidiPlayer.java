@@ -23,6 +23,7 @@ import jlib.player.Player;
 import jmp.JMPFlags;
 import jmp.core.DataManager;
 import jmp.core.JMPCore;
+import jmp.core.SoundManager;
 import jmp.core.SystemManager;
 import jmp.core.WindowManager;
 import jmp.midi.JMPSequencer;
@@ -295,7 +296,11 @@ public class MidiPlayer extends Player {
         		}
         	}
         	
-        	sequencer = new JMPSequencer(new LightweightSequencer());
+        	boolean isRenderingOnly = false;
+        	if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
+        		isRenderingOnly = true;
+        	}
+        	sequencer = new JMPSequencer(new LightweightSequencer(isRenderingOnly));
 //        	if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
 //        		sequencer = new JMPSequencer(new LightweightSequencer());
 //        	}
@@ -402,11 +407,15 @@ public class MidiPlayer extends Player {
             }
 
             // トランスミッター・レシーバーの接続を解除
-            for (Receiver rec : sequencer.getReceivers()) {
-                rec.close();
+            if (sequencer.getReceivers() != null) {
+	            for (Receiver rec : sequencer.getReceivers()) {
+	                rec.close();
+	            }
             }
-            for (Transmitter trans : sequencer.getTransmitters()) {
-                trans.close();
+            if (sequencer.getTransmitters() != null) {
+	            for (Transmitter trans : sequencer.getTransmitters()) {
+	                trans.close();
+	            }
             }
             if (sequencer.isOpen() == true) {
                 sequencer.close();
@@ -703,4 +712,12 @@ public class MidiPlayer extends Player {
         MidiSystem.write(sequence, format, file);
         return;
     }
+
+	public boolean isRenderingOnly() {
+		return sequencer.isRenderingOnly();
+	}
+	
+	public void setRenderingOnly(boolean b) {
+		sequencer.setRenderingOnly(b);
+	}
 }

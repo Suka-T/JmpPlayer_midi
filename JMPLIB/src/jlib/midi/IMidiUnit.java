@@ -58,4 +58,11 @@ public interface IMidiUnit {
      * @return
      */
     abstract long getMicrosecondLength();
+    
+    /**
+     * レンダリングモードか問い合わせ。(Midiメッセージを送らずTickの進行のみ行うモード) 
+     * 
+     * @return
+     */
+    abstract boolean isRenderingOnlyMode();
 }

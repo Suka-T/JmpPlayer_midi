@@ -7,6 +7,7 @@ import jlib.core.IDataManager;
 import jlib.plugin.IPlugin;
 import jmp.ErrorDef;
 import jmp.JMPFlags;
+import jmp.JMPLoader;
 import jmp.core.asset.AbstractCoreAsset;
 import jmp.file.CommonRegisterINI;
 import jmp.file.ConfigDatabaseWrapper;
@@ -61,7 +62,9 @@ public class JMPCore {
             if (JMPFlags.LibraryMode == false) {
                 /* ライセンス確認 */
                 if (JMPFlags.ActivateFlag == false) {
-                    getWindowManager().getWindow(WindowManager.WINDOW_NAME_LANGUAGE).showWindow();
+                	if (JMPLoader.UseConfigFile == true) {
+                		getWindowManager().getWindow(WindowManager.WINDOW_NAME_LANGUAGE).showWindow();
+                	}
                     // Notifyタスクがまだ有効ではないため、ここで言語更新する必要がある
                     getWindowManager().getWindow(WindowManager.WINDOW_NAME_LICENSE).updateLanguage();
                     getWindowManager().getWindow(WindowManager.WINDOW_NAME_LICENSE).showWindow();

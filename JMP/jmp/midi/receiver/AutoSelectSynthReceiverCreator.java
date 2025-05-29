@@ -8,66 +8,79 @@ import javax.sound.midi.Receiver;
 import jmp.core.JMPCore;
 import jmp.midi.JMPBuiltinSynthMidiDevice;
 
-class AutoSelectSynthReceiverCreator extends ReceiverCreator {
+public class AutoSelectSynthReceiverCreator extends ReceiverCreator {
 
-    public static final String DEFAULT_RECVNAME = "Gervill";
+	public static final String DEFAULT_RECVNAME = "Gervill";
+	
+	public static final String RECOMMENDED_RECVNAMES[] = {"OmniMIDI", "Keppy"};
+	
+	public static String getRecommendedReceiverName() {
+		MidiDevice.Info[] infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
 
-    @Override
-    public Receiver getReciever() {
+		// デフォルト
+		for (String name : RECOMMENDED_RECVNAMES) {
+			for (int i = 0; i < infosOfRecv.length; i++) {
+				if (infosOfRecv[i].getName().contains(name) == true) {
+					return name;
+				}
+			}
+		}
+		return DEFAULT_RECVNAME;
+	}
 
-        MidiDevice.Info[] infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
+	@Override
+	public Receiver getReciever() {
 
-        // デフォルト
-        int defIndex = -1;
-        for (int i = 0; i < infosOfRecv.length; i++) {
-            if (infosOfRecv[i].getName().contains(DEFAULT_RECVNAME) == true) {
-                defIndex = i;
-                break;
-            }
-        }
+		MidiDevice.Info[] infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
 
-        /* デフォルト使用 */
-        Receiver reciever = null;
-        if (defIndex != -1) {
-            // "DEFAULT_RECVNAME"を優先的に使用
-            try {
-                MidiDevice outDev;
-                outDev = JMPCore.getSoundManager().getMidiToolkit().getMidiDevice(infosOfRecv[defIndex]);
-                if (outDev.isOpen() == false) {
-                    outDev.open();
-                }
-                reciever = outDev.getReceiver();
-            }
-            catch (MidiUnavailableException e) {
-                reciever = null;
-            }
-        }
-        else {
-            // SoundAPIの自動選択に従う
-            try {
-                reciever = MidiSystem.getReceiver();
-            }
-            catch (Exception e3) {
-                reciever = null;
-            }
-        }
+		// デフォルト
+		int defIndex = -1;
+		for (int i = 0; i < infosOfRecv.length; i++) {
+			if (infosOfRecv[i].getName().contains(getRecommendedReceiverName()) == true) {
+				defIndex = i;
+				break;
+			}
+		}
 
-        // ない場合は内蔵シンセを採用する
-        if (reciever == null) {
-            try {
-                reciever = JMPCore.getSoundManager().getMidiToolkit().getMidiDevice(JMPBuiltinSynthMidiDevice.INFO).getReceiver();
-            }
-            catch (MidiUnavailableException e) {
-            }
-        }
+		/* デフォルト使用 */
+		Receiver reciever = null;
+		if (defIndex != -1) {
+			// "DEFAULT_RECVNAME"を優先的に使用
+			try {
+				MidiDevice outDev;
+				outDev = JMPCore.getSoundManager().getMidiToolkit().getMidiDevice(infosOfRecv[defIndex]);
+				if (outDev.isOpen() == false) {
+					outDev.open();
+				}
+				reciever = outDev.getReceiver();
+			} catch (MidiUnavailableException e) {
+				reciever = null;
+			}
+		} else {
+			// SoundAPIの自動選択に従う
+			try {
+				reciever = MidiSystem.getReceiver();
+			} catch (Exception e3) {
+				reciever = null;
+			}
+		}
 
-        // 本来ならありえないが、上記の処理でレシーバーがnullの場合は
-        // Nullレシーバーを例外処理として返す
-        if (reciever == null) {
-            NoneReceiverCreator none = new NoneReceiverCreator();
-            reciever = none.getReciever();
-        }
-        return reciever;
-    }
+		// ない場合は内蔵シンセを採用する
+		if (reciever == null) {
+			try {
+				reciever = JMPCore.getSoundManager().getMidiToolkit().getMidiDevice(JMPBuiltinSynthMidiDevice.INFO)
+						.getReceiver();
+			} catch (MidiUnavailableException e) {
+			}
+		}
+
+		// 本来ならありえないが、上記の処理でレシーバーがnullの場合は
+		// Nullレシーバーを例外処理として返す
+		if (reciever == null) {
+			NoneReceiverCreator none = new NoneReceiverCreator();
+			reciever = none.getReciever();
+		}
+		return reciever;
+	}
 
 }

@@ -13,6 +13,9 @@ public class ReceiverFactory {
         else if (name.equals(SoundManager.NULL_RECEIVER_NAME) == true) {
             return new NoneReceiverCreator();
         }
+        else if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
+            return new NoneReceiverCreator();
+        }
         else {
             return new SelectedSynthReceiverCreator(name);
         }

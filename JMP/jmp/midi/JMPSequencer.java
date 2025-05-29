@@ -19,6 +19,8 @@ import jmp.core.JMPCore;
 public class JMPSequencer implements Sequencer {
 
     private Sequencer abstractSequencer = null;
+    
+    private boolean isRenderingOnly = false;
 
     public JMPSequencer(Sequencer abstractSequenser) {
         this.abstractSequencer = abstractSequenser;
@@ -311,5 +313,14 @@ public class JMPSequencer implements Sequencer {
     public int getLoopCount() {
         return abstractSequencer.getLoopCount();
     }
+
+	public boolean isRenderingOnly() {
+		return isRenderingOnly;
+	}
+
+	public void setRenderingOnly(boolean isRenderingOnly) {
+		this.isRenderingOnly = isRenderingOnly;
+		((LightweightSequencer)abstractSequencer).setRenderOnly(this.isRenderingOnly);
+	}
 
 }
