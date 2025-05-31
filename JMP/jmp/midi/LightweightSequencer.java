@@ -32,7 +32,7 @@ import jlib.midi.MidiByte;
 import jmp.JMPFlags;
 
 public class LightweightSequencer implements Sequencer {
-	public static final int BLOCK_TICK = 20000;
+	public static final int BLOCK_TICK = 30000;
 	private float tempoBPM = 120.0f;
 	private int resolution = 480;
 	private long tickPosition = 0;
@@ -40,6 +40,7 @@ public class LightweightSequencer implements Sequencer {
 	private Sequence sequence;
 	private Thread playThread;
 	private Thread dumpThread;
+	private Thread extractThread;
 	private AtomicBoolean running = new AtomicBoolean(false);
 	private AtomicBoolean paused = new AtomicBoolean(false);
 	private long lastTimeNs = System.nanoTime();
@@ -48,10 +49,10 @@ public class LightweightSequencer implements Sequencer {
 
 	private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
 	private TreeMap<Long, List<MidiEvent>> eventMap = new TreeMap<>();
-	private TreeMap<Long, List<MidiEvent>> offEventMap = new TreeMap<>();
 	
 	private LwTransmitter lwTransmitter = new LwTransmitter();
 	private MidiMessagePump midiMsgPump;
+	private ExtractPump extractPump;
 	private boolean isRenderOnly = false;
 
 	// タスク定義：1トラックごとにテンポ & イベントを収集
@@ -75,6 +76,8 @@ public class LightweightSequencer implements Sequencer {
 		MappedSequence seq = (MappedSequence) this.sequence;
 		map.clear();
 
+		System.out.println("extract event block: " + startTick + " " + endTick);
+		
 		int coreCount = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
@@ -142,7 +145,6 @@ public class LightweightSequencer implements Sequencer {
 	private void analyzeSequence(MappedSequence seq) {
 		tempoChanges.clear(); // TreeMap<Long, Float>
 		eventMap.clear(); // TreeMap<Long, List<MidiEvent>>
-		offEventMap.clear();
 
 		int coreCount = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
@@ -265,6 +267,10 @@ public class LightweightSequencer implements Sequencer {
 					// microPerQuarter を更新
 					microPerQuarter = 60_000_000.0 / tempoBPM;
 				}
+				if (i >= getTickLength()) {
+					stop();
+					break;
+				}
 				tickPosition++;
 			}
 
@@ -285,7 +291,6 @@ public class LightweightSequencer implements Sequencer {
 		List<MidiEvent> events = eventMap.get(tick);
 		if (events != null && lwTransmitter.getReceiver() != null) {
 			for (MidiEvent event : events) {
-
 				MidiMessage msg = event.getMessage();
 				sendMidiEvent(msg, -1); // 即時送信
 			}
@@ -326,6 +331,7 @@ public class LightweightSequencer implements Sequencer {
 	public void open() {
 		isOpen = true;
 		midiMsgPump = new MidiMessagePump();
+		extractPump = new ExtractPump();
 	}
 
 	@Override
@@ -338,7 +344,23 @@ public class LightweightSequencer implements Sequencer {
 				Thread.currentThread().interrupt();
 			}
 		}
+		if (dumpThread != null) {
+			try {
+				dumpThread.join();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+		if (extractThread != null) {
+			try {
+				extractThread.join();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
 		playThread = null;
+		dumpThread = null;
+		extractThread = null;
 		isOpen = false;
 	}
 
@@ -361,11 +383,17 @@ public class LightweightSequencer implements Sequencer {
 			return;
 		} else {
 			playThread = new Thread(this::runLoop);
+			playThread.setPriority(Thread.MAX_PRIORITY - 1);
 			playThread.start();
 			
 			dumpThread = new Thread(midiMsgPump);
+			dumpThread.setPriority(Thread.MAX_PRIORITY - 2);
 			dumpThread.start();
 			midiMsgPump.reset();
+			
+			extractThread = new Thread(extractPump);
+			extractThread.setPriority(Thread.MAX_PRIORITY - 2);
+			extractThread.start();
 
 			running.set(true);
 			paused.set(false);
@@ -405,7 +433,7 @@ public class LightweightSequencer implements Sequencer {
 		lastTimeNs = System.nanoTime();
 		tickRemainder = 0.0;
 		if (midiMsgPump != null) {
-			midiMsgPump.reset();
+			midiMsgPump.reset(this.tickPosition);
 		}
 		allSoundOff();
 	}
@@ -724,32 +752,103 @@ public class LightweightSequencer implements Sequencer {
 			lwReceiver.close();
 		}
 	}
+	
+	private class ExtractPump implements Runnable {
+		private AtomicBoolean waitFlag = new AtomicBoolean(true);
+		private long readBlockIndex = 0;
+		private TreeMap<Long, List<MidiEvent>> offEventMap = new TreeMap<>();
+		
+		ExtractPump() {
+			readBlockIndex = 0;
+		}
+		
+		public void read(long readIndex) {
+			readBlockIndex = readIndex;
+			waitFlag.set(false);
+		}
+		
+		public void copy(TreeMap<Long, List<MidiEvent>> dst) {
+			while (!waitFlag.get()) {
+                try {
+                	Thread.sleep(1); // waitFlagがfalseの間は待機
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+			dst.clear();
+			dst.putAll(offEventMap);
+		}
+		
+		@Override
+		public void run() {
+			while (running.get()) {
+				if (isRenderOnly == true) {
+					// レンダリングモードは音声出力しない
+					if (offEventMap.isEmpty() == false) {
+						offEventMap.clear();
+					}
+					
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					continue;
+				}
+				
+				if (waitFlag.get() == false) {
+					offEventMap.clear();
+					extractMidiEvent(offEventMap, BLOCK_TICK * readBlockIndex, (BLOCK_TICK * (readBlockIndex + 1)));
+					
+					waitFlag.set(true);
+				}
 
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+					// TODO 自動生成された catch ブロック
+					e.printStackTrace();
+				} // スムーズなCPU制御
+			}
+		}
+	}
+	
 	private class MidiMessagePump implements Runnable {
 		private AtomicBoolean waitFlag = new AtomicBoolean(true);
 		private long curTickPosition = 0;
 		private long nextTickPosition = 0;
-		private int curBlockIndex = 0;
-		private int oldBlockIndex = -1;
+		private long curBlockIndex = -1;
 
 		MidiMessagePump() {
 			curTickPosition = 0;
 			nextTickPosition = 0;
-			curBlockIndex = 0;
-			oldBlockIndex = -1;
+			curBlockIndex = -1;
 		}
 
 		void reset() {
-			curTickPosition = 0;
-			nextTickPosition = 0;
-			curBlockIndex = 0;
-			oldBlockIndex = -1;
+			reset(0);
+		}
+		
+		void reset(long tick) {
+			if (isRenderOnly == false) {
+	            while (!waitFlag.get()) {
+	                try {
+	                	Thread.sleep(1); // waitFlagがfalseの間は待機
+	                } catch (InterruptedException e) {
+	                    Thread.currentThread().interrupt();
+	                    return;
+	                }
+	            }
+			}
+			curTickPosition = tick;
+			nextTickPosition = tick;
+			curBlockIndex = -1;
 			waitFlag.set(true);
 		}
 
 		void nextTick(long tickPos) {
 			nextTickPosition = tickPos;
-			curBlockIndex = (int) (nextTickPosition / BLOCK_TICK);
 			waitFlag.set(false);
 		}
 
@@ -758,7 +857,12 @@ public class LightweightSequencer implements Sequencer {
 			long cur = 0;
 			long next = 0;
 			long t = 0;
+			long blockIndex = -1;
 			while (running.get()) {
+				if (curTickPosition != nextTickPosition) {
+					waitFlag.set(false);
+				}
+				
 				if (isRenderOnly == true) {
 					// レンダリングモードは音声出力しない
 					if (eventMap.isEmpty() == false) {
@@ -777,20 +881,22 @@ public class LightweightSequencer implements Sequencer {
 					cur = curTickPosition;
 					next = nextTickPosition;
 					
-					if (curBlockIndex != oldBlockIndex) {
-						System.out.println("extract event block: " + curBlockIndex);
-						oldBlockIndex = curBlockIndex;
-						eventMap.clear();
-						extractMidiEvent(eventMap, BLOCK_TICK * curBlockIndex, (BLOCK_TICK * (curBlockIndex + 1)) - 1);
-					}
-					
 					for (t = cur; t < next; t++) {
-						
-						onTick(t);
-						if (t >= getTickLength()) {
-							stop();
-							break;
+						blockIndex = t / BLOCK_TICK;
+						if (curBlockIndex == -1) {
+							curBlockIndex = blockIndex;
+							eventMap.clear();
+							extractMidiEvent(eventMap, BLOCK_TICK * curBlockIndex, (BLOCK_TICK * (curBlockIndex + 1) - 1));
+							extractPump.read(curBlockIndex + 1);
 						}
+						else {
+							if (blockIndex != curBlockIndex) {
+								curBlockIndex = blockIndex;
+								extractPump.copy(eventMap);
+								extractPump.read(curBlockIndex + 1);
+							}
+						}
+						onTick(t);
 					}
 					curTickPosition = next;
 					if (nextTickPosition == next) {

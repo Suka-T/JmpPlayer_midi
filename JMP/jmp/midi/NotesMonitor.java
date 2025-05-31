@@ -1,5 +1,8 @@
 package jmp.midi;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 
@@ -12,8 +15,6 @@ import jlib.midi.MidiByte;
 import jmp.core.JMPCore;
 
 public class NotesMonitor implements IMidiEventListener, INotesMonitor {
-	
-	final static int NUM_OF_TRACK = 256;
 	
 	public class KeyStateMonitor {
 		public int channel = -1;
@@ -34,14 +35,14 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     private double nps = 0;
 
     private int[][] noteOnMonitorChannel = null;
-    private int[][] noteOnMonitorTrack = null;
+    private List<int[]> noteOnMonitorTrack = null;
     private KeyStateMonitor[] noteOnMonitorChannelTop = null;
     private int[] pitchBendMonitor = null;
     private int[] expressionMonitor = null;
 
     public NotesMonitor() {
         noteOnMonitorChannel = new int[16][128];
-        noteOnMonitorTrack = new int[NUM_OF_TRACK][128];
+        noteOnMonitorTrack = new ArrayList<int[]>();
         noteOnMonitorChannelTop = new KeyStateMonitor[128];
         for (int i = 0; i < noteOnMonitorChannelTop.length; i++) {
         	noteOnMonitorChannelTop[i] = new KeyStateMonitor();
@@ -67,7 +68,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             }
             
             noteOnMonitorChannel[channel][data1] = 1;
-            noteOnMonitorTrack[trackIndex][data1] = 1;
+            noteOnMonitorTrack.get(trackIndex)[data1] = 1;
             
             int topChStat = -1;
             for (int i = 15; i >= 0; i--) {
@@ -78,8 +79,8 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             }
             noteOnMonitorChannelTop[data1].channel = topChStat;
             int topTrkStat = -1;
-            for (int i = NUM_OF_TRACK - 1; i >= 0; i--) {
-                if (noteOnMonitorTrack[i][data1] != 0) {
+            for (int i = getNumOfTrack() - 1; i >= 0; i--) {
+                if (noteOnMonitorTrack.get(trackIndex)[data1] != 0) {
                 	topTrkStat = i;
                     break;
                 }
@@ -97,7 +98,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             }
             
             noteOnMonitorChannel[channel][data1] = 0;
-            noteOnMonitorTrack[trackIndex][data1] = 0;
+            noteOnMonitorTrack.get(trackIndex)[data1] = 0;
             
             int topChStat = -1;
             for (int i = 15; i >= 0; i--) {
@@ -108,8 +109,8 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             }
             noteOnMonitorChannelTop[data1].channel = topChStat;
             int topTrkStat = -1;
-            for (int i = NUM_OF_TRACK - 1; i >= 0; i--) {
-                if (noteOnMonitorTrack[i][data1] != 0) {
+            for (int i = getNumOfTrack() - 1; i >= 0; i--) {
+                if (noteOnMonitorTrack.get(trackIndex)[data1] != 0) {
                 	topTrkStat = i;
                     break;
                 }
@@ -149,9 +150,12 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
                 noteOnMonitorChannelTop[j].reset();
             }
         }
-        for (int i = 0; i < NUM_OF_TRACK; i++) {
+        
+        noteOnMonitorTrack.clear();
+        for (int i = 0; i < getNumOfTrack(); i++) {
+        	noteOnMonitorTrack.add(new int[128]);
         	for (int j = 0; j < 128; j++) {
-        		noteOnMonitorTrack[i][j] = 0;
+        		noteOnMonitorTrack.get(i)[j] = 0;
         	}
         }
     }
