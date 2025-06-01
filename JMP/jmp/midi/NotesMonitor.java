@@ -29,6 +29,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     private long notesCount = 0;
     private long numOfNotes = 0;
+    private int numOfTrack = 0;
 
     private long startTime = System.currentTimeMillis();
     private long pastNotesCount = 0;
@@ -80,7 +81,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             noteOnMonitorChannelTop[data1].channel = topChStat;
             int topTrkStat = -1;
             for (int i = getNumOfTrack() - 1; i >= 0; i--) {
-                if (noteOnMonitorTrack.get(trackIndex)[data1] != 0) {
+                if (noteOnMonitorTrack.get(i)[data1] != 0) {
                 	topTrkStat = i;
                     break;
                 }
@@ -110,7 +111,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             noteOnMonitorChannelTop[data1].channel = topChStat;
             int topTrkStat = -1;
             for (int i = getNumOfTrack() - 1; i >= 0; i--) {
-                if (noteOnMonitorTrack.get(trackIndex)[data1] != 0) {
+                if (noteOnMonitorTrack.get(i)[data1] != 0) {
                 	topTrkStat = i;
                     break;
                 }
@@ -167,15 +168,19 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     @Override
     public void analyzeMidiSequence() {
-        clearNumOfNotes();
-        reset();
 
+    	long newNumOfNotes = 0;
+    	int newNumOfTrack = 0;
+    	clearNumOfNotes();
+    	
         Sequence sequence = JMPCore.getSoundManager().getMidiUnit().getSequence();
-        if (sequence == null) {
-            return;
+        if (sequence != null) {
+        	newNumOfNotes = ((MappedSequence)sequence).getNumOfNotes();
+        	newNumOfTrack = ((MappedSequence)sequence).getNumTracks();
         }
-
-        numOfNotes = ((MappedSequence)sequence).getNumOfNotes();
+        numOfNotes = newNumOfNotes;
+        numOfTrack = newNumOfTrack;
+        reset();
     }
 
     public void timerEvent() {
@@ -236,11 +241,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     
     @Override
     public int getNumOfTrack() {
-        Sequence sequence = JMPCore.getSoundManager().getMidiUnit().getSequence();
-        if (sequence == null) {
-            return 0;
-        }
-        return sequence.getTracks().length;
+        return numOfTrack;
     }
     
     @Override

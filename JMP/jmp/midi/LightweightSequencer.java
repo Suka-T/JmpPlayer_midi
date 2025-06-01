@@ -22,6 +22,7 @@ import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.ShortMessage;
+import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.Transmitter;
 
@@ -32,10 +33,11 @@ import jlib.midi.MidiByte;
 import jmp.JMPFlags;
 
 public class LightweightSequencer implements Sequencer {
-	public static final int BLOCK_TICK = 30000;
+	public static final long BLOCK_TICK = 20000;
 	private float tempoBPM = 120.0f;
 	private int resolution = 480;
 	private long tickPosition = 0;
+	private long blockTick = BLOCK_TICK;
 
 	private Sequence sequence;
 	private Thread playThread;
@@ -49,35 +51,47 @@ public class LightweightSequencer implements Sequencer {
 
 	private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
 	private TreeMap<Long, List<MidiEvent>> eventMap = new TreeMap<>();
-	
+
 	private LwTransmitter lwTransmitter = new LwTransmitter();
 	private MidiMessagePump midiMsgPump;
-	private ExtractPump extractPump;
+	private ExtractWorker extractWorker;
 	private boolean isRenderOnly = false;
+	
+	// seek移動中はフラグを建てることで各スレッドを動作しない制御する 
+	private boolean seekingFlag = false;
 
 	// タスク定義：1トラックごとにテンポ & イベントを収集
 	class TrackResult {
 		final Map<Long, Float> tempoMap;
 		final Map<Long, List<MidiEvent>> events;
-		int notesCount = 0;
-		int maxTick = 0;
+		long notesCount = 0;
+		long maxTick = 0;
 
 		TrackResult(Map<Long, Float> tempoMap, Map<Long, List<MidiEvent>> events) {
 			this.tempoMap = tempoMap;
 			this.events = events;
 		}
 	}
-	
+
 	public LightweightSequencer(boolean isRenderOnly) {
 		this.isRenderOnly = isRenderOnly;
+	}
+	
+	private long calcBlockTick(long tickLength) {
+		long blockTick = tickLength / 32;
+		if (blockTick < BLOCK_TICK) {
+			blockTick = BLOCK_TICK;
+		}
+		System.out.println("blockTick " + blockTick);
+		return blockTick;
 	}
 
 	private void extractMidiEvent(TreeMap<Long, List<MidiEvent>> map, long startTick, long endTick) {
 		MappedSequence seq = (MappedSequence) this.sequence;
 		map.clear();
-
-		System.out.println("extract event block: " + startTick + " " + endTick);
 		
+		System.out.println("extract events: " + startTick + "-" + endTick);
+
 		int coreCount = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
@@ -94,20 +108,24 @@ public class LightweightSequencer implements Sequencer {
 
 						@Override
 						public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
-							// TODO 自動生成されたメソッド・スタブ
+							try {
+								SysexMessage sysex = new SysexMessage(statusByte, sysexData, length);
+								results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>())
+										.add(new MidiEvent(sysex, tick));
+							} catch (InvalidMidiDataException e) {
+								e.printStackTrace();
+							}
 
 						}
 
 						@Override
 						public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
-							LightweightShortMessage sm;
 							try {
-								sm = new LightweightShortMessage(
+								LightweightShortMessage sm = new LightweightShortMessage(
 										statusByte | (data1 << 8) | (data2 << 16), (short) trk);
 								results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>())
 										.add(new MidiEvent(sm, tick));
 							} catch (InvalidMidiDataException e) {
-								// TODO 自動生成された catch ブロック
 								e.printStackTrace();
 							}
 						}
@@ -145,6 +163,9 @@ public class LightweightSequencer implements Sequencer {
 	private void analyzeSequence(MappedSequence seq) {
 		tempoChanges.clear(); // TreeMap<Long, Float>
 		eventMap.clear(); // TreeMap<Long, List<MidiEvent>>
+		
+		seekingFlag = true;
+		midiMsgPump.reset();
 
 		int coreCount = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
@@ -160,7 +181,7 @@ public class LightweightSequencer implements Sequencer {
 			executor.submit(() -> {
 				try {
 					seq.parse(index, new MappedParseFunc() {
-						
+
 						@Override
 						public void calcTick(int trk, int tick) {
 							if (results.get(trk).maxTick < tick) {
@@ -213,20 +234,24 @@ public class LightweightSequencer implements Sequencer {
 		}
 
 		// 結果をマージ
-		int maxTick = 0;
-		int notesCount = 0;
+		long maxTick = 0;
+		long notesCount = 0;
 		for (TrackResult result : results) {
 			// tempoChanges へ統合
 			tempoChanges.putAll(result.tempoMap);
 
 			notesCount += result.notesCount;
-			
+
 			if (maxTick < result.maxTick) {
 				maxTick = result.maxTick;
 			}
 		}
 		seq.setTickLength(maxTick);
 		seq.setNumOfNotes(notesCount);
+		
+		blockTick = calcBlockTick(maxTick);
+		
+		seekingFlag = false;
 	}
 
 	// 再生処理スレッド
@@ -261,8 +286,7 @@ public class LightweightSequencer implements Sequencer {
 
 			for (i = 0; i < ticksToAdvance; i++) {
 				if (tempoChanges.containsKey(tickPosition)) {
-					float newTempo = tempoChanges.get(tickPosition);
-					setTempoInBPM(newTempo);
+					setTempoInBPM(tempoChanges.get(tickPosition));
 
 					// microPerQuarter を更新
 					microPerQuarter = 60_000_000.0 / tempoBPM;
@@ -331,7 +355,7 @@ public class LightweightSequencer implements Sequencer {
 	public void open() {
 		isOpen = true;
 		midiMsgPump = new MidiMessagePump();
-		extractPump = new ExtractPump();
+		extractWorker = new ExtractWorker();
 	}
 
 	@Override
@@ -385,13 +409,13 @@ public class LightweightSequencer implements Sequencer {
 			playThread = new Thread(this::runLoop);
 			playThread.setPriority(Thread.MAX_PRIORITY - 1);
 			playThread.start();
-			
+
 			dumpThread = new Thread(midiMsgPump);
 			dumpThread.setPriority(Thread.MAX_PRIORITY - 2);
 			dumpThread.start();
 			midiMsgPump.reset();
-			
-			extractThread = new Thread(extractPump);
+
+			extractThread = new Thread(extractWorker);
 			extractThread.setPriority(Thread.MAX_PRIORITY - 2);
 			extractThread.start();
 
@@ -426,16 +450,21 @@ public class LightweightSequencer implements Sequencer {
 
 	@Override
 	public void setTickPosition(long tick) {
+		seekingFlag = true;
+		if (midiMsgPump != null) {
+			midiMsgPump.reset(tick);
+		}
+		
 		this.tickPosition = tick;
 		if (0 >= this.tickPosition) {
 			tempoBPM = 120.0f;
 		}
 		lastTimeNs = System.nanoTime();
 		tickRemainder = 0.0;
-		if (midiMsgPump != null) {
-			midiMsgPump.reset(this.tickPosition);
-		}
+
 		allSoundOff();
+		
+		seekingFlag = false;
 	}
 
 	@Override
@@ -752,34 +781,34 @@ public class LightweightSequencer implements Sequencer {
 			lwReceiver.close();
 		}
 	}
-	
-	private class ExtractPump implements Runnable {
+
+	private class ExtractWorker implements Runnable {
 		private AtomicBoolean waitFlag = new AtomicBoolean(true);
 		private long readBlockIndex = 0;
 		private TreeMap<Long, List<MidiEvent>> offEventMap = new TreeMap<>();
-		
-		ExtractPump() {
+
+		ExtractWorker() {
 			readBlockIndex = 0;
 		}
-		
+
 		public void read(long readIndex) {
 			readBlockIndex = readIndex;
 			waitFlag.set(false);
 		}
-		
+
 		public void copy(TreeMap<Long, List<MidiEvent>> dst) {
 			while (!waitFlag.get()) {
-                try {
-                	Thread.sleep(1); // waitFlagがfalseの間は待機
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
+				try {
+					Thread.sleep(1); // waitFlagがfalseの間は待機
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+			}
 			dst.clear();
 			dst.putAll(offEventMap);
 		}
-		
+
 		@Override
 		public void run() {
 			while (running.get()) {
@@ -788,7 +817,7 @@ public class LightweightSequencer implements Sequencer {
 					if (offEventMap.isEmpty() == false) {
 						offEventMap.clear();
 					}
-					
+
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
@@ -796,11 +825,11 @@ public class LightweightSequencer implements Sequencer {
 					}
 					continue;
 				}
-				
+
 				if (waitFlag.get() == false) {
 					offEventMap.clear();
-					extractMidiEvent(offEventMap, BLOCK_TICK * readBlockIndex, (BLOCK_TICK * (readBlockIndex + 1)));
-					
+					extractMidiEvent(offEventMap, blockTick * readBlockIndex, (blockTick * (readBlockIndex + 1)) - 1);
+
 					waitFlag.set(true);
 				}
 
@@ -813,7 +842,7 @@ public class LightweightSequencer implements Sequencer {
 			}
 		}
 	}
-	
+
 	private class MidiMessagePump implements Runnable {
 		private AtomicBoolean waitFlag = new AtomicBoolean(true);
 		private long curTickPosition = 0;
@@ -829,22 +858,22 @@ public class LightweightSequencer implements Sequencer {
 		void reset() {
 			reset(0);
 		}
-		
+
 		void reset(long tick) {
 			if (isRenderOnly == false) {
-	            while (!waitFlag.get()) {
-	                try {
-	                	Thread.sleep(1); // waitFlagがfalseの間は待機
-	                } catch (InterruptedException e) {
-	                    Thread.currentThread().interrupt();
-	                    return;
-	                }
-	            }
+				while (!waitFlag.get()) {
+					try {
+						Thread.sleep(1); // waitFlagがfalseの間は待機
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						return;
+					}
+				}
 			}
+			waitFlag.set(true);
+			curBlockIndex = -1;
 			curTickPosition = tick;
 			nextTickPosition = tick;
-			curBlockIndex = -1;
-			waitFlag.set(true);
 		}
 
 		void nextTick(long tickPos) {
@@ -859,16 +888,12 @@ public class LightweightSequencer implements Sequencer {
 			long t = 0;
 			long blockIndex = -1;
 			while (running.get()) {
-				if (curTickPosition != nextTickPosition) {
-					waitFlag.set(false);
-				}
-				
 				if (isRenderOnly == true) {
 					// レンダリングモードは音声出力しない
 					if (eventMap.isEmpty() == false) {
 						eventMap.clear();
 					}
-					
+
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
@@ -877,31 +902,43 @@ public class LightweightSequencer implements Sequencer {
 					continue;
 				}
 				
-				if (waitFlag.get() == false) {
-					cur = curTickPosition;
-					next = nextTickPosition;
-					
-					for (t = cur; t < next; t++) {
-						blockIndex = t / BLOCK_TICK;
-						if (curBlockIndex == -1) {
-							curBlockIndex = blockIndex;
-							eventMap.clear();
-							extractMidiEvent(eventMap, BLOCK_TICK * curBlockIndex, (BLOCK_TICK * (curBlockIndex + 1) - 1));
-							extractPump.read(curBlockIndex + 1);
+				if (seekingFlag == false) {
+					if (curBlockIndex != -1) {
+						if (curTickPosition != nextTickPosition) {
+							waitFlag.set(false);
 						}
-						else {
-							if (blockIndex != curBlockIndex) {
+					}
+	
+					if (waitFlag.get() == false) {
+						cur = curTickPosition;
+						next = nextTickPosition;
+	
+						for (t = cur; t < next; t++) {
+							blockIndex = t / blockTick;
+							if (curBlockIndex == -1) {
 								curBlockIndex = blockIndex;
-								extractPump.copy(eventMap);
-								extractPump.read(curBlockIndex + 1);
+								eventMap.clear();
+								extractMidiEvent(eventMap, blockTick * curBlockIndex,
+										(blockTick * (curBlockIndex + 1) - 1));
+								extractWorker.read(curBlockIndex + 1);
+							} else {
+								if (blockIndex != curBlockIndex) {
+									curBlockIndex = blockIndex;
+									extractWorker.copy(eventMap);
+									extractWorker.read(curBlockIndex + 1);
+								}
 							}
+							onTick(t);
 						}
-						onTick(t);
+						curTickPosition = next;
+						if (nextTickPosition == next) {
+							waitFlag.set(true);
+						}
 					}
-					curTickPosition = next;
-					if (nextTickPosition == next) {
-						waitFlag.set(true);
-					}
+				}
+				else {
+					// シーク中のリクエストは破棄  
+					waitFlag.set(true);
 				}
 
 				try {
@@ -913,11 +950,11 @@ public class LightweightSequencer implements Sequencer {
 			}
 		}
 	}
-	
+
 	public void setRenderOnly(boolean b) {
 		isRenderOnly = b;
 	}
-	
+
 	public boolean isRenderOnly() {
 		return isRenderOnly;
 	}

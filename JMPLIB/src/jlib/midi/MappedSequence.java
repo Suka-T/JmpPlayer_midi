@@ -16,7 +16,7 @@ import javax.sound.midi.SysexMessage;
 public class MappedSequence extends Sequence {
 	private long tickLength = 0; 
 	private int numTracks = 0;
-	private int numOfNotes = 0;
+	private long numOfNotes = 0;
 	private List<MappedByteBuffer> mappedByteBuffers = null;
 
 	public MappedSequence(float divisionType, int resolution, int numTracks) throws InvalidMidiDataException {
@@ -114,11 +114,11 @@ public class MappedSequence extends Sequence {
 		return tickLength;
     }
 
-	public int getNumOfNotes() {
+	public long getNumOfNotes() {
 		return numOfNotes;
 	}
 
-	public void setNumOfNotes(int numOfNotes) {
+	public void setNumOfNotes(long numOfNotes) {
 		this.numOfNotes = numOfNotes;
 	}
 }

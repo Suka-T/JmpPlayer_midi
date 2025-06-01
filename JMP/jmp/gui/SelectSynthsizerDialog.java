@@ -131,7 +131,7 @@ public class SelectSynthsizerDialog extends JMPDialog {
 
             lblDescriptionOfRecv = new JLabel("Description : ");
             lblDescriptionOfRecv.setVerticalAlignment(SwingConstants.TOP);
-            lblDescriptionOfRecv.setBounds(22, 115, 400, 43);
+            lblDescriptionOfRecv.setBounds(22, 105, 400, 60);
             panel.add(lblDescriptionOfRecv);
             lblDescriptionOfRecv.setForeground(Color.DARK_GRAY);
 
@@ -212,7 +212,9 @@ public class SelectSynthsizerDialog extends JMPDialog {
                             vendor += "";
                             version += "";
                             description += "Automatically select an available synthesizer.<br>";
-                            description += "Select : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName() + "</font>";
+                            description += "<br>";
+                            description += " * MIDI only : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName() + "</font><br>";
+                            description += " * MIDI & Audio : <font color=\"GREEN\">Rendering Only</font>";
                         }
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_NONE) {
                             vendor += "";
