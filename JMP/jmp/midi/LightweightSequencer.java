@@ -33,11 +33,12 @@ import jlib.midi.MidiByte;
 import jmp.JMPFlags;
 
 public class LightweightSequencer implements Sequencer {
-	public static final long BLOCK_TICK = 20000;
+	public static final long DIV_OF_BLOCK = 32;
+	public static final long MIN_BLOCK_TICK = 20000;
 	private float tempoBPM = 120.0f;
 	private int resolution = 480;
 	private long tickPosition = 0;
-	private long blockTick = BLOCK_TICK;
+	private long blockTick = MIN_BLOCK_TICK;
 
 	private Sequence sequence;
 	private Thread playThread;
@@ -49,8 +50,11 @@ public class LightweightSequencer implements Sequencer {
 	private double tickRemainder = 0.0;
 	private boolean isOpen = false;
 
-	private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
-	private TreeMap<Long, List<MidiEvent>> eventMap = new TreeMap<>();
+	private Map<Long, Float> tempoChanges = new TreeMap<>();
+	private Map<Long, List<MidiEvent>> eventMap1 = new TreeMap<>();
+	private Map<Long, List<MidiEvent>> eventMap2 = new TreeMap<>();
+	private Map<Long, List<MidiEvent>> currentEventMap = null;
+	private Map<Long, List<MidiEvent>> offEventMap = null;
 
 	private LwTransmitter lwTransmitter = new LwTransmitter();
 	private MidiMessagePump midiMsgPump;
@@ -78,15 +82,15 @@ public class LightweightSequencer implements Sequencer {
 	}
 	
 	private long calcBlockTick(long tickLength) {
-		long blockTick = tickLength / 32;
-		if (blockTick < BLOCK_TICK) {
-			blockTick = BLOCK_TICK;
+		long blockTick = tickLength / DIV_OF_BLOCK;
+		if (blockTick < MIN_BLOCK_TICK) {
+			blockTick = MIN_BLOCK_TICK;
 		}
 		System.out.println("blockTick " + blockTick);
 		return blockTick;
 	}
 
-	private void extractMidiEvent(TreeMap<Long, List<MidiEvent>> map, long startTick, long endTick) {
+	private void extractMidiEvent(Map<Long, List<MidiEvent>> map, long startTick, long endTick) {
 		MappedSequence seq = (MappedSequence) this.sequence;
 		map.clear();
 		
@@ -162,7 +166,11 @@ public class LightweightSequencer implements Sequencer {
 
 	private void analyzeSequence(MappedSequence seq) {
 		tempoChanges.clear(); // TreeMap<Long, Float>
-		eventMap.clear(); // TreeMap<Long, List<MidiEvent>>
+		eventMap1.clear();
+		eventMap2.clear();
+		
+		currentEventMap = eventMap1;
+		offEventMap = eventMap2;
 		
 		seekingFlag = true;
 		midiMsgPump.reset();
@@ -312,7 +320,7 @@ public class LightweightSequencer implements Sequencer {
 	protected void onTick(long tick) {
 
 		// Note On / Off 処理
-		List<MidiEvent> events = eventMap.get(tick);
+		List<MidiEvent> events = currentEventMap.get(tick);
 		if (events != null && lwTransmitter.getReceiver() != null) {
 			for (MidiEvent event : events) {
 				MidiMessage msg = event.getMessage();
@@ -322,9 +330,7 @@ public class LightweightSequencer implements Sequencer {
 	}
 
 	private void sendMidiEvent(MidiMessage msg, int timeStamp) {
-		if (lwTransmitter.getReceiver() != null) {
-			lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
-		}
+		lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
 	}
 
 	private void allSoundOff() {
@@ -785,7 +791,6 @@ public class LightweightSequencer implements Sequencer {
 	private class ExtractWorker implements Runnable {
 		private AtomicBoolean waitFlag = new AtomicBoolean(true);
 		private long readBlockIndex = 0;
-		private TreeMap<Long, List<MidiEvent>> offEventMap = new TreeMap<>();
 
 		ExtractWorker() {
 			readBlockIndex = 0;
@@ -796,8 +801,8 @@ public class LightweightSequencer implements Sequencer {
 			waitFlag.set(false);
 		}
 
-		public void copy(TreeMap<Long, List<MidiEvent>> dst) {
-			while (!waitFlag.get()) {
+		public void waitForRead() {
+			while (waitFlag.get() == false) {
 				try {
 					Thread.sleep(1); // waitFlagがfalseの間は待機
 				} catch (InterruptedException e) {
@@ -805,8 +810,6 @@ public class LightweightSequencer implements Sequencer {
 					return;
 				}
 			}
-			dst.clear();
-			dst.putAll(offEventMap);
 		}
 
 		@Override
@@ -890,10 +893,6 @@ public class LightweightSequencer implements Sequencer {
 			while (running.get()) {
 				if (isRenderOnly == true) {
 					// レンダリングモードは音声出力しない
-					if (eventMap.isEmpty() == false) {
-						eventMap.clear();
-					}
-
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
@@ -917,14 +916,20 @@ public class LightweightSequencer implements Sequencer {
 							blockIndex = t / blockTick;
 							if (curBlockIndex == -1) {
 								curBlockIndex = blockIndex;
-								eventMap.clear();
-								extractMidiEvent(eventMap, blockTick * curBlockIndex,
+								currentEventMap = eventMap1;
+								offEventMap = eventMap2;
+								currentEventMap.clear();
+								extractMidiEvent(currentEventMap, blockTick * curBlockIndex,
 										(blockTick * (curBlockIndex + 1) - 1));
 								extractWorker.read(curBlockIndex + 1);
 							} else {
 								if (blockIndex != curBlockIndex) {
 									curBlockIndex = blockIndex;
-									extractWorker.copy(eventMap);
+									extractWorker.waitForRead();
+									
+									Map<Long, List<MidiEvent>> temp = currentEventMap;
+									currentEventMap = offEventMap;
+									offEventMap = temp;
 									extractWorker.read(curBlockIndex + 1);
 								}
 							}
