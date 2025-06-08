@@ -7,7 +7,6 @@ import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 
 import jlib.midi.IMidiEventListener;
-import jlib.midi.IMidiToolkit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.LightweightShortMessage;
 import jlib.midi.MappedSequence;
@@ -37,17 +36,12 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     private int[][] noteOnMonitorChannel = null;
     private List<int[]> noteOnMonitorTrack = null;
-    private KeyStateMonitor[] noteOnMonitorChannelTop = null;
     private int[] pitchBendMonitor = null;
     private int[] expressionMonitor = null;
 
     public NotesMonitor() {
         noteOnMonitorChannel = new int[16][128];
         noteOnMonitorTrack = new ArrayList<int[]>();
-        noteOnMonitorChannelTop = new KeyStateMonitor[128];
-        for (int i = 0; i < noteOnMonitorChannelTop.length; i++) {
-        	noteOnMonitorChannelTop[i] = new KeyStateMonitor();
-        }
         pitchBendMonitor = new int[16];
         expressionMonitor = new int[16];
         reset();
@@ -55,80 +49,29 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     @Override
     public void catchMidiEvent(MidiMessage message, long timeStamp, short senderType) {
-        IMidiToolkit midiToolkit = JMPCore.getSoundManager().getMidiToolkit();
-        if (midiToolkit.isNoteOn(message) == true) {
-            
-            notesCount++;
-            byte[] mes = message.getMessage();
-            int channel = MidiByte.getChannel(mes, mes.length);
-            int data1 = MidiByte.getData1(mes, mes.length);
-            int trackIndex = 0;
-            if (message instanceof LightweightShortMessage) {
-            	LightweightShortMessage lwMes = (LightweightShortMessage)message;
-            	trackIndex = lwMes.getTrackIndex();
-            }
-            
-            noteOnMonitorChannel[channel][data1] = 1;
-            noteOnMonitorTrack.get(trackIndex)[data1] = 1;
-            
-            int topChStat = -1;
-            for (int i = 15; i >= 0; i--) {
-                if (noteOnMonitorChannel[i][data1] != 0) {
-                	topChStat = i;
-                    break;
-                }
-            }
-            noteOnMonitorChannelTop[data1].channel = topChStat;
-            int topTrkStat = -1;
-            for (int i = getNumOfTrack() - 1; i >= 0; i--) {
-                if (noteOnMonitorTrack.get(i)[data1] != 0) {
-                	topTrkStat = i;
-                    break;
-                }
-            }
-            noteOnMonitorChannelTop[data1].track = topTrkStat;
-        }
-        else if (midiToolkit.isNoteOff(message) == true) {
-            byte[] mes = message.getMessage();
-            int channel = MidiByte.getChannel(mes, mes.length);
-            int data1 = MidiByte.getData1(mes, mes.length);
-            int trackIndex = 0;
-            if (message instanceof LightweightShortMessage) {
-            	LightweightShortMessage lwMes = (LightweightShortMessage)message;
-            	trackIndex = lwMes.getTrackIndex();
-            }
-            
-            noteOnMonitorChannel[channel][data1] = 0;
-            noteOnMonitorTrack.get(trackIndex)[data1] = 0;
-            
-            int topChStat = -1;
-            for (int i = 15; i >= 0; i--) {
-                if (noteOnMonitorChannel[i][data1] != 0) {
-                	topChStat = i;
-                    break;
-                }
-            }
-            noteOnMonitorChannelTop[data1].channel = topChStat;
-            int topTrkStat = -1;
-            for (int i = getNumOfTrack() - 1; i >= 0; i--) {
-                if (noteOnMonitorTrack.get(i)[data1] != 0) {
-                	topTrkStat = i;
-                    break;
-                }
-            }
-            noteOnMonitorChannelTop[data1].track = topTrkStat;
-        }
-        else if (midiToolkit.isPitchBend(message) == true) {
-            byte[] mes = message.getMessage();
-            int channel = MidiByte.getChannel(mes, mes.length);
-            int lsb = MidiByte.getData1(mes, mes.length);
-            int msb = MidiByte.getData2(mes, mes.length);
-            pitchBendMonitor[channel] = MidiByte.mergeLsbMsbValue(lsb, msb) - 8192;
-        }
-        else if (midiToolkit.isExpression(message) == true) {
-            byte[] mes = message.getMessage();
-            int channel = MidiByte.getChannel(mes, mes.length);
-            expressionMonitor[channel] = MidiByte.getData2(mes, mes.length);
+        if (message instanceof LightweightShortMessage) {
+        	LightweightShortMessage sm = (LightweightShortMessage)message;
+        	int command = sm.getCommand();
+        	int channel = sm.getChannel();
+        	int data1 = sm.getData1();
+        	int data2 = sm.getData2();
+        	int trackIndex = sm.getTrackIndex();
+        	if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON) && (data2 > 0)) {
+	            notesCount++;
+	            noteOnMonitorChannel[channel][data1] = 1;
+	            noteOnMonitorTrack.get(trackIndex)[data1] = 1;
+			}
+        	else if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
+					|| (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
+	            noteOnMonitorChannel[channel][data1] = 0;
+	            noteOnMonitorTrack.get(trackIndex)[data1] = 0;
+	        }
+        	else if (command == MidiByte.Status.Channel.ChannelVoice.Fst.PITCH_BEND) {
+	            pitchBendMonitor[channel] = MidiByte.mergeLsbMsbValue(data1, data2) - 8192;
+	        }
+	        else if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.CONTROL_CHANGE) && data1 == 11) {
+	            expressionMonitor[channel] = data2;
+	        }
         }
     }
 
@@ -148,7 +91,6 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 128; j++) {
                 noteOnMonitorChannel[i][j] = 0;
-                noteOnMonitorChannelTop[j].reset();
             }
         }
         
@@ -231,12 +173,26 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     
     @Override
     public int getTopNoteOnChannel(int midiNo) {
-        return noteOnMonitorChannelTop[midiNo].channel;
+        int topChStat = -1;
+        for (int i = 15; i >= 0; i--) {
+            if (noteOnMonitorChannel[i][midiNo] != 0) {
+            	topChStat = i;
+                break;
+            }
+        }
+        return topChStat;
     }
     
     @Override
     public int getTopNoteOnTrack(int midiNo) {
-        return noteOnMonitorChannelTop[midiNo].track;
+        int topTrkStat = -1;
+        for (int i = getNumOfTrack() - 1; i >= 0; i--) {
+            if (noteOnMonitorTrack.get(i)[midiNo] != 0) {
+            	topTrkStat = i;
+                break;
+            }
+        }
+        return topTrkStat;
     }
     
     @Override
