@@ -186,10 +186,12 @@ public class LightweightSequencer implements Sequencer {
 		eventMap1.clear();
 		eventMap2.clear();
 		
+		if (midiMsgPump != null) {
+			midiMsgPump.reset();
+		}
+		
 		currentEventMap = eventMap1;
 		offEventMap = eventMap2;
-		
-		midiMsgPump.reset();
 
 		int coreCount = Runtime.getRuntime().availableProcessors();
 		ExecutorService executor = Executors.newFixedThreadPool(coreCount);
@@ -350,6 +352,10 @@ public class LightweightSequencer implements Sequencer {
 	}
 
 	private void allSoundOff() {
+		if (lwTransmitter.getReceiver() == null) {
+			return;
+		}
+		
 		// 全チャンネルに All Sound Off (CC#120) を送る
 		for (int channel = 0; channel < 16; channel++) {
 			try {
