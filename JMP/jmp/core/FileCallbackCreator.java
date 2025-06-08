@@ -195,11 +195,6 @@ public class FileCallbackCreator {
                     dm.addHistory(file.getPath());
                 }
 
-                // 自動再生
-                if (this.loadToPlayFlag == true) {
-                    sm.play();
-                }
-
                 // 新しいファイル名
                 dm.setLoadedFile(file.getPath());
 
@@ -233,6 +228,14 @@ public class FileCallbackCreator {
 
             // ロード中フラグ解除
             JMPFlags.NowLoadingFlag = false;
+            
+            // 自動再生
+            if (endResult.status == true) {
+	            SoundManager sm = JMPCore.getSoundManager();
+	            if (this.loadToPlayFlag == true) {
+	                sm.play();
+	            }
+            }
         }
     }
     
