@@ -19,6 +19,11 @@ public class MappedParseFunc {
 		this.endTick = endTick;
 	}
 	
+	public void setStartTick(long tick) { startTick = tick; }
+	public long getStartTick() { return startTick; }
+	public void setEndTick(long tick) { endTick = tick; }
+	public long getEndTick() { return endTick; }
+	
 	public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {};
 	public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {};
 	public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {};

@@ -34,8 +34,8 @@ import jmp.JMPFlags;
 
 public class LightweightSequencer implements Sequencer {
 	static final double EXTRACT_MIDI_USAGE = 0.3;
-	public static final long DIV_OF_BLOCK = 32;
-	public static final long MIN_BLOCK_TICK = 20000;
+	public static final long DIV_OF_BLOCK = 100;
+	public static final long MIN_BLOCK_TICK = 10000;
 	private float tempoBPM = 120.0f;
 	private int resolution = 480;
 	private long tickPosition = 0;
@@ -185,6 +185,8 @@ public class LightweightSequencer implements Sequencer {
 		tempoChanges.clear(); // TreeMap<Long, Float>
 		eventMap1.clear();
 		eventMap2.clear();
+		
+		System.gc();
 		
 		if (midiMsgPump != null) {
 			midiMsgPump.reset();
@@ -858,7 +860,26 @@ public class LightweightSequencer implements Sequencer {
 
 				if (waitFlag.get() == false) {
 					offEventMap.clear();
-					extractMidiEvent(offEventMap, blockTick * readBlockIndex, (blockTick * (readBlockIndex + 1)) - 1, EXTRACT_MIDI_USAGE);
+					
+					long startTick = blockTick * readBlockIndex;
+					long endTick = (blockTick * (readBlockIndex + 1)) - 1;
+					if (startTick < 0) {
+						startTick = 0;
+					}
+					else if (getTickLength() < startTick) {
+						startTick = getTickLength();
+					}
+					if (endTick < 0) {
+						endTick = 0;
+					}
+					else if (getTickLength() < endTick) {
+						endTick = getTickLength();
+					}
+					
+					if (endTick >= startTick) {
+						// conflict args
+						extractMidiEvent(offEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
+					}
 
 					waitFlag.set(true);
 				}
@@ -951,8 +972,26 @@ public class LightweightSequencer implements Sequencer {
 								currentEventMap = eventMap1;
 								offEventMap = eventMap2;
 								currentEventMap.clear();
-								extractMidiEvent(currentEventMap, blockTick * curBlockIndex,
-										(blockTick * (curBlockIndex + 1) - 1), EXTRACT_MIDI_USAGE);
+								
+								long startTick = blockTick * curBlockIndex;
+								long endTick = blockTick * (curBlockIndex + 1) - 1;
+								if (startTick < 0) {
+									startTick = 0;
+								}
+								else if (getTickLength() < startTick) {
+									startTick = getTickLength();
+								}
+								if (endTick < 0) {
+									endTick = 0;
+								}
+								else if (getTickLength() < endTick) {
+									endTick = getTickLength();
+								}
+								
+								if (endTick > startTick) {
+									// conflict args
+									extractMidiEvent(currentEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
+								}
 								extractWorker.read(curBlockIndex + 1);
 							} else {
 								if (blockIndex != curBlockIndex) {

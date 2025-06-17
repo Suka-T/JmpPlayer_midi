@@ -35,6 +35,35 @@ public class MappedSequence extends Sequence {
 	}
 	
 	public void parse(short trkIndex, MappedParseFunc func) throws Exception {
+		long startTick = func.getStartTick();
+		long endTick = func.getEndTick();
+		if (startTick != -1) {
+			if (startTick < 0) {
+				startTick = 0;
+			}
+			else if (getTickLength() < startTick) {
+				startTick = getTickLength();
+			}
+		}
+		if (endTick != -1) {
+			if (endTick < 0) {
+				endTick = 0;
+			}
+			else if (getTickLength() < endTick) {
+				endTick = getTickLength();
+			}
+		}
+		
+		if (endTick != -1 && startTick != -1) {
+			if (endTick < startTick) {
+				// conflict args
+				return;
+			}
+		}
+		// renew tick 
+		func.setStartTick(startTick);
+		func.setEndTick(endTick);
+		
 		MappedByteBuffer org = getMap(trkIndex);
 		MappedByteBuffer copy = org.duplicate();
 		func.parse(trkIndex, copy);
