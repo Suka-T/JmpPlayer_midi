@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jlib.midi;
+package jmp.midi;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.ShortMessage;

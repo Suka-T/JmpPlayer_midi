@@ -9,8 +9,6 @@ import java.nio.file.StandardOpenOption;
 
 import javax.sound.midi.Sequence;
 
-import jlib.midi.MappedSequence;
-
 public class JMPMidiReader {
 
     public static MappedSequence parseSmf(File file) throws Exception {

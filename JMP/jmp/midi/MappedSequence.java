@@ -1,4 +1,4 @@
-package jlib.midi;
+package jmp.midi;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -12,6 +12,8 @@ import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.SysexMessage;
+
+import jlib.midi.MappedParseFunc;
 
 public class MappedSequence extends Sequence {
 	private long tickLength = 0; 

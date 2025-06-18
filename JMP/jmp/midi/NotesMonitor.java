@@ -4,12 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.sound.midi.MidiMessage;
-import javax.sound.midi.Sequence;
 
 import jlib.midi.IMidiEventListener;
 import jlib.midi.INotesMonitor;
-import jlib.midi.LightweightShortMessage;
-import jlib.midi.MappedSequence;
 import jlib.midi.MidiByte;
 import jmp.core.JMPCore;
 
@@ -115,10 +112,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     	int newNumOfTrack = 0;
     	clearNumOfNotes();
     	
-        Sequence sequence = JMPCore.getSoundManager().getMidiUnit().getSequence();
-        if (sequence != null) {
-        	newNumOfNotes = ((MappedSequence)sequence).getNumOfNotes();
-        	newNumOfTrack = ((MappedSequence)sequence).getNumTracks();
+        if (JMPCore.getSoundManager().getMidiUnit().isValidSequence() == true) {
+        	newNumOfNotes = JMPCore.getSoundManager().getMidiUnit().getNumOfNote();
+        	newNumOfTrack = JMPCore.getSoundManager().getMidiUnit().getNumOfTrack();
         }
         numOfNotes = newNumOfNotes;
         numOfTrack = newNumOfTrack;

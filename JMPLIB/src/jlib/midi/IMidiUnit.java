@@ -1,7 +1,5 @@
 package jlib.midi;
 
-import javax.sound.midi.Sequence;
-
 /**
  * 高度なMidi関係の設定にアクセスするためのクラス
  *
@@ -39,13 +37,6 @@ public interface IMidiUnit {
     abstract long getTickLength();
 
     /**
-     * シーケンスオブジェクト取得
-     *
-     * @return
-     */
-    abstract Sequence getSequence();
-
-    /**
      * 現在秒数取得(usec)
      *
      * @return
@@ -65,4 +56,41 @@ public interface IMidiUnit {
      * @return
      */
     abstract boolean isRenderingOnlyMode();
+    
+    /**
+     * 分解能取得 
+     * 
+     * @return
+     */
+    abstract int getResolution();
+    
+    /**
+     * MIDIファイルアクセス処理 
+     * 
+     * @param trkIndex
+     * @param func
+     * @throws Exception
+     */
+    abstract void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws Exception ;
+    
+    /**
+     * 有効なSequenceがあるかチェック 
+     * 
+     * @return
+     */
+    abstract boolean isValidSequence();
+    
+    /**
+     * 最大ノーツ数 
+     * 
+     * @return
+     */
+    abstract long getNumOfNote();
+    
+    /**
+     * トラック数取得 
+     * 
+     * @return
+     */
+    abstract int getNumOfTrack();
 }

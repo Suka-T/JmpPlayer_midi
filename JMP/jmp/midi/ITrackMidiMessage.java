@@ -1,4 +1,4 @@
-package jlib.midi;
+package jmp.midi;
 
 public interface ITrackMidiMessage {
 	abstract short getTrackIndex();

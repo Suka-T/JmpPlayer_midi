@@ -26,11 +26,12 @@ import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Track;
 import javax.sound.midi.Transmitter;
 
-import jlib.midi.LightweightShortMessage;
+import jlib.midi.IMidiEventListener;
 import jlib.midi.MappedParseFunc;
-import jlib.midi.MappedSequence;
 import jlib.midi.MidiByte;
 import jmp.JMPFlags;
+import jmp.core.JMPCore;
+import jmp.core.SoundManager;
 
 public class LightweightSequencer implements Sequencer {
 	static final double EXTRACT_MIDI_USAGE = 0.3;
@@ -350,6 +351,12 @@ public class LightweightSequencer implements Sequencer {
 	}
 
 	private void sendMidiEvent(MidiMessage msg, int timeStamp) {
+		SoundManager sm = JMPCore.getSoundManager();
+        IMidiEventListener notesMonitor = (IMidiEventListener)sm.getNotesMonitor();
+        if (notesMonitor != null) {
+            notesMonitor.catchMidiEvent(msg, timeStamp, IMidiEventListener.SENDER_MIDI_OUT);
+        }
+        
 		lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
 	}
 

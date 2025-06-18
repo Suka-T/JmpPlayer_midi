@@ -6,12 +6,12 @@ import java.util.List;
 
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Receiver;
-import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.Transmitter;
 
 import jlib.midi.IMidiFilter;
 import jlib.midi.IMidiUnit;
+import jlib.midi.MappedParseFunc;
 import jmp.player.MidiPlayer;
 
 public class MidiUnit implements IMidiUnit {
@@ -91,14 +91,6 @@ public class MidiUnit implements IMidiUnit {
     }
 
     @Override
-    public Sequence getSequence() {
-        if (getSequencer() == null) {
-            return null;
-        }
-        return getSequencer().getSequence();
-    }
-
-    @Override
     public long getMicrosecondPosition() {
         return getSequencer().getMicrosecondPosition();
     }
@@ -112,4 +104,47 @@ public class MidiUnit implements IMidiUnit {
     public boolean isRenderingOnlyMode() {
     	return getMidiPlayer().isRenderingOnly();
     }
+
+	@Override
+	public int getResolution() {
+		if (isValidSequence() == false) {
+            return 0;
+        }
+		return getSequencer().getSequence().getResolution();
+	}
+
+	@Override
+	public void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws Exception {
+        if (isValidSequence() == false) {
+            return;
+        }
+        ((MappedSequence)getSequencer().getSequence()).parse((short) trkIndex, func);
+	}
+
+	@Override
+	public boolean isValidSequence() {
+		if (getSequencer() == null) {
+            return false;
+        }
+        if (getSequencer().getSequence() == null) {
+        	return false;
+        }
+		return true;
+	}
+
+	@Override
+	public long getNumOfNote() {
+		if (isValidSequence() == false) {
+			return 0;
+		}
+		return ((MappedSequence)getSequencer().getSequence()).getNumOfNotes();
+	}
+
+	@Override
+	public int getNumOfTrack() {
+		if (isValidSequence() == false) {
+			return 0;
+		}
+		return ((MappedSequence)getSequencer().getSequence()).getNumTracks();
+	}
 }

@@ -5,7 +5,6 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.sound.midi.Sequence;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
@@ -111,9 +110,8 @@ public class NotesMonitorDialog extends JDialog implements IJmpWindow {
         
         int ppq = 0;
         IMidiUnit midiUnit = JMPCore.getSoundManager().getMidiUnit();
-        Sequence sequence = midiUnit.getSequence();
-        if (sequence != null) {
-            ppq = sequence.getResolution();
+        if (midiUnit.isValidSequence() == true) {
+            ppq = midiUnit.getResolution();
         }
         
         INotesMonitor monitor = JMPCore.getSoundManager().getNotesMonitor();

@@ -219,12 +219,12 @@ public class SelectSynthsizerDialog extends JMPDialog {
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_NONE) {
                             vendor += "";
                             version += "";
-                            description += "Don't use synthesizer.";
+                            description += "Don't sound out synthesizer.";
                         }
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_RENDER_ONLY) {
                             vendor += "";
                             version += "";
-                            description += "Don't send midi event.";
+                            description += "Audio only.";
                         }
                         else {
                             info = infosOfRecv[devIndex];
