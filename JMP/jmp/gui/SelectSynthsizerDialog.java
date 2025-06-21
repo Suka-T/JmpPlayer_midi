@@ -212,19 +212,19 @@ public class SelectSynthsizerDialog extends JMPDialog {
                             vendor += "";
                             version += "";
                             description += "Automatically select an available synthesizer.<br>";
-                            description += "<br>";
-                            description += " * MIDI only : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName() + "</font><br>";
-                            description += " * MIDI & Audio : <font color=\"GREEN\">Rendering Only</font>";
+                            description += " - MIDI only : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName() + "</font><br>";
+                            description += " - MIDI & Audio : <font color=\"GREEN\">MIDI synthesizer not any sound.</font>";
                         }
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_NONE) {
                             vendor += "";
                             version += "";
-                            description += "Don't sound out synthesizer.";
+                            description += "MIDI synthesizer not any sound.";
                         }
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_RENDER_ONLY) {
                             vendor += "";
                             version += "";
-                            description += "Audio only.";
+                            description += "Audio only. (Lightweight playback) <br>Please load MIDI & Audio files.<br>";
+                            description += "<font color=\"RED\">but, the notes count is not available.</font>";
                         }
                         else {
                             info = infosOfRecv[devIndex];

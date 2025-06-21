@@ -21,6 +21,13 @@ public interface IMidiUnit {
      * @return
      */
     abstract double getTempoInBPM();
+    
+    /**
+     * Sequence最初のBPMを取得 
+     * 
+     * @return
+     */
+    abstract double getFirstTempoInBPM();
 
     /**
      * 現在のティック取得

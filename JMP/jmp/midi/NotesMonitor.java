@@ -56,12 +56,16 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
         	if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON) && (data2 > 0)) {
 	            notesCount++;
 	            noteOnMonitorChannel[channel][data1] = 1;
-	            noteOnMonitorTrack.get(trackIndex)[data1] = 1;
+	            if (trackIndex < noteOnMonitorTrack.size()) {
+	            	noteOnMonitorTrack.get(trackIndex)[data1] = 1;
+	            }
 			}
         	else if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
 					|| (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
 	            noteOnMonitorChannel[channel][data1] = 0;
-	            noteOnMonitorTrack.get(trackIndex)[data1] = 0;
+	            if (trackIndex < noteOnMonitorTrack.size()) {
+	            	noteOnMonitorTrack.get(trackIndex)[data1] = 0;
+	            }
 	        }
         	else if (command == MidiByte.Status.Channel.ChannelVoice.Fst.PITCH_BEND) {
 	            pitchBendMonitor[channel] = MidiByte.mergeLsbMsbValue(data1, data2) - 8192;

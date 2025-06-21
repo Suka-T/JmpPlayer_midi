@@ -15,12 +15,11 @@ import javax.sound.midi.Track;
 import javax.sound.midi.Transmitter;
 
 import jmp.core.JMPCore;
+import jmp.midi.LightweightSequencer.ESeqMode;
 
 public class JMPSequencer implements Sequencer {
 
     private Sequencer abstractSequencer = null;
-    
-    private boolean isRenderingOnly = false;
 
     public JMPSequencer(Sequencer abstractSequenser) {
         this.abstractSequencer = abstractSequenser;
@@ -313,14 +312,17 @@ public class JMPSequencer implements Sequencer {
     public int getLoopCount() {
         return abstractSequencer.getLoopCount();
     }
-
-	public boolean isRenderingOnly() {
-		return isRenderingOnly;
+	
+	public void setSeqMode(ESeqMode mode) {
+		((LightweightSequencer)abstractSequencer).setSeqMode(mode);
 	}
-
-	public void setRenderingOnly(boolean isRenderingOnly) {
-		this.isRenderingOnly = isRenderingOnly;
-		((LightweightSequencer)abstractSequencer).setRenderOnly(this.isRenderingOnly);
+	
+	public ESeqMode getSeqMode() {
+		return ((LightweightSequencer)abstractSequencer).getSeqMode();
+	}
+	
+	public double getFirstTempoInBPM() {
+		return ((LightweightSequencer)abstractSequencer).getFirstTempoInBPM();
 	}
 
 }

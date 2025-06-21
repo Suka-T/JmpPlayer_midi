@@ -44,6 +44,7 @@ import jmp.core.asset.FileLoadCoreAsset;
 import jmp.file.PlaylistPickup;
 import jmp.lang.DefineLanguage.LangID;
 import jmp.midi.JMPMidiFilter;
+import jmp.midi.LightweightSequencer.ESeqMode;
 import jmp.midi.MidiController;
 import jmp.midi.MidiUnit;
 import jmp.midi.NotesMonitor;
@@ -661,7 +662,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 
                 if (PlayerAccessor.getCurrent() instanceof MidiPlayer) {
                     if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
-                    	SMidiPlayer.setRenderingOnly(false);
+                    	SMidiPlayer.setSeqMode(ESeqMode.Normal);
                     }
                 }
 
@@ -706,7 +707,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 }
                 
                 if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
-                	SMidiPlayer.setRenderingOnly(true);
+                	SMidiPlayer.setSeqMode(ESeqMode.NonSound);
                 }
 
                 if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {

@@ -6,12 +6,12 @@ import java.util.List;
 
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Receiver;
-import javax.sound.midi.Sequencer;
 import javax.sound.midi.Transmitter;
 
 import jlib.midi.IMidiFilter;
 import jlib.midi.IMidiUnit;
 import jlib.midi.MappedParseFunc;
+import jmp.midi.LightweightSequencer.ESeqMode;
 import jmp.player.MidiPlayer;
 
 public class MidiUnit implements IMidiUnit {
@@ -46,8 +46,8 @@ public class MidiUnit implements IMidiUnit {
         return true;
     }
 
-    private Sequencer getSequencer() {
-        return getMidiPlayer().getSequencer();
+    private JMPSequencer getSequencer() {
+        return (JMPSequencer)(getMidiPlayer().getSequencer());
     }
 
     public void exportMidiFile(File file) throws Exception {
@@ -79,6 +79,11 @@ public class MidiUnit implements IMidiUnit {
     public double getTempoInBPM() {
         return getSequencer().getTempoInBPM();
     }
+    
+    @Override
+    public double getFirstTempoInBPM() {
+        return getSequencer().getFirstTempoInBPM();
+    }
 
     @Override
     public long getTickPosition() {
@@ -102,7 +107,10 @@ public class MidiUnit implements IMidiUnit {
 
     @Override
     public boolean isRenderingOnlyMode() {
-    	return getMidiPlayer().isRenderingOnly();
+    	if (getMidiPlayer().getSeqMode() == ESeqMode.TickOnly) {
+    		return true;
+    	}
+    	return false;
     }
 
 	@Override

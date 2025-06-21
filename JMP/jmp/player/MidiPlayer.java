@@ -28,6 +28,7 @@ import jmp.core.SystemManager;
 import jmp.core.WindowManager;
 import jmp.midi.JMPSequencer;
 import jmp.midi.LightweightSequencer;
+import jmp.midi.LightweightSequencer.ESeqMode;
 import jmp.midi.ReceiverWrapper;
 import jmp.midi.TransmitterWrapper;
 import jmp.midi.receiver.ReceiverCreator;
@@ -296,11 +297,11 @@ public class MidiPlayer extends Player {
         		}
         	}
         	
-        	boolean isRenderingOnly = false;
+        	ESeqMode seqMode = ESeqMode.Normal;
         	if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
-        		isRenderingOnly = true;
+        		seqMode = ESeqMode.TickOnly;
         	}
-        	sequencer = new JMPSequencer(new LightweightSequencer(isRenderingOnly));
+        	sequencer = new JMPSequencer(new LightweightSequencer(seqMode));
 //        	if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
 //        		sequencer = new JMPSequencer(new LightweightSequencer());
 //        	}
@@ -712,12 +713,12 @@ public class MidiPlayer extends Player {
         MidiSystem.write(sequence, format, file);
         return;
     }
-
-	public boolean isRenderingOnly() {
-		return sequencer.isRenderingOnly();
+	
+	public void setSeqMode(ESeqMode mode) {
+		sequencer.setSeqMode(mode);
 	}
 	
-	public void setRenderingOnly(boolean b) {
-		sequencer.setRenderingOnly(b);
+	public ESeqMode getSeqMode() {
+		return sequencer.getSeqMode();
 	}
 }

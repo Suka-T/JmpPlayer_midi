@@ -34,13 +34,26 @@ import jmp.core.JMPCore;
 import jmp.core.SoundManager;
 
 public class LightweightSequencer implements Sequencer {
+	public static enum ESeqMode {
+		Normal,
+		TickOnly,
+		NonSound;
+		
+        @Override
+        public String toString() {
+            switch (this) {
+                case Normal: return "Normal";
+                case TickOnly: return "TickOnly";
+                case NonSound: return "NonSound";
+                default: return "";
+            }
+        }
+	}
 	static final double EXTRACT_MIDI_USAGE = 0.3;
-	public static final long DIV_OF_BLOCK = 100;
-	public static final long MIN_BLOCK_TICK = 10000;
 	private float tempoBPM = 120.0f;
 	private int resolution = 480;
 	private long tickPosition = 0;
-	private long blockTick = MIN_BLOCK_TICK;
+	private long blockTick = 1000;
 
 	private Sequence sequence;
 	private Thread playThread;
@@ -51,8 +64,12 @@ public class LightweightSequencer implements Sequencer {
 	private long lastTimeNs = System.nanoTime();
 	private double tickRemainder = 0.0;
 	private boolean isOpen = false;
+	
+	private static final int BUSY_WAIT_COUNT = 100;
+	private boolean isMidioutDump = false;
+	private int midioutDumpCnt = 0;
 
-	private Map<Long, Float> tempoChanges = new TreeMap<>();
+	private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
 	private Map<Long, List<MidiEvent>> eventMap1 = new TreeMap<>();
 	private Map<Long, List<MidiEvent>> eventMap2 = new TreeMap<>();
 	private Map<Long, List<MidiEvent>> currentEventMap = null;
@@ -61,7 +78,7 @@ public class LightweightSequencer implements Sequencer {
 	private LwTransmitter lwTransmitter = new LwTransmitter();
 	private MidiMessagePump midiMsgPump;
 	private ExtractWorker extractWorker;
-	private boolean isRenderOnly = false;
+	private ESeqMode seqMode = ESeqMode.Normal;
 	
 	// seek移動中はフラグを建てることで各スレッドを動作しない制御する 
 	private boolean seekingFlag = false;
@@ -79,17 +96,23 @@ public class LightweightSequencer implements Sequencer {
 		}
 	}
 
-	public LightweightSequencer(boolean isRenderOnly) {
-		this.isRenderOnly = isRenderOnly;
+	public LightweightSequencer(ESeqMode seqMode) {
+		this.seqMode = seqMode;
 	}
 	
 	private long calcBlockTick(long tickLength) {
-		long blockTick = tickLength / DIV_OF_BLOCK;
-		if (blockTick < MIN_BLOCK_TICK) {
-			blockTick = MIN_BLOCK_TICK;
+		// 1秒のtick数を1ブロックとする
+		return (long) getTickPerSecond((int)getTempoInBPM(), 3.0);
+	}
+	
+	public double getTickPerSecond(int bpm, double second) {
+		if (sequence == null) {
+			return 10000;
 		}
-		System.out.println("blockTick " + blockTick);
-		return blockTick;
+		
+		int tempo = 60_000_000 / bpm;
+		int ticksPerQuarterNote = sequence.getResolution();
+		return (second * 1_000_000.0 * (double)ticksPerQuarterNote) / (double)tempo;
 	}
 
 	private void extractMidiEvent(Map<Long, List<MidiEvent>> map, long startTick, long endTick, double usage) {
@@ -228,7 +251,7 @@ public class LightweightSequencer implements Sequencer {
 						public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
 							int command = statusByte & 0xF0;
 							if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
-									|| (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
+									|| (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 < 0)) {
 								results.get(trk).notesCount++;
 							}
 						}
@@ -357,7 +380,19 @@ public class LightweightSequencer implements Sequencer {
             notesMonitor.catchMidiEvent(msg, timeStamp, IMidiEventListener.SENDER_MIDI_OUT);
         }
         
-		lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
+        if (seqMode != ESeqMode.NonSound) {
+			if (isMidioutDump == true) {
+				if (msg instanceof LightweightShortMessage) {
+					LightweightShortMessage lm = (LightweightShortMessage) msg; 
+					if (lm.getCommand() == ShortMessage.NOTE_ON && lm.getData2() > 0) {
+						// 音声出力がビジーと判断し、NoteONをスキップする 
+						return;
+					}
+				}
+			}
+		
+			lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
+		}
 	}
 
 	private void allSoundOff() {
@@ -432,7 +467,10 @@ public class LightweightSequencer implements Sequencer {
 
 	@Override
 	public void start() {
-		System.out.println("lwSequencer RUN");
+		System.out.print("lwSequencer RUN ");
+		System.out.println(getSeqMode().toString());
+		isMidioutDump = false;
+		midioutDumpCnt = 0;
 		if (playThread != null) {
 			if (paused.get()) {
 				if (getTickLength() <= tickPosition) {
@@ -479,6 +517,14 @@ public class LightweightSequencer implements Sequencer {
 	@Override
 	public float getTempoInBPM() {
 		return tempoBPM;
+	}
+	
+	public float getFirstTempoInBPM() {
+		float bpm = 120.0f;
+		if (tempoChanges.isEmpty() == true) {
+			bpm = tempoChanges.get(tempoChanges.firstKey());
+		}
+		return bpm == 0.0f ? 120.0f : bpm;
 	}
 
 	@Override
@@ -851,8 +897,8 @@ public class LightweightSequencer implements Sequencer {
 		@Override
 		public void run() {
 			while (running.get()) {
-				if (isRenderOnly == true) {
-					// レンダリングモードは音声出力しない
+				if (seqMode == ESeqMode.TickOnly) {
+					// Tickモードは音声出力しない
 					if (offEventMap.isEmpty() == false) {
 						offEventMap.clear();
 					}
@@ -922,7 +968,7 @@ public class LightweightSequencer implements Sequencer {
 		}
 
 		void reset(long tick) {
-			if (isRenderOnly == false) {
+			if (seqMode != ESeqMode.TickOnly) {
 				while (!waitFlag.get()) {
 					try {
 						Thread.sleep(1); // waitFlagがfalseの間は待機
@@ -940,7 +986,24 @@ public class LightweightSequencer implements Sequencer {
 
 		void nextTick(long tickPos) {
 			nextTickPosition = tickPos;
-			waitFlag.set(false);
+			if (seqMode != ESeqMode.TickOnly) {
+				if (waitFlag.get() == false) {
+					midioutDumpCnt++;
+					if (midioutDumpCnt >= BUSY_WAIT_COUNT) { 
+						// 音声出力がビジーと判断  
+						isMidioutDump = true;
+						System.out.println("!! midiout busy !!");
+					}
+				}
+				else {
+					midioutDumpCnt = 0;
+					isMidioutDump = false;
+				}
+				waitFlag.set(false);
+			}
+			else {
+				waitFlag.set(true);
+			}
 		}
 
 		@Override
@@ -950,7 +1013,7 @@ public class LightweightSequencer implements Sequencer {
 			long t = 0;
 			long blockIndex = -1;
 			while (running.get()) {
-				if (isRenderOnly == true) {
+				if (seqMode == ESeqMode.TickOnly) {
 					// レンダリングモードは音声出力しない
 					try {
 						waitFlag.set(true);
@@ -1034,11 +1097,11 @@ public class LightweightSequencer implements Sequencer {
 		}
 	}
 
-	public void setRenderOnly(boolean b) {
-		isRenderOnly = b;
+	public ESeqMode getSeqMode() {
+		return seqMode;
 	}
 
-	public boolean isRenderOnly() {
-		return isRenderOnly;
+	public void setSeqMode(ESeqMode seqMode) {
+		this.seqMode = seqMode;
 	}
 } /* LightweightSequencer class end */
