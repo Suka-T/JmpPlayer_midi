@@ -349,8 +349,17 @@ public class LightweightSequencer implements Sequencer {
 				}
 				tickPosition++;
 			}
-
+			
 			midiMsgPump.nextTick(tickPosition);
+			if (isMidioutDump == true) {
+				while(midiMsgPump.isWait() == false) {
+					try {
+						Thread.sleep(1);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					} 
+				}
+			}
 
 			try {
 				Thread.sleep(1);
