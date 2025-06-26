@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.sound.midi.ControllerEventListener;
 import javax.sound.midi.InvalidMidiDataException;
@@ -102,7 +103,7 @@ public class LightweightSequencer implements Sequencer {
 	
 	private long calcBlockTick(long tickLength) {
 		// 1秒のtick数を1ブロックとする
-		return (long) getTickPerSecond((int)getTempoInBPM(), 3.0);
+		return (long) getTickPerSecond((int)getTempoInBPM(), 5.0);
 	}
 	
 	public double getTickPerSecond(int bpm, double second) {
@@ -352,12 +353,9 @@ public class LightweightSequencer implements Sequencer {
 			
 			midiMsgPump.nextTick(tickPosition);
 			if (isMidioutDump == true) {
-				while(midiMsgPump.isWait() == false) {
-					try {
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					} 
+				// busy waitを軽減
+				while (!midiMsgPump.isWait()) {
+					LockSupport.parkNanos(500_000); // 0.5ms sleep相当
 				}
 			}
 
@@ -379,6 +377,9 @@ public class LightweightSequencer implements Sequencer {
 				MidiMessage msg = event.getMessage();
 				sendMidiEvent(msg, -1); // 即時送信
 			}
+			
+			// 処理済みの tick を削除
+			currentEventMap.remove(tick);
 		}
 	}
 
@@ -1096,12 +1097,12 @@ public class LightweightSequencer implements Sequencer {
 					waitFlag.set(true);
 				}
 
+				// 過負荷を防ぐため、最小限のSleep
 				try {
 					Thread.sleep(1);
 				} catch (InterruptedException e) {
-					// TODO 自動生成された catch ブロック
 					e.printStackTrace();
-				} // スムーズなCPU制御
+				}
 			}
 		}
 	}
