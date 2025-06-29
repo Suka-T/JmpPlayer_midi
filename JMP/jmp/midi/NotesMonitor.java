@@ -187,10 +187,12 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     public int getTopNoteOnTrack(int midiNo) {
         int topTrkStat = -1;
         for (int i = getNumOfTrack() - 1; i >= 0; i--) {
-            if (noteOnMonitorTrack.get(i)[midiNo] != 0) {
-            	topTrkStat = i;
-                break;
-            }
+        	if (i < noteOnMonitorTrack.size()) {
+	            if (noteOnMonitorTrack.get(i)[midiNo] != 0) {
+	            	topTrkStat = i;
+	                break;
+	            }
+        	}
         }
         return topTrkStat;
     }

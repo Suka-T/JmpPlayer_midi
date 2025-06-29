@@ -103,7 +103,7 @@ public class LightweightSequencer implements Sequencer {
 	
 	private long calcBlockTick(long tickLength) {
 		// 1秒のtick数を1ブロックとする
-		return (long) getTickPerSecond((int)getTempoInBPM(), 5.0);
+		return (long) getTickPerSecond((int)getTempoInBPM(), 8.0);
 	}
 	
 	public double getTickPerSecond(int bpm, double second) {
