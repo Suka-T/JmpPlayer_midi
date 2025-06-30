@@ -104,7 +104,7 @@ public class JMPSequencer implements Sequencer {
             }
         }
 
-        // 実態のSequencerオブジェクトに対して開始命令を送る 
+        // 実態のSequencerオブジェクトに対して開始命令を送る
         abstractSequencer.start();
 
         JMPCore.getPluginManager().startSequencer();
@@ -115,7 +115,7 @@ public class JMPSequencer implements Sequencer {
         abstractSequencer.stop();
 
         JMPCore.getPluginManager().stopSequencer();
-        
+
         JMPCore.getSoundManager().getNotesMonitor().resetNoteMonitor();
     }
 
@@ -312,17 +312,17 @@ public class JMPSequencer implements Sequencer {
     public int getLoopCount() {
         return abstractSequencer.getLoopCount();
     }
-	
-	public void setSeqMode(ESeqMode mode) {
-		((LightweightSequencer)abstractSequencer).setSeqMode(mode);
-	}
-	
-	public ESeqMode getSeqMode() {
-		return ((LightweightSequencer)abstractSequencer).getSeqMode();
-	}
-	
-	public double getFirstTempoInBPM() {
-		return ((LightweightSequencer)abstractSequencer).getFirstTempoInBPM();
-	}
+
+    public void setSeqMode(ESeqMode mode) {
+        ((LightweightSequencer) abstractSequencer).setSeqMode(mode);
+    }
+
+    public ESeqMode getSeqMode() {
+        return ((LightweightSequencer) abstractSequencer).getSeqMode();
+    }
+
+    public double getFirstTempoInBPM() {
+        return ((LightweightSequencer) abstractSequencer).getFirstTempoInBPM();
+    }
 
 }

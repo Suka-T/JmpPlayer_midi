@@ -10,7 +10,7 @@ import jmp.file.ConfigDatabaseWrapper;
 import jmp.util.JmpUtil;
 
 public class JMPLibrary {
-    
+
     private static void consoleOutSystemInfo() {
         JMPFlags.Log.cprintln("_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/", true);
         JMPFlags.Log.cprintln("_/############################################_/", true);
@@ -66,7 +66,7 @@ public class JMPLibrary {
         boolean result = false;
         try {
             consoleOutSystemInfo();
-            
+
             result = JMPCore.initFunc(config, plugin);
         }
         catch (Exception e) {

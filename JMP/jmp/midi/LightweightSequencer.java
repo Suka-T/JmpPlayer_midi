@@ -227,7 +227,7 @@ public class LightweightSequencer implements Sequencer {
         currentEventMap = eventMap1;
         offEventMap = eventMap2;
 
-        //int coreCount = Runtime.getRuntime().availableProcessors();
+        // int coreCount = Runtime.getRuntime().availableProcessors();
         int coreCount = 1;
         ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
@@ -1118,7 +1118,7 @@ public class LightweightSequencer implements Sequencer {
                                     if (blockIndex != curBlockIndex) {
                                         curBlockIndex = blockIndex;
                                         extractWorker.waitForRead();
-    
+
                                         Map<Long, List<MidiEvent>> temp = currentEventMap;
                                         currentEventMap = offEventMap;
                                         offEventMap = temp;
@@ -1126,7 +1126,7 @@ public class LightweightSequencer implements Sequencer {
                                     }
                                 }
                             }
-                            
+
                             onMeta(t);
                             if (seqMode != ESeqMode.TickOnly) {
                                 onTick(t);

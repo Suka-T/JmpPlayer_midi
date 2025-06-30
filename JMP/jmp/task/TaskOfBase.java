@@ -46,11 +46,12 @@ public abstract class TaskOfBase implements ITask, Runnable {
 
     class SynchronizedTaskQueue extends TaskQueue {
         private Object mutex = new Object();
-        
+
         @Override
         protected void createInstance() {
             this.lst = new LinkedList<TaskPacket>();
-            //this.lst = Collections.synchronizedList(new LinkedList<TaskPacket>());
+            // this.lst = Collections.synchronizedList(new
+            // LinkedList<TaskPacket>());
         }
 
         @Override

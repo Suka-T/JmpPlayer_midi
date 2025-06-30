@@ -40,9 +40,12 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
     /**
      * Creates a FastShortMessage from this ShortMessage
      * 
-     * @throws InvalidMidiDataException if the data is invalid
-     * @param  packedMsg the packedMsg
-     * @param  tIndex track index
+     * @throws InvalidMidiDataException
+     *             if the data is invalid
+     * @param packedMsg
+     *            the packedMsg
+     * @param tIndex
+     *            track index
      */
     public LightweightShortMessage(int packedMsg, short tIndex) throws InvalidMidiDataException {
         this.packedMsg = packedMsg;
@@ -51,20 +54,19 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
         setTrackIndex(tIndex);
     }
 
-    /** 
+    /**
      * Creates a FastShortMessage from this ShortMessage
      * 
-     * @param  msg ShortMessage instance
+     * @param msg
+     *            ShortMessage instance
      */
     public LightweightShortMessage(ShortMessage msg) {
-        this.packedMsg = msg.getStatus()
-            | (msg.getData1() << 8)
-            | (msg.getData2() << 16);
+        this.packedMsg = msg.getStatus() | (msg.getData1() << 8) | (msg.getData2() << 16);
 
-        setTrackIndex((short)0);
+        setTrackIndex((short) 0);
     }
 
-    /** 
+    /**
      * get packedMsg
      * 
      * @return packedMsg
@@ -77,18 +79,21 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
     public byte[] getMessage() {
         int length = 0;
         try {
-            // fix for bug 4851018: MidiMessage.getLength and .getData return wrong values
-            // fix for bug 4890405: Reading MidiMessage byte array fails in 1.4.2
+            // fix for bug 4851018: MidiMessage.getLength and .getData return
+            // wrong values
+            // fix for bug 4890405: Reading MidiMessage byte array fails in
+            // 1.4.2
             length = getDataLength(packedMsg & 0xFF) + 1;
-        } catch (InvalidMidiDataException imde) {
+        }
+        catch (InvalidMidiDataException imde) {
             // should never happen
         }
         byte[] returnedArray = new byte[length];
-        if (length>0) {
+        if (length > 0) {
             returnedArray[0] = (byte) (packedMsg & 0xFF);
-            if (length>1) {
+            if (length > 1) {
                 returnedArray[1] = (byte) ((packedMsg & 0xFF00) >> 8);
-                if (length>2) {
+                if (length > 2) {
                     returnedArray[2] = (byte) ((packedMsg & 0xFF0000) >> 16);
                 }
             }
@@ -100,7 +105,8 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
     public int getLength() {
         try {
             return getDataLength(packedMsg & 0xFF) + 1;
-        } catch (InvalidMidiDataException imde) {
+        }
+        catch (InvalidMidiDataException imde) {
             // should never happen
         }
         return 0;
@@ -109,7 +115,8 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
     @Override
     public void setMessage(int status) throws InvalidMidiDataException {
         // check for valid values
-        int dataLength = getDataLength(status); // can throw InvalidMidiDataException
+        int dataLength = getDataLength(status); // can throw
+                                                // InvalidMidiDataException
         if (dataLength != 0) {
             super.setMessage(status); // throws Exception
         }
@@ -154,27 +161,29 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
     }
 
     /**
-     * Creates a new object of the same class and with the same contents
-     * as this object.
+     * Creates a new object of the same class and with the same contents as this
+     * object.
+     * 
      * @return a clone of this instance.
      */
     @Override
     public Object clone() {
         try {
             return new LightweightShortMessage(packedMsg, getTrackIndex());
-        } catch (InvalidMidiDataException imde) {
+        }
+        catch (InvalidMidiDataException imde) {
             // should never happen
         }
         return null;
     }
 
     @Override
-	public short getTrackIndex() {
-		return trackIndex;
-	}
+    public short getTrackIndex() {
+        return trackIndex;
+    }
 
-	public void setTrackIndex(short trackIndex) {
-		this.trackIndex = trackIndex;
-	}
+    public void setTrackIndex(short trackIndex) {
+        this.trackIndex = trackIndex;
+    }
 
 }

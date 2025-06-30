@@ -41,7 +41,7 @@ public class ResourceManager extends AbstractManager implements IManager {
 
         if (JMPLoader.UseSkinFile == true) {
             boolean readFlag = true;
-            
+
             try {
                 String skinPath = JMPCore.getSystemManager().getSystemPath(SystemManager.PATH_SKIN_DIR);
 

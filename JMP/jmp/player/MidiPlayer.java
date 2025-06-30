@@ -259,7 +259,7 @@ public class MidiPlayer extends Player {
 
         currentReceiver = receiverWrapper;
         currentTransmitter = transmitterWrapper;
-        
+
         return result;
     }
 
@@ -268,7 +268,7 @@ public class MidiPlayer extends Player {
     private String cachedMidiInName = NO_CACHE;
 
     public boolean updateMidiOut(String name) {
-        
+
         if (cachedMidiOutName.equals(NO_CACHE) == false && cachedMidiOutName.equals(name) == true) {
             // 同名は処理しない
             return false;
@@ -278,7 +278,7 @@ public class MidiPlayer extends Player {
 
         Receiver receiver = null;
         try {
-            
+
             receiverWrapper.close();
 
             /* Receiverインスタンス生成 */
@@ -288,44 +288,45 @@ public class MidiPlayer extends Player {
 
             receiverWrapper.changeAbsReceiver(receiver);
             currentReceiver = receiverWrapper;
-            
+
             Sequence oldSequence = null;
-        	if (sequencer != null) {
-        		oldSequence = sequencer.getSequence();
-        		if (sequencer.isOpen() == true) {
-        			sequencer.close();
-        		}
-        	}
-        	
-        	ESeqMode seqMode = ESeqMode.Normal;
-        	if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
-        		seqMode = ESeqMode.TickOnly;
-        	}
-        	sequencer = new JMPSequencer(new LightweightSequencer(seqMode));
-//        	if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
-//        		sequencer = new JMPSequencer(new LightweightSequencer());
-//        	}
-//        	else {
-//        		sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
-//        	}
-        	
-        	if (oldSequence != null) {
-        		try {
-					sequencer.setSequence(oldSequence);
-					
-					//全プレイヤーを更新するためinitPositionを呼ぶ
-					JMPCore.getSoundManager().initPosition(); 
-					JMPCore.getPluginManager().updateSequencer();
-					
-				} catch (InvalidMidiDataException e) {
-					e.printStackTrace();
-				}
-        	}
-            
-            if (getSequencer().getTransmitter() != null) {
-            	getSequencer().getTransmitter().setReceiver(receiverWrapper);
+            if (sequencer != null) {
+                oldSequence = sequencer.getSequence();
+                if (sequencer.isOpen() == true) {
+                    sequencer.close();
+                }
             }
-            
+
+            ESeqMode seqMode = ESeqMode.Normal;
+            if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
+                seqMode = ESeqMode.TickOnly;
+            }
+            sequencer = new JMPSequencer(new LightweightSequencer(seqMode));
+            // if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
+            // sequencer = new JMPSequencer(new LightweightSequencer());
+            // }
+            // else {
+            // sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
+            // }
+
+            if (oldSequence != null) {
+                try {
+                    sequencer.setSequence(oldSequence);
+
+                    // 全プレイヤーを更新するためinitPositionを呼ぶ
+                    JMPCore.getSoundManager().initPosition();
+                    JMPCore.getPluginManager().updateSequencer();
+
+                }
+                catch (InvalidMidiDataException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (getSequencer().getTransmitter() != null) {
+                getSequencer().getTransmitter().setReceiver(receiverWrapper);
+            }
+
             sequencer.addMetaEventListener(new MetaEventListener() {
 
                 @Override
@@ -409,14 +410,14 @@ public class MidiPlayer extends Player {
 
             // トランスミッター・レシーバーの接続を解除
             if (sequencer.getReceivers() != null) {
-	            for (Receiver rec : sequencer.getReceivers()) {
-	                rec.close();
-	            }
+                for (Receiver rec : sequencer.getReceivers()) {
+                    rec.close();
+                }
             }
             if (sequencer.getTransmitters() != null) {
-	            for (Transmitter trans : sequencer.getTransmitters()) {
-	                trans.close();
-	            }
+                for (Transmitter trans : sequencer.getTransmitters()) {
+                    trans.close();
+                }
             }
             if (sequencer.isOpen() == true) {
                 sequencer.close();
@@ -713,12 +714,12 @@ public class MidiPlayer extends Player {
         MidiSystem.write(sequence, format, file);
         return;
     }
-	
-	public void setSeqMode(ESeqMode mode) {
-		sequencer.setSeqMode(mode);
-	}
-	
-	public ESeqMode getSeqMode() {
-		return sequencer.getSeqMode();
-	}
+
+    public void setSeqMode(ESeqMode mode) {
+        sequencer.setSeqMode(mode);
+    }
+
+    public ESeqMode getSeqMode() {
+        return sequencer.getSeqMode();
+    }
 }

@@ -21,7 +21,10 @@ public class JMPCore {
     public static final String APPLICATION_NAME = "JMPPlayer";
 
     /** アプリケーションバージョン */
-    public static final String APPLICATION_VERSION = "1.00.002"; /* メジャーリリース番号.機能追加番号.修正番号 */
+    public static final String APPLICATION_VERSION = "1.00.002"; /*
+                                                                  * メジャーリリース番号.
+                                                                  * 機能追加番号.修正番号
+                                                                  */
 
     /** ライブラリバージョン */
     public static final String LIBRALY_VERSION = JMPLIB.BUILD_VERSION;
@@ -62,9 +65,9 @@ public class JMPCore {
             if (JMPFlags.LibraryMode == false) {
                 /* ライセンス確認 */
                 if (JMPFlags.ActivateFlag == false) {
-                	if (JMPLoader.UseConfigFile == true) {
-                		getWindowManager().getWindow(WindowManager.WINDOW_NAME_LANGUAGE).showWindow();
-                	}
+                    if (JMPLoader.UseConfigFile == true) {
+                        getWindowManager().getWindow(WindowManager.WINDOW_NAME_LANGUAGE).showWindow();
+                    }
                     // Notifyタスクがまだ有効ではないため、ここで言語更新する必要がある
                     getWindowManager().getWindow(WindowManager.WINDOW_NAME_LICENSE).updateLanguage();
                     getWindowManager().getWindow(WindowManager.WINDOW_NAME_LICENSE).showWindow();

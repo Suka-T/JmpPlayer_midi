@@ -16,63 +16,63 @@ import javax.sound.midi.SysexMessage;
 import jlib.midi.MappedParseFunc;
 
 public class MappedSequence extends Sequence {
-	private long tickLength = 0; 
-	private int numTracks = 0;
-	private long numOfNotes = 0;
-	private List<MappedByteBuffer> mappedByteBuffers = null;
+    private long tickLength = 0;
+    private int numTracks = 0;
+    private long numOfNotes = 0;
+    private List<MappedByteBuffer> mappedByteBuffers = null;
 
-	public MappedSequence(float divisionType, int resolution, int numTracks) throws InvalidMidiDataException {
-		super(divisionType, resolution, numTracks);
-		
-		mappedByteBuffers = new ArrayList<MappedByteBuffer>();
-		this.numTracks = numTracks;
-	}
-	
-	public void addMap(MappedByteBuffer map) {
-		mappedByteBuffers.add(map);
-	}
-	
-	public MappedByteBuffer getMap(int index) {
-		return mappedByteBuffers.get(index);
-	}
-	
-	public void parse(short trkIndex, MappedParseFunc func) throws Exception {
-		long startTick = func.getStartTick();
-		long endTick = func.getEndTick();
-		if (startTick != -1) {
-			if (startTick < 0) {
-				startTick = 0;
-			}
-			else if (getTickLength() < startTick) {
-				startTick = getTickLength();
-			}
-		}
-		if (endTick != -1) {
-			if (endTick < 0) {
-				endTick = 0;
-			}
-			else if (getTickLength() < endTick) {
-				endTick = getTickLength();
-			}
-		}
-		
-		if (endTick != -1 && startTick != -1) {
-			if (endTick < startTick) {
-				// conflict args
-				return;
-			}
-		}
-		// renew tick 
-		func.setStartTick(startTick);
-		func.setEndTick(endTick);
-		
-		MappedByteBuffer org = getMap(trkIndex);
-		MappedByteBuffer copy = org.duplicate();
-		func.parse(trkIndex, copy);
-	}
+    public MappedSequence(float divisionType, int resolution, int numTracks) throws InvalidMidiDataException {
+        super(divisionType, resolution, numTracks);
+
+        mappedByteBuffers = new ArrayList<MappedByteBuffer>();
+        this.numTracks = numTracks;
+    }
+
+    public void addMap(MappedByteBuffer map) {
+        mappedByteBuffers.add(map);
+    }
+
+    public MappedByteBuffer getMap(int index) {
+        return mappedByteBuffers.get(index);
+    }
+
+    public void parse(short trkIndex, MappedParseFunc func) throws Exception {
+        long startTick = func.getStartTick();
+        long endTick = func.getEndTick();
+        if (startTick != -1) {
+            if (startTick < 0) {
+                startTick = 0;
+            }
+            else if (getTickLength() < startTick) {
+                startTick = getTickLength();
+            }
+        }
+        if (endTick != -1) {
+            if (endTick < 0) {
+                endTick = 0;
+            }
+            else if (getTickLength() < endTick) {
+                endTick = getTickLength();
+            }
+        }
+
+        if (endTick != -1 && startTick != -1) {
+            if (endTick < startTick) {
+                // conflict args
+                return;
+            }
+        }
+        // renew tick
+        func.setStartTick(startTick);
+        func.setEndTick(endTick);
+
+        MappedByteBuffer org = getMap(trkIndex);
+        MappedByteBuffer copy = org.duplicate();
+        func.parse(trkIndex, copy);
+    }
 
     public List<MidiEvent> parseTrackBuffer(short trkIndex) throws Exception {
-    	ByteBuffer buf = getMap(trkIndex);
+        ByteBuffer buf = getMap(trkIndex);
         List<MidiEvent> events = new ArrayList<>();
         int tick = 0;
         int lastStatus = 0;
@@ -83,10 +83,12 @@ public class MappedSequence extends Sequence {
 
             int statusByte = buf.get() & 0xFF;
             if (statusByte < 0x80) {
-                //if (lastStatus == 0) throw new IOException("Invalid running status");
+                // if (lastStatus == 0) throw new IOException("Invalid running
+                // status");
                 buf.position(buf.position() - 1);
                 statusByte = lastStatus;
-            } else {
+            }
+            else {
                 lastStatus = statusByte;
             }
 
@@ -98,21 +100,23 @@ public class MappedSequence extends Sequence {
                 MetaMessage meta = new MetaMessage();
                 meta.setMessage(type, metaData, length);
                 events.add(new MidiEvent(meta, tick));
-            } else if (statusByte >= 0x80 && statusByte <= 0xEF) {
+            }
+            else if (statusByte >= 0x80 && statusByte <= 0xEF) {
                 int command = statusByte & 0xF0;
                 int data1 = buf.get() & 0xFF;
                 int data2 = (command != 0xC0 && command != 0xD0) ? (buf.get() & 0xFF) : 0;
-                LightweightShortMessage sm = new LightweightShortMessage(
-                        statusByte | (data1 << 8) | (data2 << 16), trkIndex);
+                LightweightShortMessage sm = new LightweightShortMessage(statusByte | (data1 << 8) | (data2 << 16), trkIndex);
                 events.add(new MidiEvent(sm, tick));
-            } else if (statusByte == 0xF0 || statusByte == 0xF7) {
+            }
+            else if (statusByte == 0xF0 || statusByte == 0xF7) {
                 int length = readVariableLength(buf);
                 byte[] sysexData = new byte[length];
                 buf.get(sysexData);
                 SysexMessage sx = new SysexMessage();
                 sx.setMessage(statusByte, sysexData, length);
                 events.add(new MidiEvent(sx, tick));
-            } else {
+            }
+            else {
                 throw new IOException("Unknown status byte: " + statusByte);
             }
         }
@@ -125,31 +129,33 @@ public class MappedSequence extends Sequence {
         int value = 0;
         int b;
         do {
-            if (!buf.hasRemaining()) throw new EOFException();
+            if (!buf.hasRemaining())
+                throw new EOFException();
             b = buf.get() & 0xFF;
             value = (value << 7) | (b & 0x7F);
-        } while ((b & 0x80) != 0);
+        }
+        while ((b & 0x80) != 0);
         return value;
     }
 
-	public int getNumTracks() {
-		return numTracks;
-	}
-	
-	public void setTickLength(long tickLen) {
-		tickLength = tickLen;
-	}
-	
-	@Override
-    public long getTickLength() {
-		return tickLength;
+    public int getNumTracks() {
+        return numTracks;
     }
 
-	public long getNumOfNotes() {
-		return numOfNotes;
-	}
+    public void setTickLength(long tickLen) {
+        tickLength = tickLen;
+    }
 
-	public void setNumOfNotes(long numOfNotes) {
-		this.numOfNotes = numOfNotes;
-	}
+    @Override
+    public long getTickLength() {
+        return tickLength;
+    }
+
+    public long getNumOfNotes() {
+        return numOfNotes;
+    }
+
+    public void setNumOfNotes(long numOfNotes) {
+        this.numOfNotes = numOfNotes;
+    }
 }

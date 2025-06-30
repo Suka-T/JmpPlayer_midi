@@ -100,7 +100,7 @@ public class WindowManager extends AbstractManager implements IWindowManager {
                 register(WINDOW_NAME_CONSOLE, SystemManager.console);
                 register(WINDOW_NAME_MIDI_WAV_SYNC, new MidiWavSynchronizerDialog());
                 register(WINDOW_NAME_NOTES_MONITOR, new NotesMonitorDialog());
-                
+
                 registerMainWindow(new JMPPlayerWindow());
             });
         }
@@ -297,15 +297,15 @@ public class WindowManager extends AbstractManager implements IWindowManager {
             }
         }
     }
-    
+
     public void toFront(String name) {
         IJmpWindow win = getWindow(name);
         if (win.isWindowVisible() == true) {
             if (win instanceof JFrame) {
-                ((JFrame)win).toFront();
+                ((JFrame) win).toFront();
             }
             else if (win instanceof JDialog) {
-                ((JDialog)win).toFront();
+                ((JDialog) win).toFront();
             }
         }
     }

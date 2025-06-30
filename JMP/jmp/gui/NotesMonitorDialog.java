@@ -38,27 +38,16 @@ public class NotesMonitorDialog extends JDialog implements IJmpWindow {
             table.setEnabled(false);
             table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             table.setModel(new DefaultTableModel(
-                new Object[][] {
-                    {"BPM", ""},
-                    {"PPQ", ""},
-                    {"Number of Notes", ""},
-                    {"Notes Count", ""},
-                    {"NPS", ""},
-                    {"Poryphony", null},
-                },
-                new String[] {
-                    "Name", "Value"
-                }
-            ) {
-                Class[] columnTypes = new Class[] {
-                    String.class, String.class
-                };
+                    new Object[][] { { "BPM", "" }, { "PPQ", "" }, { "Number of Notes", "" }, { "Notes Count", "" }, { "NPS", "" }, { "Poryphony", null }, },
+                    new String[] { "Name", "Value" }) {
+                Class[] columnTypes = new Class[] { String.class, String.class };
+
                 public Class getColumnClass(int columnIndex) {
                     return columnTypes[columnIndex];
                 }
-                boolean[] columnEditables = new boolean[] {
-                    false, true
-                };
+
+                boolean[] columnEditables = new boolean[] { false, true };
+
                 public boolean isCellEditable(int row, int column) {
                     return columnEditables[column];
                 }
@@ -83,7 +72,6 @@ public class NotesMonitorDialog extends JDialog implements IJmpWindow {
             }
         }
     }
-    
 
     @Override
     public void showWindow() {
@@ -107,13 +95,13 @@ public class NotesMonitorDialog extends JDialog implements IJmpWindow {
     @Override
     public void repaintWindow() {
         repaint();
-        
+
         int ppq = 0;
         IMidiUnit midiUnit = JMPCore.getSoundManager().getMidiUnit();
         if (midiUnit.isValidSequence() == true) {
             ppq = midiUnit.getResolution();
         }
-        
+
         INotesMonitor monitor = JMPCore.getSoundManager().getNotesMonitor();
         table.setValueAt(String.format("%.2f", midiUnit.getTempoInBPM()), 0, 1);
         table.setValueAt(String.format("%d", ppq), 1, 1);
@@ -122,7 +110,7 @@ public class NotesMonitorDialog extends JDialog implements IJmpWindow {
         table.setValueAt(String.format("%.2f", monitor.getNps()), 4, 1);
         table.setValueAt(String.format("%d", monitor.getPolyphony()), 5, 1);
     }
-    
+
     @Override
     public void updateLanguage() {
     }

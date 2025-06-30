@@ -145,9 +145,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         /* MoviePlayerはjava8のみ */
         String javaVer = Platform.getJavaVersion();
         boolean isEnableMoviePlayer = false;
-        //if (javaVer.startsWith("1.8") == true) {
-            isEnableMoviePlayer = true;
-        //}
+        // if (javaVer.startsWith("1.8") == true) {
+        isEnableMoviePlayer = true;
+        // }
 
         // midi
         SMidiPlayer = new MidiPlayer();
@@ -190,8 +190,8 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         SFFmpegPlayer = new FFmpegPlayer(SWavPlayer);
         SFFmpegPlayer.setSupportExtentions("*");
         PlayerAccessor.register(SFFmpegPlayer);
-        
-        // Midi Wav 同時再生 
+
+        // Midi Wav 同時再生
         SDualPlayerSynchronizer = new DualPlayerSynchronizer(SMidiPlayer, SWavPlayer);
         PlayerAccessor.registerDualPlayerSynchronizer(SDualPlayerSynchronizer);
 
@@ -222,8 +222,8 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         // プレイリストの候補作成
         playlistPickup = new PlaylistPickup();
         playlistPickup.remakePool();
-        
-        // ノーツ監視クラス 
+
+        // ノーツ監視クラス
         notesMonitor = new NotesMonitor();
 
         super.initFunc();
@@ -645,9 +645,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     @Override
     protected boolean operate(AbstractCoreAsset asset) {
         boolean res = super.operate(asset);
-        
+
         getNotesMonitor().clearNumOfNotes();
-        
+
         if (asset.getOperateType() == OperateType.FileLoad) {
             /* ファイルロード処理 */
             FileLoadCoreAsset fileAsset = (FileLoadCoreAsset) asset;
@@ -659,10 +659,10 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 if (tmpPlayer != PlayerAccessor.getCurrent()) {
                     tmpPlayer.changingPlayer();
                 }
-                
+
                 if (PlayerAccessor.getCurrent() instanceof MidiPlayer) {
                     if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
-                    	SMidiPlayer.setSeqMode(ESeqMode.Normal);
+                        SMidiPlayer.setSeqMode(ESeqMode.Normal);
                     }
                 }
 
@@ -705,18 +705,18 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 if (tmpPlayer != PlayerAccessor.getCurrent()) {
                     tmpPlayer.changingPlayer();
                 }
-                
+
                 if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
-                	SMidiPlayer.setSeqMode(ESeqMode.NonSound);
+                    SMidiPlayer.setSeqMode(ESeqMode.NonSound);
                 }
 
                 if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {
                     loadResult = false;
                 }
-                
+
                 if (loadResult == true) {
-                    // ２つ目のファイルをロードする 
-                    DualPlayerSynchronizer syncPlayer = (DualPlayerSynchronizer)PlayerAccessor.getCurrent();
+                    // ２つ目のファイルをロードする
+                    DualPlayerSynchronizer syncPlayer = (DualPlayerSynchronizer) PlayerAccessor.getCurrent();
                     loadResult = syncPlayer.loadSecondFile(fileAsset.subFile);
                 }
             }
@@ -744,9 +744,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
 
             res = loadResult;
         }
-        
+
         getNotesMonitor().analyzeMidiSequence();
-        
+
         return res;
     }
 
@@ -773,9 +773,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         if (player.isValid() == false) {
             return;
         }
-        
+
         if (JMPFlags.NowLoadingFlag == true) {
-        	return;
+            return;
         }
 
         JMPCore.getWindowManager().processingBeforePlay();
@@ -1168,7 +1168,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     public boolean executeMidiFilter(MidiMessage message, short senderType) {
         return midiUnit.filter(message, senderType);
     }
-    
+
     public boolean isValidSyncPlayer() {
         return (PlayerAccessor.getCurrent() == SDualPlayerSynchronizer);
     }

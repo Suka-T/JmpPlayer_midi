@@ -47,7 +47,7 @@ public class MidiUnit implements IMidiUnit {
     }
 
     private JMPSequencer getSequencer() {
-        return (JMPSequencer)(getMidiPlayer().getSequencer());
+        return (JMPSequencer) (getMidiPlayer().getSequencer());
     }
 
     public void exportMidiFile(File file) throws Exception {
@@ -79,7 +79,7 @@ public class MidiUnit implements IMidiUnit {
     public double getTempoInBPM() {
         return getSequencer().getTempoInBPM();
     }
-    
+
     @Override
     public double getFirstTempoInBPM() {
         return getSequencer().getFirstTempoInBPM();
@@ -107,52 +107,52 @@ public class MidiUnit implements IMidiUnit {
 
     @Override
     public boolean isRenderingOnlyMode() {
-    	if (getMidiPlayer().getSeqMode() == ESeqMode.TickOnly) {
-    		return true;
-    	}
-    	return false;
+        if (getMidiPlayer().getSeqMode() == ESeqMode.TickOnly) {
+            return true;
+        }
+        return false;
     }
 
-	@Override
-	public int getResolution() {
-		if (isValidSequence() == false) {
+    @Override
+    public int getResolution() {
+        if (isValidSequence() == false) {
             return 0;
         }
-		return getSequencer().getSequence().getResolution();
-	}
+        return getSequencer().getSequence().getResolution();
+    }
 
-	@Override
-	public void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws Exception {
+    @Override
+    public void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws Exception {
         if (isValidSequence() == false) {
             return;
         }
-        ((MappedSequence)getSequencer().getSequence()).parse((short) trkIndex, func);
-	}
+        ((MappedSequence) getSequencer().getSequence()).parse((short) trkIndex, func);
+    }
 
-	@Override
-	public boolean isValidSequence() {
-		if (getSequencer() == null) {
+    @Override
+    public boolean isValidSequence() {
+        if (getSequencer() == null) {
             return false;
         }
         if (getSequencer().getSequence() == null) {
-        	return false;
+            return false;
         }
-		return true;
-	}
+        return true;
+    }
 
-	@Override
-	public long getNumOfNote() {
-		if (isValidSequence() == false) {
-			return 0;
-		}
-		return ((MappedSequence)getSequencer().getSequence()).getNumOfNotes();
-	}
+    @Override
+    public long getNumOfNote() {
+        if (isValidSequence() == false) {
+            return 0;
+        }
+        return ((MappedSequence) getSequencer().getSequence()).getNumOfNotes();
+    }
 
-	@Override
-	public int getNumOfTrack() {
-		if (isValidSequence() == false) {
-			return 0;
-		}
-		return ((MappedSequence)getSequencer().getSequence()).getNumTracks();
-	}
+    @Override
+    public int getNumOfTrack() {
+        if (isValidSequence() == false) {
+            return 0;
+        }
+        return ((MappedSequence) getSequencer().getSequence()).getNumTracks();
+    }
 }

@@ -148,7 +148,7 @@ public class PluginObserver implements IPlugin, IPlayerListener, IMidiEventListe
             pluginWrap.updateTickPosition(before, after);
         }
     }
-    
+
     @Override
     public void updateSequencer() {
         for (PluginWrapper pluginWrap : getPlugins()) {

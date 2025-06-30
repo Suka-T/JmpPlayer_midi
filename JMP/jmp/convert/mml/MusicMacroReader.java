@@ -21,7 +21,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
         C, D, E, F, G, A, B, R
     }
 
-    //private boolean loadResult = false;
+    // private boolean loadResult = false;
     private File file = null;
 
     private Vector<MmlObject> objects = null;
@@ -124,7 +124,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
 
     public void load() throws IOException {
 
-//        loadResult = false;
+        // loadResult = false;
 
         List<String> contents = Utility.getTextFileContents(file.getPath());
         compile(contents);

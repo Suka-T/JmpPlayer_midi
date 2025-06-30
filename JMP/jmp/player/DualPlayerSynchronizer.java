@@ -7,24 +7,24 @@ import jlib.player.Player;
 public class DualPlayerSynchronizer extends Player {
 
     private Player[] aPlayer;
-    
+
     public DualPlayerSynchronizer(Player primeFile, Player secondPlayer) {
         aPlayer = new Player[2];
         aPlayer[0] = primeFile;
         aPlayer[1] = secondPlayer;
     }
-    
+
     protected Player getTarget() {
         return aPlayer[0].getLength() >= aPlayer[1].getLength() ? aPlayer[0] : aPlayer[1];
     }
 
     @Override
     public void play() {
-        // 同期再生は一時停止不可 
+        // 同期再生は一時停止不可
         if (getPosition() > 0) {
             setPosition(0);
         }
-        
+
         for (Player player : aPlayer) {
             player.play();
         }
@@ -95,11 +95,11 @@ public class DualPlayerSynchronizer extends Player {
     public boolean saveFile(File file) throws Exception {
         return this.aPlayer[0].saveFile(file);
     }
-    
+
     public boolean loadSecondFile(File file) throws Exception {
         return this.aPlayer[1].loadFile(file);
     }
-    
+
     @Override
     public void changingPlayer() {
         for (Player player : aPlayer) {

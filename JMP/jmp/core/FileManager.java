@@ -104,13 +104,13 @@ public class FileManager extends AbstractManager implements IFileManager {
         ICallbackFunction func = FileCallbackCreator.getInstance().createLoadCallback(f, false);
         execFileProcess(func);
     }
-    
+
     @Override
     public void loadDualFile(File f, File sub) {
         ICallbackFunction func = FileCallbackCreator.getInstance().createDualLoadCallback(f, sub, false);
         execFileProcess(func);
     }
-    
+
     @Override
     public void loadDualFileToPlay(File f, File sub) {
         ICallbackFunction func = FileCallbackCreator.getInstance().createDualLoadCallback(f, sub, true);

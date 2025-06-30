@@ -9,7 +9,7 @@ public class PlayerAccessor {
 
     private List<Player> registerPlayer = new ArrayList<Player>();
     private Player currentPlayer = null;
-    
+
     private DualPlayerSynchronizer dualPlayerSynchronizer = null;
 
     public PlayerAccessor() {
@@ -47,7 +47,7 @@ public class PlayerAccessor {
         for (Player p : registerPlayer) {
             p.stop();
         }
-        
+
         dualPlayerSynchronizer.stop();
     }
 
@@ -57,11 +57,11 @@ public class PlayerAccessor {
         }
     }
 
-//    public void remove(Player player) {
-//        if (registerPlayer.contains(player) == true) {
-//            registerPlayer.remove(player);
-//        }
-//    }
+    // public void remove(Player player) {
+    // if (registerPlayer.contains(player) == true) {
+    // registerPlayer.remove(player);
+    // }
+    // }
 
     public boolean change(String extension) {
         Player player = getSupportedPlayer(extension);
@@ -125,7 +125,7 @@ public class PlayerAccessor {
     public void registerDualPlayerSynchronizer(DualPlayerSynchronizer synchronizer) {
         this.dualPlayerSynchronizer = synchronizer;
     }
-    
+
     public void changeDualPlayerSynchronizer() {
         currentPlayer = this.dualPlayerSynchronizer;
     }

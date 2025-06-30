@@ -231,24 +231,24 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         cReg.add(cRegKeys[COMMON_REGKEY_NO_PLAYER_BACK_COLOR], Utility.convertHtmlColorToCode(DEFAULT_PLAYER_BACK_COLOR));
         cReg.add(cRegKeys[COMMON_REGKEY_NO_DEBUGMODE], "FALSE");
         cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT], COMMON_REGKEY_CH_COLOR_FORMAT);
-        
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_1], "#00FF00", true);   // 緑
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_2], "#0000FF", true);   // 青
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_3], "#FFFF00", true);   // 黄
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_4], "#FF00FF", true);   // マゼンタ
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_5], "#00FFFF", true);   // シアン
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_6], "#FFA500", true);   // オレンジ
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_7], "#5b37a4", true);   // 紫
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_8], "#FF69B4", true);  // ホットピンク
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_9], "#87CEEB", true);  // スカイブルー
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_10], "#FF0000", true);   // 赤
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_11], "#8FBC8F", true);  // ダークシーグリーン
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_12], "#FFD700", true);  // ゴールド
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_13], "#4682B4", true);   // スティールブルー
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_14], "#008080", true);  // ティール
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_15], "#f08080", true);  // ライトコーラル
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_16], "#708090", true);  // スレートグレー
-        
+
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_1], "#00FF00", true); // 緑
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_2], "#0000FF", true); // 青
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_3], "#FFFF00", true); // 黄
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_4], "#FF00FF", true); // マゼンタ
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_5], "#00FFFF", true); // シアン
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_6], "#FFA500", true); // オレンジ
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_7], "#5b37a4", true); // 紫
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_8], "#FF69B4", true); // ホットピンク
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_9], "#87CEEB", true); // スカイブルー
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_10], "#FF0000", true); // 赤
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_11], "#8FBC8F", true); // ダークシーグリーン
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_12], "#FFD700", true); // ゴールド
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_13], "#4682B4", true); // スティールブルー
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_14], "#008080", true); // ティール
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_15], "#f08080", true); // ライトコーラル
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_CH_COLOR_FORMAT_16], "#708090", true); // スレートグレー
+
         cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_OUTPUT], "output");
         cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_WIN], "ffmpeg", true);
         cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_MAC], "/Usr/local/bin/ffmpeg", true);
@@ -427,7 +427,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         if (JMPFlags.ActivateFlag == true) {
             activateOutFlag = true;
         }
-        if (JMPFlags.DebugMode == true  || JMPFlags.LibraryMode == true) {
+        if (JMPFlags.DebugMode == true || JMPFlags.LibraryMode == true) {
             // デバッグは発行しない
             activateOutFlag = false;
         }
@@ -549,14 +549,14 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         // skin
         aPath[PATH_SKIN_DIR] = Utility.pathCombin(currentPath, SKIN_FOLDER_NAME);
 
-//        JMPFlags.Log.cprintln("###");
-//        JMPFlags.Log.cprintln("## Directory list");
-//        JMPFlags.Log.cprintln("##");
-//        for (int i = 0; i < NUM_OF_PATH; i++) {
-//            JMPFlags.Log.cprintln("[" + i + "]" + aPath[i]);
-//        }
-//        JMPFlags.Log.cprintln("##");
-//        JMPFlags.Log.cprintln();
+        // JMPFlags.Log.cprintln("###");
+        // JMPFlags.Log.cprintln("## Directory list");
+        // JMPFlags.Log.cprintln("##");
+        // for (int i = 0; i < NUM_OF_PATH; i++) {
+        // JMPFlags.Log.cprintln("[" + i + "]" + aPath[i]);
+        // }
+        // JMPFlags.Log.cprintln("##");
+        // JMPFlags.Log.cprintln();
     }
 
     public String getSystemPath(int id) {
@@ -802,7 +802,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
     public boolean isValidYoutubeDlWrapper() {
         return youtubeDlWrapper.isValid();
     }
-    
+
     @Override
     public boolean getStatus(int statusId) {
         switch (statusId) {

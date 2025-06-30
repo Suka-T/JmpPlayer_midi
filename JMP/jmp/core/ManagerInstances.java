@@ -109,7 +109,7 @@ public class ManagerInstances {
 
         remakeAsc();
         remakeDesc();
-        
+
         JMPFlags.Log.cprintln("");
         JMPFlags.Log.cprintln("###");
         JMPFlags.Log.cprintln("## CORE initializing");

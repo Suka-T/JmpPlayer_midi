@@ -212,7 +212,8 @@ public class SelectSynthsizerDialog extends JMPDialog {
                             vendor += "";
                             version += "";
                             description += "Automatically select an available synthesizer.<br>";
-                            description += " - MIDI only : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName() + "</font><br>";
+                            description += " - MIDI only : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName()
+                                    + "</font><br>";
                             description += " - MIDI & Audio : <font color=\"GREEN\">MIDI synthesizer not any sound.</font>";
                         }
                         else if (comboRecvMode.getSelectedIndex() == INDEX_OF_NONE) {
@@ -235,7 +236,7 @@ public class SelectSynthsizerDialog extends JMPDialog {
                             version += info.getVersion();
                             description += info.getDescription();
                         }
-                        
+
                         description += "</html>";
 
                         lblVendorOfRecv.setText(vendor);
@@ -316,7 +317,7 @@ public class SelectSynthsizerDialog extends JMPDialog {
                 if (JMPCore.getSoundManager().isPlay() == true) {
                     JMPCore.getSoundManager().stop();
                 }
-                
+
                 if (JMPCore.isEnableStandAlonePlugin() == true || JMPFlags.LibraryMode == true) {
                     // スタンドアロン・ライブラリは非表示
                     chckbxStartupShowDialog.setVisible(false);
@@ -327,14 +328,14 @@ public class SelectSynthsizerDialog extends JMPDialog {
                 chckbxStartupShowDialog.setSelected(JMPCore.getDataManager().isShowStartupDeviceSetup());
             }
             else {
-            	if (JMPCore.isEnableStandAlonePlugin() == true || JMPFlags.LibraryMode == true) {
+                if (JMPCore.isEnableStandAlonePlugin() == true || JMPFlags.LibraryMode == true) {
                     // スタンドアロン・ライブラリは非表示
                     chckbxStartupShowDialog.setVisible(false);
                 }
             }
-            
+
             if (JMPLoader.UseConfigFile == false) {
-            	chckbxStartupShowDialog.setVisible(false);
+                chckbxStartupShowDialog.setVisible(false);
             }
             updateLanguage();
         }

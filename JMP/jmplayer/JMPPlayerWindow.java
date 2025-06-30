@@ -205,7 +205,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         this.addWindowListener(this);
         this.setTransferHandler(new DropFileCallbackHandler(this));
         this.setBounds(WindowManager.DEFAULT_PLAYER_WINDOW_SIZE);
-        
+
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -303,7 +303,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 if (JMPCore.getSoundManager().isValidSyncPlayer() == true) {
                     return;
                 }
-                
+
                 long value = s_tmpSliderTick;
                 if (s_tmpSliderTick != -1) {
                     JMPCore.getSoundManager().getCurrentPlayer().setPosition(value);
@@ -370,7 +370,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
             }
         });
         fileMenu.add(openItem);
-        
+
         mntmMidiWavSync = new JMenuItem("Synchronized MIDI and WAV playback");
         mntmMidiWavSync.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -425,7 +425,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 JMPCore.getWindowManager().setVisibleAll(false);
             }
         });
-        
+
         mntmToFrontAll = new JMenuItem("To Front");
         mntmToFrontAll.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -562,7 +562,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 showChildWindow(WindowManager.WINDOW_NAME_MIDI_MONITOR);
             }
         });
-        
+
         menuBar.add(pluginMenu);
 
         addPluginMenuItem = new JMenuItem("プラグイン追加");
@@ -1621,7 +1621,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         }
         IDropFileCallback.super.catchDropMultiFile(files);
     }
-    
+
     @Override
     public void catchDropFile(File file) {
         WindowManager wm = JMPCore.getWindowManager();

@@ -96,7 +96,7 @@ public class FileCallbackCreator {
             this.noneHistoryFlag = noneHistoryFlag;
             this.loadToPlayFlag = toPlay;
         }
-        
+
         public FileLoadCoreAsset createFileLoadCoreAsset() {
             endResult.status = true;
             endResult.statusMsg = "";
@@ -165,7 +165,7 @@ public class FileCallbackCreator {
 
             /* 事後処理 */
             if (endResult.status == true) {
-                
+
                 JMPFlags.Log.cprintln(">> File load success.", true);
                 JMPFlags.Log.cprintln(file.getName(), true);
                 String sFileSize = "?? ";
@@ -176,13 +176,13 @@ public class FileCallbackCreator {
                         sFileSize = String.format("%d ", fileSize);
                     }
                     else if (fileSize < (1024L * 1000L)) {
-                        sFileSize = String.format("%.3f K", (double)fileSize / 1024.0);
+                        sFileSize = String.format("%.3f K", (double) fileSize / 1024.0);
                     }
                     else if (fileSize < (1024L * 1000000L)) {
-                        sFileSize = String.format("%.3f M", (double)fileSize / (double)(1024L * 1000));
+                        sFileSize = String.format("%.3f M", (double) fileSize / (double) (1024L * 1000));
                     }
                     else if (fileSize < (1024L * 1000000000L)) {
-                        sFileSize = String.format("%.3f G", (double)fileSize / (double)(1024L * 1000000L));
+                        sFileSize = String.format("%.3f G", (double) fileSize / (double) (1024L * 1000000L));
                     }
                 }
                 catch (IOException e) {
@@ -212,7 +212,7 @@ public class FileCallbackCreator {
             }
             else {
                 JMPFlags.Log.cprintln(">> File load falied.", true);
-                
+
                 // 前のファイル名に戻す
                 dm.setLoadedFile(tmpFileName);
 
@@ -228,31 +228,32 @@ public class FileCallbackCreator {
 
             // ロード中フラグ解除
             JMPFlags.NowLoadingFlag = false;
-            
+
             // 自動再生
             if (endResult.status == true) {
-	            SoundManager sm = JMPCore.getSoundManager();
-	            if (this.loadToPlayFlag == true) {
-	                sm.play();
-	            }
+                SoundManager sm = JMPCore.getSoundManager();
+                if (this.loadToPlayFlag == true) {
+                    sm.play();
+                }
             }
         }
     }
-    
+
     private class DualFileLoadCallbackFunc extends LoadCallbackFunc {
 
         File subFile = null;
+
         public DualFileLoadCallbackFunc(File f, File sub, boolean noneHistoryFlag, boolean toPlay) {
             super(f, noneHistoryFlag, toPlay);
-            
+
             this.subFile = sub;
         }
-        
+
         @Override
         public FileLoadCoreAsset createFileLoadCoreAsset() {
             endResult.status = true;
             endResult.statusMsg = "";
-            
+
             return new DualFileLoadCoreAsset(file, endResult, subFile);
         }
     }
@@ -260,7 +261,7 @@ public class FileCallbackCreator {
     public FileCallbackFunction createLoadCallback(File f, boolean toPlay) {
         return new LoadCallbackFunc(f, JMPFlags.NoneHistoryLoadFlag, toPlay);
     }
-    
+
     public FileCallbackFunction createDualLoadCallback(File f, File sub, boolean toPlay) {
         return new DualFileLoadCallbackFunc(f, sub, JMPFlags.NoneHistoryLoadFlag, toPlay);
     }

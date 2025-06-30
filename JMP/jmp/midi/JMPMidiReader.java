@@ -49,4 +49,4 @@ public class JMPMidiReader {
             return sequence;
         }
     }
-} 
+}

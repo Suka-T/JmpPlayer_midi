@@ -70,10 +70,11 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
                     inpuTextField.addKeyListener(new KeyAdapter() {
                         String mnemLog = "";
                         int mnemIndex = -1;
-                        
+
                         @Override
                         public void keyTyped(KeyEvent e) {
                         }
+
                         @Override
                         public void keyPressed(KeyEvent e) {
                             if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN) {
@@ -154,7 +155,7 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
     public static void println(String str) {
         addText(str, true, REVERSE);
     }
-    
+
     public static void clear() {
         SText = "";
     }
@@ -164,7 +165,7 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
         // return;
         // }
         //
-        
+
         try {
             int addBites = str.getBytes("UTF-8").length;
             int currentBites = SText.getBytes("UTF-8").length;
@@ -172,12 +173,12 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
                 // 3K以上は記録しない
                 SText = "";
             }
-            
+
         }
         catch (Exception ex) {
             SText = "";
         }
-        
+
         String text = SText;
 
         String s1, s2, s3;
@@ -227,7 +228,7 @@ public class DebugLogConsole extends JDialog implements IJmpWindow {
     public void repaintWindow() {
         this.repaint();
     }
-    
+
     @Override
     public void updateConfig(String key) {
         if (JmpUtil.checkConfigKey(key, DataManager.CFG_KEY_LANGUAGE) == true) {

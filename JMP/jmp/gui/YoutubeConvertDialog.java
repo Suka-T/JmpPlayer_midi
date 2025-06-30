@@ -100,7 +100,7 @@ public class YoutubeConvertDialog extends JMPDialog {
                 if (JMPCore.getDataManager().isYoutubeDlInstalled() == true) {
                     return;
                 }
-                
+
                 setExePath(file.getPath());
             }
         }));
@@ -281,7 +281,7 @@ public class YoutubeConvertDialog extends JMPDialog {
     }
 
     private void updateGuiState() {
-        //textFieldExePath.setEnabled(!JMPCore.getDataManager().isYoutubeDlInstalled());
+        // textFieldExePath.setEnabled(!JMPCore.getDataManager().isYoutubeDlInstalled());
         btnOpenExe.setEnabled(!JMPCore.getDataManager().isYoutubeDlInstalled());
         if (JMPCore.getDataManager().isYoutubeDlInstalled() == true) {
             textFieldExePath.setText(JMPCore.getDataManager().getYoutubeDlCommand());
@@ -347,14 +347,14 @@ public class YoutubeConvertDialog extends JMPDialog {
         LanguageManager lm = JMPCore.getLanguageManager();
 
         dm.setYoutubeDlInstalled(chckbxInstalled.isSelected());
-        
+
         if (JMPCore.getDataManager().isYoutubeDlInstalled() == true) {
             dm.setYoutubeDlCommand(textFieldExePath.getText());
         }
         else {
             dm.setYoutubeDlPath(textFieldExePath.getText());
         }
-        
+
         String sWebNameType = comboboxNameType.getSelectedItem().toString();
         if (sWebNameType.isEmpty() == false) {
             IJ_YoutubeDlFileNameConfig fileNameConf = IJ_YoutubeDlFileNameConfig.IJ_Title;
@@ -363,7 +363,7 @@ public class YoutubeConvertDialog extends JMPDialog {
             }
             dm.setYoutubeDlFileNameMode(fileNameConf);
         }
-        
+
         if (system.isValidYoutubeDlWrapper() == false) {
             lblStatus.setForeground(Color.RED);
             String name = String.format("\"%s\"", ".exe");
@@ -461,8 +461,8 @@ public class YoutubeConvertDialog extends JMPDialog {
                 });
             }
         });
-        
-        // 非同期のSystemManagerの同期処理を待つためwaitする 
+
+        // 非同期のSystemManagerの同期処理を待つためwaitする
         JmpUtil.threadSleep(500);
 
         try {

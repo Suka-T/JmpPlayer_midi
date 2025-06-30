@@ -25,7 +25,9 @@ import jmp.gui.ui.JMPDialog;
 import jmp.lang.DefineLanguage.LangID;
 import jmp.util.JmpUtil;
 
-public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog implements IJmpWindow {
+public class MidiWavSynchronizerDialog extends JMPDialog { // extends JDialog
+                                                           // implements
+                                                           // IJmpWindow {
 
     private final JPanel contentPanel = new JPanel();
     private JTextField textFieldMidiPath;
@@ -51,11 +53,11 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         getContentPane().add(contentPanel, BorderLayout.CENTER);
         contentPanel.setLayout(null);
-        
+
         lblMidi = new JLabel("MIDI File Path");
         lblMidi.setBounds(12, 10, 205, 13);
         contentPanel.add(lblMidi);
-        
+
         textFieldMidiPath = new JTextField();
         textFieldMidiPath.setBounds(12, 33, 372, 19);
         contentPanel.add(textFieldMidiPath);
@@ -70,11 +72,11 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
                 setMidiPath(file.getPath());
             }
         }));
-        
+
         lblMedia = new JLabel("WAV File Path");
         lblMedia.setBounds(12, 94, 205, 13);
         contentPanel.add(lblMedia);
-        
+
         textFieldMediaFilePath = new JTextField();
         textFieldMediaFilePath.setColumns(10);
         textFieldMediaFilePath.setBounds(12, 117, 372, 19);
@@ -89,7 +91,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
                 setMediaPath(file.getPath());
             }
         }));
-        
+
         JButton btnOpenMidi = new JButton("...");
         btnOpenMidi.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -123,7 +125,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         });
         btnOpenMidi.setBounds(383, 33, 39, 21);
         contentPanel.add(btnOpenMidi);
-        
+
         JButton btnOpenWav = new JButton("...");
         btnOpenWav.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -157,7 +159,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         });
         btnOpenWav.setBounds(383, 117, 39, 21);
         contentPanel.add(btnOpenWav);
-        
+
         btnMidiConfig = new JButton("MIDI Device Setting");
         btnMidiConfig.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -166,7 +168,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         });
         btnMidiConfig.setBounds(261, 62, 161, 21);
         contentPanel.add(btnMidiConfig);
-        
+
         btnToWav = new JButton("Path To .wav");
         btnToWav.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -224,7 +226,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
             }
         }
     }
-    
+
     private FileNameExtensionFilter createFileFilter(String exName, String... ex) {
         String exs = "";
         for (int i = 0; i < ex.length; i++) {
@@ -237,15 +239,15 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         String description = String.format("%s (%s)", exName, exs);
         return new FileNameExtensionFilter(description, ex);
     }
-    
+
     public void setMidiPath(String path) {
         textFieldMidiPath.setText(path);
     }
-    
+
     public void setMediaPath(String path) {
         textFieldMediaFilePath.setText(path);
     }
-    
+
     public void executeLoadToPlay() {
         File f1 = new File(textFieldMidiPath.getText());
         if (textFieldMediaFilePath.getText().isEmpty() == false) {
@@ -255,11 +257,10 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         else {
             JMPCore.getFileManager().loadFileToPlay(f1);
         }
-        
+
         hideWindow();
     }
 
-    
     public void executeLoad() {
         File f1 = new File(textFieldMidiPath.getText());
         if (textFieldMediaFilePath.getText().isEmpty() == false) {
@@ -295,7 +296,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
     public void repaintWindow() {
         repaint();
     }
-    
+
     @Override
     public void updateLanguage() {
         WindowManager wm = JMPCore.getWindowManager();
@@ -309,7 +310,7 @@ public class MidiWavSynchronizerDialog extends JMPDialog { //extends JDialog imp
         wm.changeFont(loadButton, LangID.Load);
         wm.changeFont(cancelButton, LangID.Close);
     }
-    
+
     @Override
     public void updateBackColor() {
         super.updateBackColor();

@@ -154,7 +154,7 @@ public interface IJmpConfigDatabase {
     default void setSendMidiSystemSetup(boolean isSendMidiSystemSetup) {
         setConfigParamToBoolean(DataManager.CFG_KEY_SEND_MIDI_SYSTEMSETUP, isSendMidiSystemSetup);
     }
-    
+
     default String getYoutubeDlCommand() {
         return getConfigParam(DataManager.CFG_KEY_YOUTUBEDL_COMMAND);
     }
@@ -214,7 +214,7 @@ public interface IJmpConfigDatabase {
         }
         setConfigParam(DataManager.CFG_KEY_YOUTUBEDL_FILENAME_MODE, s);
     }
-    
+
     default boolean isCheckPluginVersion() {
         return getConfigParamToBoolean(DataManager.CFG_KEY_CHECK_PLUGIN_VERSION, false);
     }

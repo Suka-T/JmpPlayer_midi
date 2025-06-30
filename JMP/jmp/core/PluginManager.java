@@ -238,7 +238,7 @@ public class PluginManager extends AbstractManager {
             // 制限なし
             return true;
         }
-        
+
         if (JMPCore.getDataManager().isCheckPluginVersion() == false) {
             // 制限なし
             return true;
@@ -851,7 +851,7 @@ public class PluginManager extends AbstractManager {
     public void updateTickPosition(long before, long after) {
         observers.updateTickPosition(before, after);
     }
-    
+
     public void updateSequencer() {
         observers.updateSequencer();
     }

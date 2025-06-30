@@ -7,70 +7,71 @@ import java.util.List;
 import javax.sound.midi.MidiEvent;
 
 public class JMPMidiDataInfo {
-	public static long DIVISION_DAT_TICK = 10000L;
-	private int headerLength = 0;
-	private int format = 0;
-	private int numTracks = 0;
-	private int division = 0;
-	private int ppg = 0;
-	private List<List<MidiEvent>> allEventLists = null;
-	private File tempDir = null;
-	
-	public JMPMidiDataInfo(String tempDirPath, int division, int numTracks) {
-		this.division = division;
-		this.numTracks = numTracks;
-		this.tempDir = new File(tempDirPath);
-		if (this.tempDir.exists() == false) {
-			this.tempDir.mkdirs();
-		}
-		
-		allEventLists = new ArrayList<>(numTracks);
-		for (int i = 0; i < numTracks; i++) {
-			allEventLists.add(new ArrayList<MidiEvent>());
-		}
-		
-	}
-	public List<List<MidiEvent>> getAllEventLists() {
-		return allEventLists;
-	}
-	
-	public int getHeaderLength() {
-		return headerLength;
-	}
+    public static long DIVISION_DAT_TICK = 10000L;
+    private int headerLength = 0;
+    private int format = 0;
+    private int numTracks = 0;
+    private int division = 0;
+    private int ppg = 0;
+    private List<List<MidiEvent>> allEventLists = null;
+    private File tempDir = null;
 
-	public void setHeaderLength(int headerLength) {
-		this.headerLength = headerLength;
-	}
+    public JMPMidiDataInfo(String tempDirPath, int division, int numTracks) {
+        this.division = division;
+        this.numTracks = numTracks;
+        this.tempDir = new File(tempDirPath);
+        if (this.tempDir.exists() == false) {
+            this.tempDir.mkdirs();
+        }
 
-	public int getFormat() {
-		return format;
-	}
+        allEventLists = new ArrayList<>(numTracks);
+        for (int i = 0; i < numTracks; i++) {
+            allEventLists.add(new ArrayList<MidiEvent>());
+        }
 
-	public void setFormat(int format) {
-		this.format = format;
-	}
+    }
 
-	public int getNumTracks() {
-		return numTracks;
-	}
+    public List<List<MidiEvent>> getAllEventLists() {
+        return allEventLists;
+    }
 
-	public void setNumTracks(int numTracks) {
-		this.numTracks = numTracks;
-	}
+    public int getHeaderLength() {
+        return headerLength;
+    }
 
-	public int getDivision() {
-		return division;
-	}
+    public void setHeaderLength(int headerLength) {
+        this.headerLength = headerLength;
+    }
 
-	public void setDivision(int division) {
-		this.division = division;
-	}
+    public int getFormat() {
+        return format;
+    }
 
-	public int getPpg() {
-		return ppg;
-	}
+    public void setFormat(int format) {
+        this.format = format;
+    }
 
-	public void setPpg(int ppg) {
-		this.ppg = ppg;
-	}
+    public int getNumTracks() {
+        return numTracks;
+    }
+
+    public void setNumTracks(int numTracks) {
+        this.numTracks = numTracks;
+    }
+
+    public int getDivision() {
+        return division;
+    }
+
+    public void setDivision(int division) {
+        this.division = division;
+    }
+
+    public int getPpg() {
+        return ppg;
+    }
+
+    public void setPpg(int ppg) {
+        this.ppg = ppg;
+    }
 }

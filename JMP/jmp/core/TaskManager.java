@@ -178,7 +178,7 @@ public class TaskManager extends AbstractManager {
 
             @Override
             public void callback() {
-                ((NotesMonitor)JMPCore.getSoundManager().getNotesMonitor()).timerEvent();
+                ((NotesMonitor) JMPCore.getSoundManager().getNotesMonitor()).timerEvent();
             }
         });
     }
