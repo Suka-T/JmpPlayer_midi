@@ -145,7 +145,12 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
         btnWCDefault = new JButton("Full color");
         btnWCDefault.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                panel.setRestoreColorTable();
+                if (panel.traceViewMode == MultiWaveViewerPanel.TRACE_VIEW_MODE_SPECT) {
+                    panel.toggleSpectrumDispRange();
+                }
+                else {
+                    panel.setRestoreColorTable();
+                }
             }
         });
         leftPanel.add(btnWCDefault);
@@ -153,7 +158,12 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
         btnWCSimple = new JButton("Mono color");
         btnWCSimple.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                panel.setDefaultColorTable();
+                if (panel.traceViewMode == MultiWaveViewerPanel.TRACE_VIEW_MODE_SPECT) {
+                    panel.toggleSpectrumFreqResolution();
+                }
+                else {
+                    panel.setDefaultColorTable();
+                }
             }
         });
         leftPanel.add(btnWCSimple);
@@ -478,6 +488,8 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
     }
 
     private void updateLabel() {
+        btnWCDefault.setText("Full Color");
+        btnWCSimple.setText("Mono Color");
         if (rdbtnModeDetail.isSelected() == true) {
             panel.traceViewMode = MultiWaveViewerPanel.TRACE_VIEW_MODE_DETAIL;
         }
@@ -486,6 +498,8 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
         }
         else if (rdbtnModeSpectrum.isSelected() == true) {
             panel.traceViewMode = MultiWaveViewerPanel.TRACE_VIEW_MODE_SPECT;
+            btnWCDefault.setText("FQ.Range");
+            btnWCSimple.setText("FQ.Res");
         }
         else if (rdbtnModeInfo.isSelected() == true) {
             panel.traceViewMode = MultiWaveViewerPanel.TRACE_VIEW_MODE_INFO;
