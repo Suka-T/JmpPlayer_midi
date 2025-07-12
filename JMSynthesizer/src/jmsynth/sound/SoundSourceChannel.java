@@ -188,6 +188,10 @@ public class SoundSourceChannel extends Thread implements ISynthController {
         int sampleRate = BUF_SIZE;
         while (isRunnable) {
             try {
+                
+                this.envelope.process();
+                this.modulator.process();
+                
                 int length = makeTone(waveData, sampleRate); // 再生するたびに作り直す
                 // samplesOfAverage(waveData, length);
 

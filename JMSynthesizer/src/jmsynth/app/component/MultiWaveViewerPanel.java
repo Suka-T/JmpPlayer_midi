@@ -986,7 +986,7 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
 
         // --- ラベル描画 ---
         g.setColor(Color.WHITE);
-        g.setFont(new Font("SansSerif", Font.PLAIN, 10));
+        //g.setFont(new Font("SansSerif", Font.PLAIN, 10));
         int numLabels = 10;
         for (int i = 0; i <= numLabels; i++) {
             int x = (int) (i * w / (double) numLabels);
