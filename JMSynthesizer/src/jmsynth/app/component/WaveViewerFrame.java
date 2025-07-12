@@ -452,7 +452,6 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
 
         tableEditer = new ProgramChangeTableEditDialog();
         rdbtnModeDetail.setVisible(true);
-        rdbtnModeSpectrum.setVisible(false);
         rdbtnModeMerge.setVisible(true);
         rdbtnModeInfo.setVisible(true);
 
