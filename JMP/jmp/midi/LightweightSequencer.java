@@ -525,6 +525,12 @@ public class LightweightSequencer implements Sequencer {
     public void start() {
         System.out.print("lwSequencer RUN ");
         System.out.println(getSeqMode().toString());
+        if (midiMsgPump == null) {
+            midiMsgPump = new MidiMessagePump();
+        }
+        if (extractWorker == null) {
+            extractWorker = new ExtractWorker();
+        }
         isMidioutDump = false;
         midioutDumpCnt = 0;
         if (playThread != null) {
