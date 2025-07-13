@@ -174,14 +174,14 @@ public class DefaultProgramChangeTable extends ProgramChangeTable {
         /*
          * Synth Effects
          */
-        this.sets[PC_97] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
-        this.sets[PC_98] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
-        this.sets[PC_99] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
-        this.sets[PC_100] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
-        this.sets[PC_101] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
+        this.sets[PC_97] = WavePreset.getOscillatorSet(0.0, 0.5, 0.4, 0.1, ofc, WavePreset.PRESET_NAME_SINE);
+        this.sets[PC_98] = WavePreset.getOscillatorSet(0.5, 0.0, 1.0, 0.1, ofc, WavePreset.PRESET_NAME_SAW);
+        this.sets[PC_99] = WavePreset.getOscillatorSet(0.0, 0.0, 1.0, 0.6, ofc, WavePreset.PRESET_NAME_SQUARE);
+        this.sets[PC_100] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_PULSE25);
+        this.sets[PC_101] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SQUARE);
         this.sets[PC_102] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
-        this.sets[PC_103] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
-        this.sets[PC_104] = new OscillatorSet(0.0, 0.25, 0.0, 0.0, createOsc(ofc, OscillatorFactory.OSCILLATOR_NAME_NOISE_L));
+        this.sets[PC_103] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SQUARE);
+        this.sets[PC_104] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SAW);
 
         /*
          * ethnic
