@@ -226,24 +226,29 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
         btnAllOn = new JButton("Show all");
         btnAllOn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                boolean bb = true;
-                chckbxWave1.setSelected(bb);
-                chckbxWave2.setSelected(bb);
-                chckbxWave3.setSelected(bb);
-                chckbxWave4.setSelected(bb);
-                chckbxWave5.setSelected(bb);
-                chckbxWave6.setSelected(bb);
-                chckbxWave7.setSelected(bb);
-                chckbxWave8.setSelected(bb);
-                chckbxWave9.setSelected(bb);
-                chckbxWave10.setSelected(bb);
-                chckbxWave11.setSelected(bb);
-                chckbxWave12.setSelected(bb);
-                chckbxWave13.setSelected(bb);
-                chckbxWave14.setSelected(bb);
-                chckbxWave15.setSelected(bb);
-                chckbxWave16.setSelected(bb);
-                updateLabel();
+                if (panel.traceViewMode == MultiWaveViewerPanel.TRACE_VIEW_MODE_SPECT) {
+                    panel.toggleValidMovingAvgFilter();
+                }
+                else {
+                    boolean bb = true;
+                    chckbxWave1.setSelected(bb);
+                    chckbxWave2.setSelected(bb);
+                    chckbxWave3.setSelected(bb);
+                    chckbxWave4.setSelected(bb);
+                    chckbxWave5.setSelected(bb);
+                    chckbxWave6.setSelected(bb);
+                    chckbxWave7.setSelected(bb);
+                    chckbxWave8.setSelected(bb);
+                    chckbxWave9.setSelected(bb);
+                    chckbxWave10.setSelected(bb);
+                    chckbxWave11.setSelected(bb);
+                    chckbxWave12.setSelected(bb);
+                    chckbxWave13.setSelected(bb);
+                    chckbxWave14.setSelected(bb);
+                    chckbxWave15.setSelected(bb);
+                    chckbxWave16.setSelected(bb);
+                    updateLabel();
+                }
             }
         });
         leftPanel.add(btnAllOn, BorderLayout.SOUTH);
@@ -490,6 +495,7 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
     private void updateLabel() {
         btnWCDefault.setText("Full Color");
         btnWCSimple.setText("Mono Color");
+        btnAllOn.setText("Show all");
         if (rdbtnModeDetail.isSelected() == true) {
             panel.traceViewMode = MultiWaveViewerPanel.TRACE_VIEW_MODE_DETAIL;
         }
@@ -500,6 +506,7 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
             panel.traceViewMode = MultiWaveViewerPanel.TRACE_VIEW_MODE_SPECT;
             btnWCDefault.setText("FQ.Range");
             btnWCSimple.setText("FQ.Res");
+            btnAllOn.setText("Filter");
         }
         else if (rdbtnModeInfo.isSelected() == true) {
             panel.traceViewMode = MultiWaveViewerPanel.TRACE_VIEW_MODE_INFO;
@@ -550,7 +557,13 @@ public class WaveViewerFrame extends JFrame implements ActionListener {
         if (rdbtnModeDetail.isSelected() == false) {
             isVisibleChckbxWave = false;
         }
-        btnAllOn.setVisible(isVisibleChckbxWave);
+        
+        if (rdbtnModeSpectrum.isSelected() == true) {
+            btnAllOn.setVisible(true);
+        }
+        else {
+            btnAllOn.setVisible(isVisibleChckbxWave);
+        }
         btnAllOff.setVisible(isVisibleChckbxWave);
         chckbxAutoWaveVisible.setVisible(isVisibleChckbxWave);
         chckbxWave1.setVisible(isVisibleChckbxWave);

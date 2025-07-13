@@ -65,18 +65,21 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
     private int selectedChannel = -1;
     private double selectedValue = 0.0;
 
-    private int spectrumDispRangeLevel = 1;
+    private int spectrumDispRangeLevel = 1; // 表示周波数レンジ 
     private static final double spectrumDispRange[] = { 2000.0, 4000.0, 8000.0, 16000.0, };
-
     public void toggleSpectrumDispRange() {
         spectrumDispRangeLevel = (spectrumDispRangeLevel + 1) % spectrumDispRange.length;
     }
 
-    private int spectrumFreqResolutionLevel = 1;
+    private int spectrumFreqResolutionLevel = 1; // 周波数分解能レベル  
     private static final int spectrumFreqResolution[] = { 1024, 2048, 4096, 8192, };
-
     public void toggleSpectrumFreqResolution() {
         spectrumFreqResolutionLevel = (spectrumFreqResolutionLevel + 1) % spectrumFreqResolution.length;
+    }
+    
+    private boolean isValidMovingAvgFilter = true; //移動平均フィルター 
+    public void toggleValidMovingAvgFilter() {
+        isValidMovingAvgFilter = !isValidMovingAvgFilter;
     }
 
     /**
@@ -925,12 +928,12 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
 
         return String.format("%s%d %+4.1f cents", name, octave, cents);
     }
-
+    
+    boolean useBlackmanWindow = false;
     public void paintSpectrum(Graphics g) {
-        if (d1 == null || d1.length <= 2)
-            return;
+        if (d1 == null || d1.length <= 2) return;
 
-        // 合計バッファ生成
+        // --- 合計バッファ生成 ---
         int[] dispData = new int[d1.length];
         Arrays.fill(dispData, 0);
         for (int j = 0; j < visibleWave.length; j++) {
@@ -939,7 +942,7 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
             }
         }
 
-        // ステレオ → モノ変換（short値）、正規化
+        // --- ステレオ → モノラル変換 + 正規化 ---
         int samples = dispData.length / 4;
         double[] signal = new double[samples];
         for (int i = 0; i < samples; i++) {
@@ -947,7 +950,6 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
             int msbL = dispData[i * 4 + 1];
             int lsbR = dispData[i * 4 + 2] & 0xFF;
             int msbR = dispData[i * 4 + 3];
-
             short left = (short) ((msbL << 8) | lsbL);
             short right = (short) ((msbR << 8) | lsbR);
             signal[i] = ((left + right) / 2.0) / 32768.0;
@@ -955,15 +957,19 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
 
         // --- DC除去 ---
         double mean = Arrays.stream(signal).average().orElse(0.0);
-        for (int i = 0; i < signal.length; i++) {
-            signal[i] -= mean;
-        }
+        for (int i = 0; i < signal.length; i++) signal[i] -= mean;
 
-        // --- FFT入力用 Complex 配列（+ ハミング窓） ---
+        // --- FFT用入力生成（Blackman or Hamming） ---
         int fftSize = spectrumFreqResolution[spectrumFreqResolutionLevel];
         Complex[] input = new Complex[fftSize];
         for (int i = 0; i < fftSize; i++) {
-            double window = 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (fftSize - 1));
+            double window = 1.0;
+            if (useBlackmanWindow) {
+                window = 0.42 - 0.5 * Math.cos(2 * Math.PI * i / (fftSize - 1))
+                             + 0.08 * Math.cos(4 * Math.PI * i / (fftSize - 1));
+            } else {
+                window = 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (fftSize - 1));
+            }
             double val = (i < signal.length) ? signal[i] * window : 0.0;
             input[i] = new Complex(val, 0);
         }
@@ -972,38 +978,60 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
         Complex[] result = fft(input);
         double[] magnitude = new double[fftSize / 2];
         for (int i = 0; i < magnitude.length; i++) {
-            magnitude[i] = 20 * Math.log10(result[i].abs() + 1e-6);
+            double amp = result[i].abs() * Math.sqrt(2.0 / fftSize);
+            magnitude[i] = 20 * Math.log10(amp + 1e-12);
+        }
+
+        // --- ノイズフロア除去 ---
+        double noiseFloor = -120.0;
+        for (int i = 0; i < magnitude.length; i++) {
+            if (magnitude[i] < noiseFloor) magnitude[i] = noiseFloor;
+        }
+
+        // --- 平滑化（移動平均） ---
+        if (isValidMovingAvgFilter) {
+            double[] smoothed = new double[magnitude.length];
+            int window = 3;
+            for (int i = 0; i < magnitude.length; i++) {
+                double sum = 0.0;
+                int count = 0;
+                for (int j = -window; j <= window; j++) {
+                    int idx = i + j;
+                    if (idx >= 0 && idx < magnitude.length) {
+                        sum += magnitude[idx];
+                        count++;
+                    }
+                }
+                smoothed[i] = sum / count;
+            }
+            magnitude = smoothed;
         }
 
         // --- 描画設定 ---
         int sampleRate = (int) SoundSourceChannel.SAMPLE_RATE;
-        int w = this.getWidth();
-        int h = this.getHeight();
-        double maxDB = 55;
-        double minDB = -60;
+        int w = getWidth();
+        int h = getHeight();
+        double maxDB = 10;
+        double minDB = -90;
         double freqPerBin = sampleRate / (double) fftSize;
 
-        // 表示最大周波数（ここで制限）
         double maxDisplayHz = spectrumDispRange[spectrumDispRangeLevel];
-        int maxBin = (int) (maxDisplayHz / freqPerBin);
-        maxBin = Math.min(maxBin, magnitude.length);
+        int maxBin = Math.min((int)(maxDisplayHz / freqPerBin), magnitude.length);
         double binWidth = (double) w / maxBin;
 
         // 背景
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, w, h);
 
-        // --- ピーク周波数の検出（低域除外） ---
+        // --- ピーク検出 ---
         double peakFreq = 0;
         double peakValue = -Double.MAX_VALUE;
-        int startBin = 0;
-
         int[] xPoints = new int[maxBin];
         int[] yPoints = new int[maxBin];
 
         for (int i = 0; i < maxBin; i++) {
             double db = magnitude[i];
-            if (i >= startBin && db > peakValue) {
+            if (db > peakValue) {
                 peakValue = db;
                 peakFreq = i * freqPerBin;
             }
@@ -1015,16 +1043,19 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
             yPoints[i] = y;
         }
 
-        // --- ピーク位置に縦線（赤）を描画 ---
+        // ピーク位置に縦線
         g.setColor(Color.DARK_GRAY);
         int peakX = (int) Math.round(peakFreq / maxDisplayHz * w);
         g.drawLine(peakX, 0, peakX, h);
+        int peakY = h - (int) ((peakValue - minDB) / (maxDB - minDB) * h);
+        peakY = Math.min(h, Math.max(0, peakY)); // 範囲制限
+        g.drawLine(0, peakY, w, peakY);
 
-        // 線グラフで描画
-        g.setColor(Color.GREEN);
+        // 線描画
+        g.setColor(Color.CYAN);
         g.drawPolyline(xPoints, yPoints, maxBin);
 
-        // --- ラベル描画 ---
+        // ラベル描画
         g.setColor(Color.WHITE);
         int numLabels = 10;
         for (int i = 0; i <= numLabels; i++) {
@@ -1033,10 +1064,11 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
             g.drawString(freq + "Hz", x, h - 2);
         }
 
+        // ピークノート
         String peakNote = frequencyToNoteWithCent(peakFreq);
-
-        g.drawString("Peak: " + new DecimalFormat("0.0").format(peakFreq) + " Hz (" + peakNote + ")", 10, 20);
+        g.drawString("Peak: " + new DecimalFormat("0.0").format(peakFreq) + " Hz, " + new DecimalFormat("0.0").format(peakValue) + " dB" + " (" + peakNote + ")", 10, 20);
         g.drawString("Reso: " + new DecimalFormat("0.0").format(freqPerBin) + " Hz", 10, 36);
+        g.drawString("Filter: " + (isValidMovingAvgFilter ? "ON" : "OFF"), 10, 52);
     }
 
     @Override
@@ -1088,6 +1120,10 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
                 && my <= CONTROL_DRG_VOL_Y + CONTROL_DRG_BAR_HEIGHT) {
 
         }
+        
+        if (traceViewMode == TRACE_VIEW_MODE_SPECT) {
+            toggleValidMovingAvgFilter();
+        }
 
         pressedX = mx;
         pressedY = my;
@@ -1124,6 +1160,10 @@ public class MultiWaveViewerPanel extends JPanel implements MouseListener {
 
         Complex mul(Complex b) {
             return new Complex(re * b.re - im * b.im, re * b.im + im * b.re);
+        }
+        
+        public Complex div(double val) {
+            return new Complex(re / val, im / val);
         }
 
         double abs() {
