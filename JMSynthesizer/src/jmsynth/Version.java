@@ -13,5 +13,5 @@ package jmsynth;
  *
  */
 class Version {
-    public static String NO = "1.01";
+    public static String NO = "1.02";
 }
