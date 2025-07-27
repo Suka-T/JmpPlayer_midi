@@ -429,12 +429,8 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         mntmToFrontAll = new JMenuItem("To Front");
         mntmToFrontAll.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                for (String name : JMPCore.getWindowManager().getWindowNameList()) {
-                    if (name != WindowManager.WINDOW_NAME_MAIN) {
-                        JMPCore.getWindowManager().toFront(name);
-                    }
-                    JMPCore.getWindowManager().toFront(WindowManager.WINDOW_NAME_MAIN);
-                }
+                JMPCore.getPluginManager().toFrontAll();
+                JMPCore.getWindowManager().toFrontAll();
             }
         });
 

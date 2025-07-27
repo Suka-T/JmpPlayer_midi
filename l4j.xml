@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch4jConfig>
-  <dontWrapJar>false</dontWrapJar>
+  <dontWrapJar>true</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>project\JMP\JMPPlayer.jar</jar>
+  <jar>JMPPlayer.jar</jar>
   <outfile>JMPPlayer.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir>.</chdir>
   <priority>normal</priority>
-  <downloadUrl>https://bell-sw.com/pages/downloads/#jdk-8-lts</downloadUrl>
+  <downloadUrl></downloadUrl>
   <supportUrl></supportUrl>
   <stayAlive>false</stayAlive>
   <restartOnCrash>false</restartOnCrash>
@@ -18,7 +18,11 @@
     <path>jre</path>
     <requiresJdk>false</requiresJdk>
     <requires64Bit>false</requires64Bit>
-    <minVersion>1.8.0</minVersion>
+    <minVersion>21</minVersion>
     <maxVersion></maxVersion>
+    <opt>-XX:+UseZGC</opt>
+    <opt>-Xmx16G</opt>
+    <opt>-XX:+UnlockExperimentalVMOptions</opt>
+    <opt>-XX:SoftMaxHeapSize=2G</opt>
   </jre>
 </launch4jConfig>

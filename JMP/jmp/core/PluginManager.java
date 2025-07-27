@@ -937,4 +937,18 @@ public class PluginManager extends AbstractManager {
         }
         this.preLoadPlugin = preLoadPlugin;
     }
+    
+    public void toFrontAll() { 
+        for (String pName : getPluginsNameSet()) {
+            toFront(pName);
+        }
+    }
+    
+    public void toFront(String name) {
+        // プラグインを開きなおすことで最前面に表示する 
+        PluginWrapper pw = getPluginWrapper(name);
+        if (pw.isOpen() == true && getPluginState(name) != PluginState.INVALID) {
+            pw.open();
+        }
+    }
 }

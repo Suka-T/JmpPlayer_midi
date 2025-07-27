@@ -298,6 +298,19 @@ public class WindowManager extends AbstractManager implements IWindowManager {
         }
     }
 
+    public void toFrontAll() {
+        if (isVisibleBuiltinSynthFrame() == true) {
+            openBuiltinSynthFrame();
+        }
+        
+        for (String name : getWindowNameList()) {
+            if (name.equals(WindowManager.WINDOW_NAME_MAIN) == false) {
+                toFront(name);
+            }
+        }
+        toFront(WindowManager.WINDOW_NAME_MAIN);
+    }
+    
     public void toFront(String name) {
         IJmpWindow win = getWindow(name);
         if (win.isWindowVisible() == true) {
