@@ -18,17 +18,19 @@ public class DefaultProgramChangeTable extends ProgramChangeTable {
 
         // GS準拠
 
+        OscillatorSet pianoSet = WavePreset.getOscillatorSet(0.0, 1.0, 0.25, 0.5, 1000, 1500, 1000, ofc, WavePreset.PRESET_NAME_SINE);
+        
         /*
          * Piano
          */
-        this.sets[PC_1] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_2] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_3] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_4] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_5] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_6] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_7] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
-        this.sets[PC_8] = WavePreset.getOscillatorSet(ofc, WavePreset.PRESET_NAME_SINE);
+        this.sets[PC_1] = pianoSet;
+        this.sets[PC_2] = pianoSet;
+        this.sets[PC_3] = pianoSet;
+        this.sets[PC_4] = pianoSet;
+        this.sets[PC_5] = pianoSet;
+        this.sets[PC_6] = pianoSet;
+        this.sets[PC_7] = pianoSet;
+        this.sets[PC_8] = pianoSet;
 
         /*
          * Chromatic Percussion
