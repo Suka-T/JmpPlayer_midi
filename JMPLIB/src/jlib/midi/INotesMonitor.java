@@ -12,6 +12,7 @@ public interface INotesMonitor {
     abstract boolean isNoteOn(int channel, int midiNo);
     abstract int getTopNoteOnChannel(int midiNo);
     abstract int getTopNoteOnTrack(int midiNo);
+    abstract int getTopNoteOnTrack(int midiNo, boolean orderAsc);
     abstract int getNumOfTrack();    
     abstract int getPitchBend(int channel);
     abstract int getExpression(int channel);
