@@ -32,6 +32,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     private long startTime = System.currentTimeMillis();
     private long pastNotesCount = 0;
     private double nps = 0;
+    private double maxNps = 0;
 
     private int[][] noteOnMonitorChannel = null;
     private List<int[]> noteOnMonitorTrack = null;
@@ -81,6 +82,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     @Override
     public void reset() {
         notesCount = 0;
+        maxNps = 0.0;
         for (int i = 0; i < 16; i++) {
             expressionMonitor[i] = 127;
             pitchBendMonitor[i] = 0;
@@ -132,6 +134,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
         if (currentTime - startTime >= 200) {
             long diff = notesCount - pastNotesCount;
             nps = (double) diff * 1000 / (currentTime - startTime);
+            if (nps > maxNps) {
+                maxNps = nps;
+            }
             pastNotesCount = notesCount;
             startTime = currentTime;
         }
@@ -150,6 +155,11 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     @Override
     public double getNps() {
         return nps;
+    }
+    
+    @Override
+    public double getMaxNps() {
+        return maxNps;
     }
 
     @Override
@@ -230,5 +240,4 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     public int getExpression(int channel) {
         return expressionMonitor[channel];
     }
-
 }
