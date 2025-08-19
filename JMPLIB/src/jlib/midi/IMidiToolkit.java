@@ -55,6 +55,13 @@ public interface IMidiToolkit {
      * @throws MidiUnavailableException
      */
     abstract MidiDevice getMidiDevice(String name) throws MidiUnavailableException;
+    
+    /**
+     * MIDIレシーバーデバイス名一覧取得。DataManagerに設定可能なキー名を取得する
+     *  
+     * @return
+     */
+    abstract String[] getMidiRecieverItems();
 
     /**
      * ByteメッセージからMIDIメッセージオブジェクト生成

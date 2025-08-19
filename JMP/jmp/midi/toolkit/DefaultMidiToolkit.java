@@ -17,8 +17,10 @@ import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
 
+import jlib.core.ISoundManager;
 import jlib.midi.IMidiToolkit;
 import jlib.midi.MidiByte;
+import jmp.core.JMPCore;
 import jmp.midi.JMPBuiltinSynthMidiDevice;
 import jmp.midi.JMPMidiReader;
 import jmp.midi.MidiByteMessage;
@@ -126,6 +128,20 @@ public class DefaultMidiToolkit implements IMidiToolkit {
             throw new MidiUnavailableException();
         }
         return dev;
+    }
+    
+    @Override
+    public String[] getMidiRecieverItems() {
+        List<String> ret = new ArrayList<String>();
+        MidiDevice.Info[] infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
+        
+        ret.add(ISoundManager.AUTO_RECEIVER_NAME);
+        ret.add(ISoundManager.NULL_RECEIVER_NAME);
+        ret.add(ISoundManager.RENDER_ONLY_RECEIVER_NAME);
+        for (int i = 0; i < infosOfRecv.length; i++) {
+            ret.add(infosOfRecv[i].getName());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override

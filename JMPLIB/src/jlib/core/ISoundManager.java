@@ -7,7 +7,8 @@ import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 
 public interface ISoundManager {
-	/** アプリ固有のレシーバー名 */
+    /** アプリ固有のレシーバー名 */
+    public static final String AUTO_RECEIVER_NAME = "AUTO";
     public static final String NULL_RECEIVER_NAME = "NULL";
     public static final String RENDER_ONLY_RECEIVER_NAME = "RENDER_ONLY";
     

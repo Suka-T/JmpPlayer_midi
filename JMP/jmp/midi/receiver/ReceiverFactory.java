@@ -7,7 +7,7 @@ public class ReceiverFactory {
     };
 
     public ReceiverCreator create(String name) {
-        if (name.equals("") == true || name.isEmpty() == true) {
+        if (name.equals("") == true || name.isEmpty() == true || name.equals(SoundManager.AUTO_RECEIVER_NAME) == true) {
             return new AutoSelectSynthReceiverCreator();
         }
         else if (name.equals(SoundManager.NULL_RECEIVER_NAME) == true) {
