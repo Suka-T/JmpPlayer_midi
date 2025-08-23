@@ -221,4 +221,10 @@ public interface ISystemManager {
      * @return ステータス 
      */
     abstract boolean getStatus(int statusId);
+    
+    /**
+     * JMPPアプリケーションを終了する。(自動的にプラグインが終了する)
+     * 
+     */
+    abstract void exitApplication();
 }

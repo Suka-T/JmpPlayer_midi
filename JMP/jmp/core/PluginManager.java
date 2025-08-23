@@ -885,7 +885,9 @@ public class PluginManager extends AbstractManager {
     }
 
     public void closeAllPlugins() {
-        observers.close();
+        if (JMPCore.getSystemManager().isEnableStandAlonePlugin() == false) { //STDプラグインモードは不可 
+            observers.close();
+        }
     }
 
     public void closeNonSupportPlugins(File file) {

@@ -62,7 +62,7 @@ public class JMPCore {
             getWindowManager().updateLanguage();
 
             /* ライセンス確認 */
-            if (JMPFlags.LibraryMode == false) {
+            if (JMPFlags.LibraryMode == false && getSystemManager().isEnableStandAlonePlugin() == false) {
                 /* ライセンス確認 */
                 if (JMPFlags.ActivateFlag == false) {
                     if (JMPLoader.UseConfigFile == true) {

@@ -19,6 +19,7 @@ import jlib.plugin.IPlugin;
 import jlib.util.IUtilityToolkit;
 import jmp.ErrorDef;
 import jmp.JMPFlags;
+import jmp.JMPLibrary;
 import jmp.JMPLoader;
 import jmp.core.FileManager.AutoPlayMode;
 import jmp.file.CommonRegister;
@@ -810,5 +811,13 @@ public class SystemManager extends AbstractManager implements ISystemManager {
                 return JMPFlags.NowLoadingFlag;
         }
         return false;
+    }
+    
+    @Override
+    public void exitApplication() {
+        JMPCore.getSoundManager().stop();
+
+        // JMPリソースの終了処理
+        JMPLibrary.exitApplication();
     }
 }

@@ -289,11 +289,13 @@ public class WindowManager extends AbstractManager implements IWindowManager {
         }
 
         // プラグインもすべて閉じる
-        PluginManager pm = JMPCore.getPluginManager();
-        for (String pname : pm.getPluginsNameSet()) {
-            PluginWrapper plg = pm.getPluginWrapper(pname);
-            if (plg != null) {
-                plg.close();
+        if (JMPCore.getSystemManager().isEnableStandAlonePlugin() == false) {
+            PluginManager pm = JMPCore.getPluginManager();
+            for (String pname : pm.getPluginsNameSet()) {
+                PluginWrapper plg = pm.getPluginWrapper(pname);
+                if (plg != null) {
+                    plg.close();
+                }
             }
         }
     }
