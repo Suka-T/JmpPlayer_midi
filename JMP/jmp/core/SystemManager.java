@@ -334,9 +334,6 @@ public class SystemManager extends AbstractManager implements ISystemManager {
                 return false;
             }
         }
-        if (makeDir(aPath[PATH_PLUGINS_DIR]) == false) {
-            return false;
-        }
         if (makeDir(aPath[PATH_DATA_DIR]) == false) {
             return false;
         }

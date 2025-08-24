@@ -16,6 +16,7 @@ import function.Utility;
 import jlib.core.ISystemManager;
 import jlib.plugin.IPlugin;
 import jmp.JMPFlags;
+import jmp.JMPLoader;
 import jmp.core.asset.AbstractCoreAsset;
 import jmp.core.asset.AbstractCoreAsset.OperateType;
 import jmp.core.asset.FileLoadCoreAsset;
@@ -96,8 +97,10 @@ public class PluginManager extends AbstractManager {
     protected boolean initFunc() {
         super.initFunc();
 
-        // プラグイン状態の復帰
-        loadPluginState();
+        if (JMPLoader.UsePluginDirectory == true) {
+            // プラグイン状態の復帰
+            loadPluginState();
+        }
 
         return true;
     }
@@ -107,8 +110,10 @@ public class PluginManager extends AbstractManager {
 
         closeAllPlugins();
 
-        // プラグインの状態を保存する
-        savePluginState();
+        if (JMPLoader.UsePluginDirectory == true) {
+            // プラグインの状態を保存する
+            savePluginState();
+        }
 
         // プラグイン終了処理
         exit();
