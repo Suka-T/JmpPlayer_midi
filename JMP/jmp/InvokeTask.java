@@ -2,6 +2,7 @@ package jmp;
 
 import java.io.File;
 
+import jlib.core.ISystemManager.ErrorCategory;
 import jlib.plugin.IPlugin;
 import jmp.core.JMPCore;
 import jmp.core.TaskManager;
@@ -62,7 +63,7 @@ class InvokeTask implements Runnable {
         invokeResult = endResult;
 
         if (JMPCore.ErrorId != ErrorDef.ERROR_ID_NOERROR) {
-            JMPCore.getSystemManager().showSystemErrorMessage(JMPCore.ErrorId);
+            JMPCore.getSystemManager().errorHandle(ErrorCategory.ERROR, ErrorDef.getTotalMsg(JMPCore.ErrorId));
         }
     }
 

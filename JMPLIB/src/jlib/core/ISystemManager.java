@@ -4,6 +4,13 @@ import jlib.plugin.IPlugin;
 import jlib.util.IUtilityToolkit;
 
 public interface ISystemManager {
+    
+    public static enum ErrorCategory {
+        WARNING,
+        ERROR,
+        CRITICAL,
+    };
+    
 
     // パスのID
 
@@ -227,4 +234,16 @@ public interface ISystemManager {
      * 
      */
     abstract void exitApplication();
+    
+    /**
+     * エラーハンドリング 
+     * 
+     */
+    abstract void errorHandle(ErrorCategory category, String msg);
+
+    /**
+     * エラーハンドリング 
+     * 
+     */
+    abstract void errorHandle(Throwable e);
 }

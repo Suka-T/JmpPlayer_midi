@@ -17,7 +17,6 @@ import jlib.core.ISystemManager;
 import jlib.gui.IJmpMainWindow;
 import jlib.plugin.IPlugin;
 import jlib.util.IUtilityToolkit;
-import jmp.ErrorDef;
 import jmp.JMPFlags;
 import jmp.JMPLibrary;
 import jmp.JMPLoader;
@@ -26,8 +25,10 @@ import jmp.file.CommonRegister;
 import jmp.file.CommonRegisterINI;
 import jmp.gui.DebugLogConsole;
 import jmp.lang.DefineLanguage;
+import jmp.lang.DefineLanguage.LangID;
 import jmp.midi.JMPBuiltinSynthMidiDevice;
 import jmp.midi.toolkit.MidiToolkitManager;
+import jmp.task.ICallbackFunction;
 import jmp.task.TaskOfNotify.NotifyID;
 import jmp.util.JmpUtil;
 import jmp.util.toolkit.UtilityToolkitManager;
@@ -144,26 +145,6 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         if (console != null) {
             console.updateText();
         }
-    }
-
-    public void showSystemErrorMessage(int errorID) {
-        String errorMsg = ErrorDef.getTotalMsg(errorID);
-
-        Component parent = null;
-        if (JMPCore.getWindowManager().isFinishedInitialize() == true) {
-            IJmpMainWindow win = JMPCore.getWindowManager().getMainWindow();
-            if (win != null) {
-                if (win.isWindowVisible() == true) {
-                    if (win instanceof Component) {
-                        parent = (Component) win;
-                    }
-                    else {
-                        parent = null;
-                    }
-                }
-            }
-        }
-        JOptionPane.showMessageDialog(parent, errorMsg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     SystemManager() {
@@ -809,12 +790,95 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         }
         return false;
     }
-    
+
     @Override
     public void exitApplication() {
         JMPCore.getSoundManager().stop();
 
         // JMPリソースの終了処理
         JMPLibrary.exitApplication();
+    }
+
+    protected void errorHandleImpl(ErrorCategory category, String msg) {
+        
+        ICallbackFunction cb = new ICallbackFunction() {
+
+            @Override
+            public void callback() {
+                Component parent = null;
+                if (JMPCore.getWindowManager().isFinishedInitialize() == true) {
+                    IJmpMainWindow win = JMPCore.getWindowManager().getMainWindow();
+                    if (win != null) {
+                        if (win.isWindowVisible() == true) {
+                            if (win instanceof Component) {
+                                parent = (Component) win;
+                            }
+                            else {
+                                parent = null;
+                            }
+                        }
+                    }
+                    
+                    if (JMPCore.getSoundManager().isPlay() == true) {
+                        JMPCore.getSoundManager().stop();
+                    }
+                }
+
+                int iCat = JOptionPane.ERROR_MESSAGE;
+                String strCat = "Error";
+                switch (category) {
+                    case CRITICAL:
+                        strCat = "Critical";
+                        break;
+                    case ERROR:
+                        strCat = "Error";
+                        break;
+                    case WARNING:
+                        strCat = "Warning";
+                        iCat = JOptionPane.WARNING_MESSAGE;
+                        break;
+                    default:
+                        break;
+
+                }
+                JOptionPane.showMessageDialog(parent, msg, strCat, iCat);
+
+                if (category == ErrorCategory.CRITICAL) {
+                    System.exit(1);
+                }
+            }
+        };
+
+        if (JMPCore.getWindowManager().isFinishedInitialize() == true) {
+            JMPCore.getTaskManager().queuing(cb);
+        }
+        else {
+            cb.callback();
+        }
+    }
+
+    public void errorHandle(ErrorCategory category, LangID langId) {
+        errorHandleImpl(category, JMPCore.getLanguageManager().getLanguageStr(langId));
+    }
+
+    public void errorHandle(ErrorCategory category, String msg) {
+        errorHandleImpl(category, msg);
+    }
+
+    public void errorHandle(Throwable e) {
+        ErrorCategory cat = ErrorCategory.ERROR;
+        if (e instanceof Error) {
+            cat = ErrorCategory.CRITICAL;
+        }
+        else if (e instanceof RuntimeException) {
+            cat = ErrorCategory.ERROR;
+        }
+        else if (e instanceof Exception) {
+            cat = ErrorCategory.ERROR;
+        }
+        String msg = "";
+        msg += "Type : " +  e.getClass().getSimpleName() + Platform.getNewLine();
+        msg += e.getMessage();
+        errorHandleImpl(cat, msg);
     }
 }

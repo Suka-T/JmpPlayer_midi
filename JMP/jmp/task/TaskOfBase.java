@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import jmp.core.JMPCore;
+
 public abstract class TaskOfBase implements ITask, Runnable {
 
     class TaskQueue {
@@ -105,34 +107,34 @@ public abstract class TaskOfBase implements ITask, Runnable {
         begin();
 
         while (isRunnable) {
-            long pastTime = System.currentTimeMillis();
-
-            if (queue.isEmpty() == false) {
-                TaskPacket obj = pop();
-                if (obj != null) {
-                    interpret(obj);
-                }
-            }
-
-            loop();
-
-            long newTime = System.currentTimeMillis();
-            long pSleepTime = sleepTime - (newTime - pastTime);
-            if (pSleepTime < 1) {
-                pSleepTime = 1;
-            }
-            notifySleepTimeCalc(pSleepTime);
-
-            if (this.waitTime > 0) {
-                // 待ち時間を加算
-                pSleepTime += this.waitTime;
-                this.waitTime = 0;
-            }
-
             try {
+                long pastTime = System.currentTimeMillis();
+    
+                if (queue.isEmpty() == false) {
+                    TaskPacket obj = pop();
+                    if (obj != null) {
+                        interpret(obj);
+                    }
+                }
+    
+                loop();
+    
+                long newTime = System.currentTimeMillis();
+                long pSleepTime = sleepTime - (newTime - pastTime);
+                if (pSleepTime < 1) {
+                    pSleepTime = 1;
+                }
+                notifySleepTimeCalc(pSleepTime);
+    
+                if (this.waitTime > 0) {
+                    // 待ち時間を加算
+                    pSleepTime += this.waitTime;
+                    this.waitTime = 0;
+                }
                 Thread.sleep(pSleepTime);
             }
-            catch (Exception e) {
+            catch (Throwable e) {
+                JMPCore.getSystemManager().errorHandle(e);
             }
         }
 

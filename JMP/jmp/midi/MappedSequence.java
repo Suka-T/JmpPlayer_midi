@@ -36,7 +36,7 @@ public class MappedSequence extends Sequence {
         return mappedByteBuffers.get(index);
     }
 
-    public void parse(short trkIndex, MappedParseFunc func) throws Exception {
+    public void parse(short trkIndex, MappedParseFunc func) throws IOException {
         long startTick = func.getStartTick();
         long endTick = func.getEndTick();
         if (startTick != -1) {

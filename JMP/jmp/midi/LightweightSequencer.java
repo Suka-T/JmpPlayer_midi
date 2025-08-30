@@ -166,6 +166,7 @@ public class LightweightSequencer implements Sequencer {
                             catch (InvalidMidiDataException e) {
                                 e.printStackTrace();
                             }
+                            
                         }
 
                         @Override
@@ -173,8 +174,8 @@ public class LightweightSequencer implements Sequencer {
                         }
                     });
                 }
-                catch (Exception e) {
-                    e.printStackTrace();
+                catch (Throwable e) {
+                    JMPCore.getSystemManager().errorHandle(e);
                 }
             });
         }
@@ -284,8 +285,8 @@ public class LightweightSequencer implements Sequencer {
                         }
                     });
                 }
-                catch (Exception e) {
-                    e.printStackTrace();
+                catch (Throwable e) {
+                    JMPCore.getSystemManager().errorHandle(e);
                 }
             });
         }
@@ -330,58 +331,50 @@ public class LightweightSequencer implements Sequencer {
         long ticksToAdvance = 0;
         long i = 0;
         while (running.get()) {
-            if (paused.get()) {
-                try {
+            try {
+                if (paused.get()) {
                     Thread.sleep(10);
                     continue;
                 }
-                catch (InterruptedException e) {
-                    break;
+    
+                nowNs = System.nanoTime();
+                deltaUs = (nowNs - lastTimeNs) / 1000;
+                lastTimeNs = nowNs;
+    
+                // Δtick = Δμ秒 / (テンポ（μs/拍） / resolution)
+                microPerQuarter = 60_000_000.0 / tempoBPM;
+                ticksDelta = (double) (deltaUs * resolution) / microPerQuarter;
+    
+                tickRemainder += ticksDelta;
+                ticksToAdvance = (long) tickRemainder;
+                tickRemainder -= ticksToAdvance;
+    
+                for (i = 0; i < ticksToAdvance; i++) {
+                    if (tempoChanges.containsKey(tickPosition)) {
+                        setTempoInBPM(tempoChanges.get(tickPosition));
+    
+                        // microPerQuarter を更新
+                        microPerQuarter = 60_000_000.0 / tempoBPM;
+                    }
+    
+                    if (i >= getTickLength()) {
+                        stop();
+                        break;
+                    }
+                    tickPosition++;
                 }
-            }
-
-            nowNs = System.nanoTime();
-            deltaUs = (nowNs - lastTimeNs) / 1000;
-            lastTimeNs = nowNs;
-
-            // Δtick = Δμ秒 / (テンポ（μs/拍） / resolution)
-            microPerQuarter = 60_000_000.0 / tempoBPM;
-            ticksDelta = (double) (deltaUs * resolution) / microPerQuarter;
-
-            tickRemainder += ticksDelta;
-            ticksToAdvance = (long) tickRemainder;
-            tickRemainder -= ticksToAdvance;
-
-            for (i = 0; i < ticksToAdvance; i++) {
-                if (tempoChanges.containsKey(tickPosition)) {
-                    setTempoInBPM(tempoChanges.get(tickPosition));
-
-                    // microPerQuarter を更新
-                    microPerQuarter = 60_000_000.0 / tempoBPM;
+    
+                midiMsgPump.nextTick(tickPosition);
+                if (isMidioutDump == true) {
+                    // busy waitを軽減
+                    while (!midiMsgPump.isWait()) {
+                        LockSupport.parkNanos(500_000); // 0.5ms sleep相当
+                    }
                 }
-
-                if (i >= getTickLength()) {
-                    stop();
-                    break;
-                }
-                tickPosition++;
-            }
-
-            midiMsgPump.nextTick(tickPosition);
-            if (isMidioutDump == true) {
-                // busy waitを軽減
-                while (!midiMsgPump.isWait()) {
-                    LockSupport.parkNanos(500_000); // 0.5ms sleep相当
-                }
-            }
-
-            try {
                 Thread.sleep(1);
+            } catch (Throwable e) {
+                JMPCore.getSystemManager().errorHandle(e);
             }
-            catch (InterruptedException e) {
-                // TODO 自動生成された catch ブロック
-                e.printStackTrace();
-            } // スムーズなCPU制御
         }
     }
 
@@ -961,54 +954,46 @@ public class LightweightSequencer implements Sequencer {
         @Override
         public void run() {
             while (running.get()) {
-                if (seqMode == ESeqMode.TickOnly) {
-                    // Tickモードは音声出力しない
-                    if (offEventMap.isEmpty() == false) {
-                        offEventMap.clear();
-                    }
-
-                    try {
-                        Thread.sleep(100);
-                    }
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    continue;
-                }
-
-                if (waitFlag.get() == false) {
-                    offEventMap.clear();
-
-                    long startTick = blockTick * readBlockIndex;
-                    long endTick = (blockTick * (readBlockIndex + 1)) - 1;
-                    if (startTick < 0) {
-                        startTick = 0;
-                    }
-                    else if (getTickLength() < startTick) {
-                        startTick = getTickLength();
-                    }
-                    if (endTick < 0) {
-                        endTick = 0;
-                    }
-                    else if (getTickLength() < endTick) {
-                        endTick = getTickLength();
-                    }
-
-                    if (endTick >= startTick) {
-                        // conflict args
-                        extractMidiEvent(offEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
-                    }
-
-                    waitFlag.set(true);
-                }
-
                 try {
+                    if (seqMode == ESeqMode.TickOnly) {
+                        // Tickモードは音声出力しない
+                        if (offEventMap.isEmpty() == false) {
+                            offEventMap.clear();
+                        }
+                        Thread.sleep(100);
+                        continue;
+                    }
+    
+                    if (waitFlag.get() == false) {
+                        offEventMap.clear();
+    
+                        long startTick = blockTick * readBlockIndex;
+                        long endTick = (blockTick * (readBlockIndex + 1)) - 1;
+                        if (startTick < 0) {
+                            startTick = 0;
+                        }
+                        else if (getTickLength() < startTick) {
+                            startTick = getTickLength();
+                        }
+                        if (endTick < 0) {
+                            endTick = 0;
+                        }
+                        else if (getTickLength() < endTick) {
+                            endTick = getTickLength();
+                        }
+    
+                        if (endTick >= startTick) {
+                            // conflict args
+                            extractMidiEvent(offEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
+                        }
+    
+                        waitFlag.set(true);
+                    }
                     Thread.sleep(1);
                 }
-                catch (InterruptedException e) {
-                    // TODO 自動生成された catch ブロック
-                    e.printStackTrace();
-                } // スムーズなCPU制御
+                catch (Throwable  e) {
+                    JMPCore.getSystemManager().errorHandle(e);
+                }
             }
         }
     }
@@ -1077,84 +1062,83 @@ public class LightweightSequencer implements Sequencer {
             long t = 0;
             long blockIndex = -1;
             while (running.get()) {
-                if (seekingFlag == false) {
-                    if (curBlockIndex != -1) {
-                        if (curTickPosition != nextTickPosition) {
-                            waitFlag.set(false);
-                        }
-                    }
-
-                    if (waitFlag.get() == false) {
-                        cur = curTickPosition;
-                        next = nextTickPosition;
-
-                        for (t = cur; t < next; t++) {
-                            blockIndex = t / blockTick;
-                            if (curBlockIndex == -1) {
-                                curBlockIndex = blockIndex;
-                                currentEventMap = eventMap1;
-                                offEventMap = eventMap2;
-                                currentEventMap.clear();
-
-                                long startTick = blockTick * curBlockIndex;
-                                long endTick = blockTick * (curBlockIndex + 1) - 1;
-                                if (startTick < 0) {
-                                    startTick = 0;
-                                }
-                                else if (getTickLength() < startTick) {
-                                    startTick = getTickLength();
-                                }
-                                if (endTick < 0) {
-                                    endTick = 0;
-                                }
-                                else if (getTickLength() < endTick) {
-                                    endTick = getTickLength();
-                                }
-
-                                if (seqMode != ESeqMode.TickOnly) {
-                                    if (endTick > startTick) {
-                                        // conflict args
-                                        extractMidiEvent(currentEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
-                                    }
-                                    extractWorker.read(curBlockIndex + 1);
-                                }
+                try {
+                    if (seekingFlag == false) {
+                        if (curBlockIndex != -1) {
+                            if (curTickPosition != nextTickPosition) {
+                                waitFlag.set(false);
                             }
-                            else {
-                                if (seqMode != ESeqMode.TickOnly) {
-                                    if (blockIndex != curBlockIndex) {
-                                        curBlockIndex = blockIndex;
-                                        extractWorker.waitForRead();
-
-                                        Map<Long, List<MidiEvent>> temp = currentEventMap;
-                                        currentEventMap = offEventMap;
-                                        offEventMap = temp;
+                        }
+    
+                        if (waitFlag.get() == false) {
+                            cur = curTickPosition;
+                            next = nextTickPosition;
+    
+                            for (t = cur; t < next; t++) {
+                                blockIndex = t / blockTick;
+                                if (curBlockIndex == -1) {
+                                    curBlockIndex = blockIndex;
+                                    currentEventMap = eventMap1;
+                                    offEventMap = eventMap2;
+                                    currentEventMap.clear();
+    
+                                    long startTick = blockTick * curBlockIndex;
+                                    long endTick = blockTick * (curBlockIndex + 1) - 1;
+                                    if (startTick < 0) {
+                                        startTick = 0;
+                                    }
+                                    else if (getTickLength() < startTick) {
+                                        startTick = getTickLength();
+                                    }
+                                    if (endTick < 0) {
+                                        endTick = 0;
+                                    }
+                                    else if (getTickLength() < endTick) {
+                                        endTick = getTickLength();
+                                    }
+    
+                                    if (seqMode != ESeqMode.TickOnly) {
+                                        if (endTick > startTick) {
+                                            // conflict args
+                                            extractMidiEvent(currentEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
+                                        }
                                         extractWorker.read(curBlockIndex + 1);
                                     }
                                 }
+                                else {
+                                    if (seqMode != ESeqMode.TickOnly) {
+                                        if (blockIndex != curBlockIndex) {
+                                            curBlockIndex = blockIndex;
+                                            extractWorker.waitForRead();
+    
+                                            Map<Long, List<MidiEvent>> temp = currentEventMap;
+                                            currentEventMap = offEventMap;
+                                            offEventMap = temp;
+                                            extractWorker.read(curBlockIndex + 1);
+                                        }
+                                    }
+                                }
+    
+                                onMeta(t);
+                                if (seqMode != ESeqMode.TickOnly) {
+                                    onTick(t);
+                                }
                             }
-
-                            onMeta(t);
-                            if (seqMode != ESeqMode.TickOnly) {
-                                onTick(t);
+                            curTickPosition = next;
+                            if (nextTickPosition == next) {
+                                waitFlag.set(true);
                             }
-                        }
-                        curTickPosition = next;
-                        if (nextTickPosition == next) {
-                            waitFlag.set(true);
                         }
                     }
-                }
-                else {
-                    // シーク中のリクエストは破棄
-                    waitFlag.set(true);
-                }
-
-                // 過負荷を防ぐため、最小限のSleep
-                try {
+                    else {
+                        // シーク中のリクエストは破棄
+                        waitFlag.set(true);
+                    }
+    
+                    // 過負荷を防ぐため、最小限のSleep
                     Thread.sleep(1);
-                }
-                catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    JMPCore.getSystemManager().errorHandle(e);
                 }
             }
         }

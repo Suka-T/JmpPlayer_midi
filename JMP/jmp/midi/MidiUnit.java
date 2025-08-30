@@ -1,6 +1,7 @@
 package jmp.midi;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -122,7 +123,7 @@ public class MidiUnit implements IMidiUnit {
     }
 
     @Override
-    public void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws Exception {
+    public void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws IOException {
         if (isValidSequence() == false) {
             return;
         }

@@ -1,5 +1,7 @@
 package jlib.midi;
 
+import java.io.IOException;
+
 /**
  * 高度なMidi関係の設定にアクセスするためのクラス
  *
@@ -76,9 +78,10 @@ public interface IMidiUnit {
      * 
      * @param trkIndex
      * @param func
+     * @throws IOException 
      * @throws Exception
      */
-    abstract void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws Exception ;
+    abstract void parseMappedByteBuffer(short trkIndex, MappedParseFunc func) throws IOException;
     
     /**
      * 有効なSequenceがあるかチェック 
