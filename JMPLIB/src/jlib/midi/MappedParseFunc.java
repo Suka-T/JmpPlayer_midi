@@ -4,11 +4,19 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 public class MappedParseFunc {
-    private StringBuilder sb = new StringBuilder(64); // 初期容量を指定
+    //private StringBuilder sb = new StringBuilder(64); // 初期容量を指定
     private long startTick = -1;
     private long endTick = -1;
+    private long waitMargin = 1000;
+    private long waitTime = 2;
+    
+    public void setWaintTime(long margin, long waitTime) {
+        this.waitMargin = margin;
+        this.waitTime = waitTime;
+    }
 
     public MappedParseFunc() {
         this.startTick = -1;
@@ -75,9 +83,21 @@ public class MappedParseFunc {
         int command = 0;
         int data1 = 0;
         int data2 = 0;
+        long pastMillis = System.currentTimeMillis();
+        long curMillis = System.currentTimeMillis();
         while (buf.hasRemaining()) {
             if (interrupt() == true) {
                 break;
+            }
+            
+            curMillis = System.currentTimeMillis();
+            if ((curMillis - pastMillis) > waitMargin) {
+                pastMillis = System.currentTimeMillis();
+                try {
+                    TimeUnit.MILLISECONDS.sleep(waitTime <= 0 ? 1 : waitTime);
+                }
+                catch (InterruptedException e) {
+                }
             }
             
             delta = readVariableLength(buf);
