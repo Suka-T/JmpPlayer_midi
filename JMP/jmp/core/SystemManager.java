@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 
@@ -798,13 +799,28 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         // JMPリソースの終了処理
         JMPLibrary.exitApplication();
     }
+    
+    /** エラーダイアログ表示中フラグ */
+    public JDialog showErrorDlg = null;
+    public ErrorCategory showErrorDlgCategory = ErrorCategory.ERROR;
 
-    protected void errorHandleImpl(ErrorCategory category, String msg) {
+    protected void errorHandleImpl(ErrorCategory category, String msg, boolean unsync) {
         
         ICallbackFunction cb = new ICallbackFunction() {
 
             @Override
             public void callback() {
+                if (showErrorDlg != null) {
+                    if (category == ErrorCategory.CRITICAL && showErrorDlgCategory != ErrorCategory.CRITICAL) {
+                        showErrorDlg.setVisible(false);
+                    }
+                    else {
+                        return;
+                    }
+                }
+                
+                showErrorDlgCategory = category;
+                
                 Component parent = null;
                 if (JMPCore.getWindowManager().isFinishedInitialize() == true) {
                     IJmpMainWindow win = JMPCore.getWindowManager().getMainWindow();
@@ -826,7 +842,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
 
                 int iCat = JOptionPane.ERROR_MESSAGE;
                 String strCat = "Error";
-                switch (category) {
+                switch (showErrorDlgCategory) {
                     case CRITICAL:
                         strCat = "Critical";
                         break;
@@ -841,15 +857,38 @@ public class SystemManager extends AbstractManager implements ISystemManager {
                         break;
 
                 }
-                JOptionPane.showMessageDialog(parent, msg, strCat, iCat);
+                
+                // JOptionPane を作成
+                JOptionPane optionPane = new JOptionPane(
+                        msg,
+                        iCat,
+                        JOptionPane.DEFAULT_OPTION,
+                        null,
+                        new Object[]{}
+                );
 
-                if (category == ErrorCategory.CRITICAL) {
-                    System.exit(1);
-                }
+                // モーダルでない JDialog を作る
+                showErrorDlg = optionPane.createDialog(parent, strCat);
+                showErrorDlg.setModal(false);
+                showErrorDlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                showErrorDlg.setAlwaysOnTop(true);
+                
+                showErrorDlg.addWindowListener(new java.awt.event.WindowAdapter() {
+                    @Override
+                    public void windowClosed(java.awt.event.WindowEvent e) {
+                        System.out.println("handle error.");
+                        if (showErrorDlgCategory == ErrorCategory.CRITICAL) {
+                            System.exit(1);
+                        }
+                        showErrorDlgCategory = ErrorCategory.ERROR;
+                        showErrorDlg = null;
+                    }
+                });
+                showErrorDlg.setVisible(true);
             }
         };
 
-        if (JMPCore.getWindowManager().isFinishedInitialize() == true) {
+        if (JMPCore.getWindowManager().isFinishedInitialize() == true && unsync == true) {
             JMPCore.getTaskManager().queuing(cb);
         }
         else {
@@ -857,15 +896,18 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         }
     }
 
+    public void errorHandle(ErrorCategory category, LangID langId, boolean unsync) {
+        errorHandleImpl(category, JMPCore.getLanguageManager().getLanguageStr(langId), unsync);
+    }
     public void errorHandle(ErrorCategory category, LangID langId) {
-        errorHandleImpl(category, JMPCore.getLanguageManager().getLanguageStr(langId));
+        errorHandleImpl(category, JMPCore.getLanguageManager().getLanguageStr(langId), true);
     }
 
-    public void errorHandle(ErrorCategory category, String msg) {
-        errorHandleImpl(category, msg);
+    public void errorHandle(ErrorCategory category, String msg, boolean unsync) {
+        errorHandleImpl(category, msg, unsync);
     }
 
-    public void errorHandle(Throwable e) {
+    public void errorHandle(Throwable e, boolean unsync) {
         ErrorCategory cat = ErrorCategory.ERROR;
         if (e instanceof Error) {
             cat = ErrorCategory.CRITICAL;
@@ -879,6 +921,6 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         String msg = "";
         msg += "Type : " +  e.getClass().getSimpleName() + Platform.getNewLine();
         msg += e.getMessage();
-        errorHandleImpl(cat, msg);
+        errorHandleImpl(cat, msg, unsync);
     }
 }

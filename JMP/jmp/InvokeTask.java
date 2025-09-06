@@ -63,7 +63,7 @@ class InvokeTask implements Runnable {
         invokeResult = endResult;
 
         if (JMPCore.ErrorId != ErrorDef.ERROR_ID_NOERROR) {
-            JMPCore.getSystemManager().errorHandle(ErrorCategory.ERROR, ErrorDef.getTotalMsg(JMPCore.ErrorId));
+            JMPCore.getSystemManager().errorHandle(ErrorCategory.ERROR, ErrorDef.getTotalMsg(JMPCore.ErrorId), false);
         }
     }
 

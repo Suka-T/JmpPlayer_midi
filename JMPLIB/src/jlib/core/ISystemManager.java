@@ -239,11 +239,17 @@ public interface ISystemManager {
      * エラーハンドリング 
      * 
      */
-    abstract void errorHandle(ErrorCategory category, String msg);
+    abstract void errorHandle(ErrorCategory category, String msg, boolean unsync);
+    default void errorHandle(ErrorCategory category, String msg) {
+        errorHandle(category, msg, true);
+    };
 
     /**
      * エラーハンドリング 
      * 
      */
-    abstract void errorHandle(Throwable e);
+    abstract void errorHandle(Throwable e, boolean unsync);
+    default void errorHandle(Throwable e) {
+        errorHandle(e, true);
+    };
 }
