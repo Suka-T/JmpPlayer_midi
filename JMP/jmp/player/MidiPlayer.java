@@ -8,7 +8,6 @@ import java.util.Arrays;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaEventListener;
 import javax.sound.midi.MetaMessage;
-import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
@@ -619,29 +618,6 @@ public class MidiPlayer extends Player {
     }
 
     public void loadMidiSequence(Sequence seq) throws InvalidMidiDataException {
-        if (JMPFlags.UseHispeedMidiMessage == true) {
-            /* 高速ショートメッセージ使用 */
-            Sequence newSeq = new Sequence(seq.getDivisionType(), seq.getResolution());
-            Track[] tracks = seq.getTracks();
-            for (int i = 0; i < tracks.length; i++) {
-                Track t = newSeq.createTrack();
-                for (int j = 0; j < tracks[i].size(); j++) {
-                    MidiEvent newEvent = null;
-                    MidiEvent orgEvent = tracks[i].get(j);
-                    if (orgEvent.getMessage() instanceof ShortMessage) {
-                        newEvent = new MidiEvent(new FastShortMessage((ShortMessage) orgEvent.getMessage()), orgEvent.getTick());
-                    }
-                    else if (orgEvent.getMessage() instanceof MetaMessage) {
-                        newEvent = new MidiEvent(new FastMetaMessage((MetaMessage) orgEvent.getMessage()), orgEvent.getTick());
-                    }
-                    else {
-                        newEvent = orgEvent;
-                    }
-                    t.add(newEvent);
-                }
-            }
-            seq = newSeq;
-        }
         getSequencer().setSequence(seq);
     }
 

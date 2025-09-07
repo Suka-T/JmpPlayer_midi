@@ -12,6 +12,7 @@ import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.PluginManager;
 import jmp.core.WindowManager;
+import jmp.midi.NotesMonitor;
 
 public class TaskOfMidiEvent extends TaskOfBase {
 
@@ -86,6 +87,8 @@ public class TaskOfMidiEvent extends TaskOfBase {
                 i.remove();
             }
         }
+        
+        ((NotesMonitor) JMPCore.getSoundManager().getNotesMonitor()).timerEvent();
     }
 
     @Override

@@ -29,7 +29,6 @@ import jmp.core.SoundManager;
 import jmp.core.WindowManager;
 import jmp.gui.ui.JMPDialog;
 import jmp.lang.DefineLanguage.LangID;
-import jmp.midi.receiver.AutoSelectSynthReceiverCreator;
 
 public class SelectSynthsizerDialog extends JMPDialog {
     public static final int MAX_ROW_COUNT = 15;
@@ -209,10 +208,11 @@ public class SelectSynthsizerDialog extends JMPDialog {
                         MidiDevice.Info info = null;
 
                         if (comboRecvMode.getSelectedIndex() == INDEX_OF_AUTO_SELECTION) {
+                            String recommendedReceiverName = JMPCore.getSoundManager().getMidiToolkit().getAutoSelectRecieverName();
                             vendor += "";
                             version += "";
                             description += "Automatically select an available synthesizer.<br>";
-                            description += " - MIDI only : <font color=\"GREEN\">" + AutoSelectSynthReceiverCreator.getRecommendedReceiverName()
+                            description += " - MIDI only : <font color=\"GREEN\">" + recommendedReceiverName
                                     + "</font><br>";
                             description += " - MIDI & Audio : <font color=\"GREEN\">MIDI synthesizer not any sound.</font>";
                         }

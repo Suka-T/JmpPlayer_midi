@@ -10,33 +10,16 @@ import jmp.midi.JMPBuiltinSynthMidiDevice;
 
 public class AutoSelectSynthReceiverCreator extends ReceiverCreator {
 
-    public static final String DEFAULT_RECVNAME = "Gervill";
-
-    public static final String RECOMMENDED_RECVNAMES[] = { "OmniMIDI", "Keppy" };
-
-    public static String getRecommendedReceiverName() {
-        MidiDevice.Info[] infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
-
-        // デフォルト
-        for (String name : RECOMMENDED_RECVNAMES) {
-            for (int i = 0; i < infosOfRecv.length; i++) {
-                if (infosOfRecv[i].getName().contains(name) == true) {
-                    return name;
-                }
-            }
-        }
-        return DEFAULT_RECVNAME;
-    }
-
     @Override
     public Receiver getReciever() {
 
+        String recommendedReceiverName = JMPCore.getSoundManager().getMidiToolkit().getAutoSelectRecieverName();
         MidiDevice.Info[] infosOfRecv = JMPCore.getSoundManager().getMidiToolkit().getMidiDeviceInfo(false, true);
 
         // デフォルト
         int defIndex = -1;
         for (int i = 0; i < infosOfRecv.length; i++) {
-            if (infosOfRecv[i].getName().contains(getRecommendedReceiverName()) == true) {
+            if (infosOfRecv[i].getName().contains(recommendedReceiverName) == true) {
                 defIndex = i;
                 break;
             }

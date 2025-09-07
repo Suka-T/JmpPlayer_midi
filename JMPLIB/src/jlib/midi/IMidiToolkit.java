@@ -62,6 +62,13 @@ public interface IMidiToolkit {
      * @return
      */
     abstract String[] getMidiRecieverItems();
+    
+    /**
+     * 自動選択の対象MIDIレシーバーデバイス名を取得 
+     * 
+     * @return
+     */
+    abstract String getAutoSelectRecieverName();
 
     /**
      * ByteメッセージからMIDIメッセージオブジェクト生成

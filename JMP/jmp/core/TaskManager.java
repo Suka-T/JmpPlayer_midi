@@ -7,7 +7,6 @@ import javax.sound.midi.MidiMessage;
 
 import jlib.player.IPlayer;
 import jmp.JMPFlags;
-import jmp.midi.NotesMonitor;
 import jmp.task.CallbackPackage;
 import jmp.task.CallbackPacket;
 import jmp.task.ICallbackFunction;
@@ -171,14 +170,6 @@ public class TaskManager extends AbstractManager {
                     // 再生バーのトグル
                     JMPFlags.PlayingTimerToggleFlag = !(JMPFlags.PlayingTimerToggleFlag);
                 }
-            }
-        });
-        // シーケンスバーのトグル用コールバック関数を登録
-        addCallbackPackage(100L, new ICallbackFunction() {
-
-            @Override
-            public void callback() {
-                ((NotesMonitor) JMPCore.getSoundManager().getNotesMonitor()).timerEvent();
             }
         });
     }

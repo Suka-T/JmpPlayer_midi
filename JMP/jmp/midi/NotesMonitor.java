@@ -39,6 +39,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     private int[] pitchBendMonitor = null;
     private int[] expressionMonitor = null;
 
+    private int polyphony = 0;
+    private int maxPolyphony = 0;
+
     public NotesMonitor() {
         noteOnMonitorChannel = new int[16][128];
         noteOnMonitorTrack = new ArrayList<int[]>();
@@ -83,6 +86,8 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     public void reset() {
         notesCount = 0;
         maxNps = 0.0;
+        polyphony = 0;
+        maxPolyphony = 0;
         for (int i = 0; i < 16; i++) {
             expressionMonitor[i] = 127;
             pitchBendMonitor[i] = 0;
@@ -140,6 +145,11 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             pastNotesCount = notesCount;
             startTime = currentTime;
         }
+
+        polyphony = calcPolyphony();
+        if (maxPolyphony < polyphony) {
+            maxPolyphony = polyphony;
+        }
     }
 
     @Override
@@ -156,14 +166,13 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     public double getNps() {
         return nps;
     }
-    
+
     @Override
     public double getMaxNps() {
         return maxNps;
     }
 
-    @Override
-    public int getPolyphony() {
+    private int calcPolyphony() {
         int num = 0;
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 128; j++) {
@@ -173,6 +182,16 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             }
         }
         return num;
+    }
+
+    @Override
+    public int getPolyphony() {
+        return polyphony;
+    }
+    
+    @Override
+    public int getMaxPolyphony() {
+        return maxPolyphony;
     }
 
     @Override
@@ -214,7 +233,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             trkEnd = getNumOfTrack();
             trkDir = 1;
         }
-        
+
         for (int i = trkBegin; i != trkEnd; i += trkDir) {
             if (i < noteOnMonitorTrack.size()) {
                 if (noteOnMonitorTrack.get(i)[midiNo] != 0) {

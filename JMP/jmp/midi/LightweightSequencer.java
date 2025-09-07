@@ -186,8 +186,7 @@ public class LightweightSequencer implements Sequencer {
             executor.awaitTermination(1, TimeUnit.MINUTES);
         }
         catch (InterruptedException e) {
-            // TODO 自動生成された catch ブロック
-            e.printStackTrace();
+            JMPCore.getSystemManager().errorHandle(e);
         }
 
         // 結果をマージ
@@ -209,7 +208,7 @@ public class LightweightSequencer implements Sequencer {
                     Thread.sleep(10);
                 }
                 catch (InterruptedException e) {
-                    e.printStackTrace();
+                    JMPCore.getSystemManager().errorHandle(e);
                 }
             }
         }

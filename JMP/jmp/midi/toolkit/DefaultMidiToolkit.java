@@ -26,6 +26,9 @@ import jmp.midi.JMPMidiReader;
 import jmp.midi.MidiByteMessage;
 
 public class DefaultMidiToolkit implements IMidiToolkit {
+    public static final String DEFAULT_RECVNAME = "Gervill";
+    public static final String RECOMMENDED_RECVNAMES[] = { "OmniMIDI", "Keppy" };
+    
     DefaultMidiToolkit() {
     };
 
@@ -172,5 +175,20 @@ public class DefaultMidiToolkit implements IMidiToolkit {
     @Override
     public MidiEvent createMidiEvent(MidiMessage mes, long position) throws InvalidMidiDataException {
         return new MidiEvent(mes, position);
+    }
+
+    @Override
+    public String getAutoSelectRecieverName() {
+        MidiDevice.Info[] infosOfRecv = getMidiDeviceInfo(false, true);
+
+        // デフォルト
+        for (String name : RECOMMENDED_RECVNAMES) {
+            for (int i = 0; i < infosOfRecv.length; i++) {
+                if (infosOfRecv[i].getName().contains(name) == true) {
+                    return name;
+                }
+            }
+        }
+        return DEFAULT_RECVNAME;
     }
 }

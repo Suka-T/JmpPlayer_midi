@@ -57,6 +57,13 @@ public interface INotesMonitor {
     abstract int getPolyphony();
     
     /**
+     * 最大同時発声数を取得する
+     * 
+     * @return 同時発声数
+     */
+    abstract int getMaxPolyphony();
+    
+    /**
      * 指定CHとMIDI番号のNoteONステータスを取得する
      * 
      * @param channel CH番号 0~15
