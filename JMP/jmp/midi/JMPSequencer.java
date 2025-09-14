@@ -324,5 +324,29 @@ public class JMPSequencer implements Sequencer {
     public double getFirstTempoInBPM() {
         return ((LightweightSequencer) abstractSequencer).getFirstTempoInBPM();
     }
+    
+    public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
+        ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfMonitor(lowest, highest);
+    }
+    
+    public boolean isValidIgnoreNotesOfMonitor() {
+        return ((LightweightSequencer) abstractSequencer).isValidIgnoreNotesOfMonitor();
+    }
+    
+    public boolean isGhostNotesOfMonitor(int velocity) {
+        return ((LightweightSequencer) abstractSequencer).isGhostNotesOfMonitor(velocity);
+    }
+    
+    public void setIgnoreNotesVelocityOfAudio(int lowest, int highest) {
+        ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfAudio(lowest, highest);
+    }
+    
+    public boolean isValidIgnoreNotesOfAudio() {
+        return ((LightweightSequencer) abstractSequencer).isValidIgnoreNotesOfAudio();
+    }
+    
+    public boolean isGhostNotesOfAudio(int velocity) {
+        return ((LightweightSequencer) abstractSequencer).isGhostNotesOfAudio(velocity);
+    }
 
 }

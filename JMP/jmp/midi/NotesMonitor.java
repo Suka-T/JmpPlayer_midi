@@ -6,6 +6,7 @@ import java.util.List;
 import javax.sound.midi.MidiMessage;
 
 import jlib.midi.IMidiEventListener;
+import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.MidiByte;
 import jmp.core.JMPCore;
@@ -53,6 +54,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     @Override
     public void catchMidiEvent(MidiMessage message, long timeStamp, short senderType) {
         if (message instanceof LightweightShortMessage) {
+            IMidiUnit midiUnit = JMPCore.getSoundManager().getMidiUnit();
             LightweightShortMessage sm = (LightweightShortMessage) message;
             int command = sm.getCommand();
             int channel = sm.getChannel();
@@ -61,9 +63,11 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             int trackIndex = sm.getTrackIndex();
             if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON) && (data2 > 0)) {
                 notesCount++;
-                noteOnMonitorChannel[channel][data1] = 1;
-                if (trackIndex < noteOnMonitorTrack.size()) {
-                    noteOnMonitorTrack.get(trackIndex)[data1] = 1;
+                if (midiUnit.isGhostNotesOfMonitor(data2) == false) {
+                    noteOnMonitorChannel[channel][data1] = 1;
+                    if (trackIndex < noteOnMonitorTrack.size()) {
+                        noteOnMonitorTrack.get(trackIndex)[data1] = 1;
+                    }
                 }
             }
             else if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
@@ -204,14 +208,34 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     @Override
     public int getTopNoteOnChannel(int midiNo) {
-        int topChStat = -1;
-        for (int i = 15; i >= 0; i--) {
-            if (noteOnMonitorChannel[i][midiNo] != 0) {
-                topChStat = i;
-                break;
+        return getTopNoteOnChannel(midiNo, true);
+    }
+    
+    @Override
+    public int getTopNoteOnChannel(int midiNo, boolean orderAsc) {
+        int topTrkStat = -1;
+        int trkBegin, trkEnd, trkDir;
+        final int numOfChannel = 16;
+        if (orderAsc) {
+            trkBegin = numOfChannel - 1;
+            trkEnd = -1;
+            trkDir = -1;
+        }
+        else {
+            trkBegin = 0;
+            trkEnd = numOfChannel;
+            trkDir = 1;
+        }
+
+        for (int i = trkBegin; i != trkEnd; i += trkDir) {
+            if (i < numOfChannel) {
+                if (noteOnMonitorChannel[i][midiNo] != 0) {
+                    topTrkStat = i;
+                    break;
+                }
             }
         }
-        return topChStat;
+        return topTrkStat;
     }
 
     @Override

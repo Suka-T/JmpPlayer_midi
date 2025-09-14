@@ -156,4 +156,34 @@ public class MidiUnit implements IMidiUnit {
         }
         return ((MappedSequence) getSequencer().getSequence()).getNumTracks();
     }
+    
+    @Override
+    public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
+        getSequencer().setIgnoreNotesVelocityOfMonitor(lowest, highest);
+    }
+    
+    @Override
+    public boolean isValidIgnoreNotesOfMonitor() {
+        return getSequencer().isValidIgnoreNotesOfMonitor();
+    }
+    
+    @Override
+    public boolean isGhostNotesOfMonitor(int velocity) {
+        return getSequencer().isGhostNotesOfMonitor(velocity);
+    }
+    
+    @Override
+    public void setIgnoreNotesVelocityOfAudio(int lowest, int highest) {
+        getSequencer().setIgnoreNotesVelocityOfAudio(lowest, highest);
+    }
+    
+    @Override
+    public boolean isValidIgnoreNotesOfAudio() {
+        return getSequencer().isValidIgnoreNotesOfAudio();
+    }
+    
+    @Override
+    public boolean isGhostNotesOfAudio(int velocity) {
+        return getSequencer().isGhostNotesOfAudio(velocity);
+    }
 }

@@ -81,6 +81,15 @@ public interface INotesMonitor {
     abstract int getTopNoteOnChannel(int midiNo);
     
     /***
+     * 各MIDI番号のトップレイヤー鍵盤のCH番号を取得する
+     * 
+     * @param midiNo
+     * @param orderAsc
+     * @return
+     */
+    abstract int getTopNoteOnChannel(int midiNo, boolean orderAsc);
+    
+    /***
      * 各MIDI番号のトップレイヤー鍵盤のTrack番号を取得する
      * 
      * @param midiNo

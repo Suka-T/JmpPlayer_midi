@@ -103,4 +103,12 @@ public interface IMidiUnit {
      * @return
      */
     abstract int getNumOfTrack();
+    
+    abstract void setIgnoreNotesVelocityOfMonitor(int lowest, int highest);
+    abstract boolean isValidIgnoreNotesOfMonitor();
+    abstract boolean isGhostNotesOfMonitor(int velocity);
+    
+    abstract void setIgnoreNotesVelocityOfAudio(int lowest, int highest);
+    abstract boolean isValidIgnoreNotesOfAudio();
+    abstract boolean isGhostNotesOfAudio(int velocity);
 }

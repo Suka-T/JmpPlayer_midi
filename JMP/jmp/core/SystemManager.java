@@ -921,6 +921,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         String msg = "";
         msg += "Type : " +  e.getClass().getSimpleName() + Platform.getNewLine();
         msg += e.getMessage();
+        e.printStackTrace();
         errorHandleImpl(cat, msg, unsync);
     }
 }

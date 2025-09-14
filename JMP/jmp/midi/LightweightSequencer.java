@@ -86,6 +86,14 @@ public class LightweightSequencer implements Sequencer {
     private MidiMessagePump midiMsgPump;
     private ExtractWorker extractWorker;
     private ESeqMode seqMode = ESeqMode.Normal;
+    
+    private boolean ignoreNotesValidOfMonitor = false;
+    private int ignoreNotesLowestOfMonitor = 0;
+    private int ignoreNotesHighestOfMonitor = 0;
+    
+    private boolean ignoreNotesValidOfAudio = false;
+    private int ignoreNotesLowestOfAudio = 0;
+    private int ignoreNotesHighestOfAudio = 0;
 
     // seek移動中はフラグを建てることで各スレッドを動作しない制御する
     private boolean seekingFlag = false;
@@ -105,6 +113,82 @@ public class LightweightSequencer implements Sequencer {
 
     public LightweightSequencer(ESeqMode seqMode) {
         this.seqMode = seqMode;
+    }
+    
+    public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
+        ignoreNotesValidOfMonitor = true;
+        ignoreNotesLowestOfMonitor = lowest;
+        ignoreNotesHighestOfMonitor = highest;
+        if (ignoreNotesLowestOfMonitor < 0) {
+            ignoreNotesLowestOfMonitor = 0;
+        }
+        else if (ignoreNotesLowestOfMonitor > 127) {
+            ignoreNotesLowestOfMonitor = 127;
+        }
+        if (ignoreNotesHighestOfMonitor < 0) {
+            ignoreNotesHighestOfMonitor = 0;
+        }
+        else if (ignoreNotesHighestOfMonitor > 127) {
+            ignoreNotesHighestOfMonitor = 127;
+        }
+        if (ignoreNotesLowestOfMonitor > ignoreNotesHighestOfMonitor) {
+            ignoreNotesLowestOfMonitor = 0;
+            ignoreNotesHighestOfMonitor = 0;
+            ignoreNotesValidOfMonitor = false;
+        }
+    }
+    
+    public boolean isValidIgnoreNotesOfMonitor() {
+        return ignoreNotesValidOfMonitor;
+    }
+    
+    public boolean isGhostNotesOfMonitor(int velocity) {
+        if (ignoreNotesValidOfMonitor == false) {
+            return false;
+        }
+        
+        if (ignoreNotesLowestOfMonitor <= velocity && velocity <= ignoreNotesHighestOfMonitor) {
+            return true;
+        }
+        return false;
+    }
+    
+    public void setIgnoreNotesVelocityOfAudio(int lowest, int highest) {
+        ignoreNotesValidOfAudio = true;
+        ignoreNotesLowestOfAudio = lowest;
+        ignoreNotesHighestOfAudio = highest;
+        if (ignoreNotesLowestOfAudio < 0) {
+            ignoreNotesLowestOfAudio = 0;
+        }
+        else if (ignoreNotesLowestOfAudio > 127) {
+            ignoreNotesLowestOfAudio = 127;
+        }
+        if (ignoreNotesHighestOfAudio < 0) {
+            ignoreNotesHighestOfAudio = 0;
+        }
+        else if (ignoreNotesHighestOfAudio > 127) {
+            ignoreNotesHighestOfAudio = 127;
+        }
+        if (ignoreNotesLowestOfAudio > ignoreNotesHighestOfAudio) {
+            ignoreNotesLowestOfAudio = 0;
+            ignoreNotesHighestOfAudio = 0;
+            ignoreNotesValidOfAudio = false;
+        }
+    }
+    
+    public boolean isValidIgnoreNotesOfAudio() {
+        return ignoreNotesValidOfAudio;
+    }
+    
+    public boolean isGhostNotesOfAudio(int velocity) {
+        if (ignoreNotesValidOfAudio == false) {
+            return false;
+        }
+        
+        if (ignoreNotesLowestOfAudio <= velocity && velocity <= ignoreNotesHighestOfAudio) {
+            return true;
+        }
+        return false;
     }
 
     private long calcBlockTick(long tickLength) {
@@ -412,16 +496,19 @@ public class LightweightSequencer implements Sequencer {
         }
 
         if (seqMode != ESeqMode.NonSound) {
-            if (isMidioutDump == true) {
-                if (msg instanceof LightweightShortMessage) {
-                    LightweightShortMessage lm = (LightweightShortMessage) msg;
-                    if (lm.getCommand() == ShortMessage.NOTE_ON && lm.getData2() > 0) {
-                        // 音声出力がビジーと判断し、NoteONをスキップする
+            if (msg instanceof LightweightShortMessage) {
+                LightweightShortMessage lm = (LightweightShortMessage) msg;
+                if (lm.getCommand() == ShortMessage.NOTE_ON && lm.getData2() > 0) {
+                    if (isGhostNotesOfAudio(lm.getData2()) == true) {
                         return;
                     }
                 }
             }
-
+            
+            if (isMidioutDump == true) {
+                // 音声出力がビジーと判断し、NoteONをスキップする
+                return;
+            }
             lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
         }
     }
