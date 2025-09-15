@@ -21,7 +21,7 @@ public class JMPCore {
     public static final String APPLICATION_NAME = "JMPPlayer";
 
     /** アプリケーションバージョン */
-    public static final String APPLICATION_VERSION = "1.03.002"; /*
+    public static final String APPLICATION_VERSION = "1.03.003"; /*
                                                                   * メジャーリリース番号.
                                                                   * 機能追加番号.修正番号
                                                                   */
