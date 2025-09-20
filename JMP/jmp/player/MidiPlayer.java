@@ -18,6 +18,7 @@ import javax.sound.midi.Transmitter;
 
 import jlib.midi.IMidiEventListener;
 import jlib.midi.MidiByte;
+import jlib.midi.SignatureInfo;
 import jlib.player.Player;
 import jmp.JMPFlags;
 import jmp.core.DataManager;
@@ -216,6 +217,8 @@ public class MidiPlayer extends Player {
 
     private TransmitterWrapper transmitterWrapper = null;
     private ReceiverWrapper receiverWrapper = null;
+    
+    private SignatureInfo signatureInfo = null;
 
     public Receiver getCurrentReciver() {
         return currentReceiver;
@@ -258,6 +261,8 @@ public class MidiPlayer extends Player {
 
         currentReceiver = receiverWrapper;
         currentTransmitter = transmitterWrapper;
+        
+        signatureInfo = new SignatureInfo();
 
         return result;
     }
@@ -341,6 +346,27 @@ public class MidiPlayer extends Player {
                     }
                     else if (MidiByte.END_OF_TRACK.type == meta.getType()) {
                         JMPCore.getWindowManager().getMainWindow().setLyric("");
+                    }
+                    else if (MidiByte.BEAT.type == meta.getType()) {
+                        byte[] data = meta.getData();
+                        signatureInfo.setNumerator(data[0] & 0xFF);
+                        signatureInfo.setDenominator(1 << (data[1] & 0xFF));
+                        signatureInfo.setMidiClocks(data[2] & 0xFF);
+                        signatureInfo.setNotated32nd(data[3] & 0xFF);
+                    }
+                    else if (MidiByte.KEY_SEGNATURE.type == meta.getType()) {
+                        byte[] data = meta.getData();
+                        int sf = data[0]; // 調号 (符号付き!)
+                        int mi = data[1] & 0xFF; // 0=major, 1=minor
+                        int index = sf + 7;
+                        String acc = "";
+                        if (index < 0 || index >= 15) {
+                            acc = "";
+                        }
+                        else {
+                            acc = (mi == 0) ? SignatureInfo.MAJOR_KEYS[index] : SignatureInfo.MINOR_KEYS[index];
+                        }
+                        signatureInfo.setAccidental(acc);
                     }
 
                     IMidiEventListener l = (IMidiEventListener) JMPCore.getWindowManager().getWindow(WindowManager.WINDOW_NAME_MIDI_MONITOR);
@@ -596,6 +622,7 @@ public class MidiPlayer extends Player {
      * @throws Exception
      */
     public void loadMidiFile(File file) throws InvalidMidiDataException, IOException {
+        signatureInfo.init();
         Sequence seq = JMPCore.getSoundManager().getMidiToolkit().readMidiFile(file);
         loadMidiSequence(seq);
     }
@@ -697,5 +724,9 @@ public class MidiPlayer extends Player {
 
     public ESeqMode getSeqMode() {
         return sequencer.getSeqMode();
+    }
+    
+    public SignatureInfo getSignatureInfo() {
+        return signatureInfo;
     }
 }

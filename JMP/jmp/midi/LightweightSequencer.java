@@ -54,6 +54,19 @@ public class LightweightSequencer implements Sequencer {
         }
     }
 
+    // タスク定義：1トラックごとにテンポ & イベントを収集
+    class TrackResult {
+        final Map<Long, Float> tempoMap;
+        final Map<Long, List<MidiEvent>> events;
+        long notesCount = 0;
+        long maxTick = 0;
+
+        TrackResult(Map<Long, Float> tempoMap, Map<Long, List<MidiEvent>> events) {
+            this.tempoMap = tempoMap;
+            this.events = events;
+        }
+    }
+
     static final double EXTRACT_MIDI_USAGE = 0.3;
     private float tempoBPM = 120.0f;
     private int resolution = 480;
@@ -86,11 +99,11 @@ public class LightweightSequencer implements Sequencer {
     private MidiMessagePump midiMsgPump;
     private ExtractWorker extractWorker;
     private ESeqMode seqMode = ESeqMode.Normal;
-    
+
     private boolean ignoreNotesValidOfMonitor = false;
     private int ignoreNotesLowestOfMonitor = 0;
     private int ignoreNotesHighestOfMonitor = 0;
-    
+
     private boolean ignoreNotesValidOfAudio = false;
     private int ignoreNotesLowestOfAudio = 0;
     private int ignoreNotesHighestOfAudio = 0;
@@ -98,23 +111,10 @@ public class LightweightSequencer implements Sequencer {
     // seek移動中はフラグを建てることで各スレッドを動作しない制御する
     private boolean seekingFlag = false;
 
-    // タスク定義：1トラックごとにテンポ & イベントを収集
-    class TrackResult {
-        final Map<Long, Float> tempoMap;
-        final Map<Long, List<MidiEvent>> events;
-        long notesCount = 0;
-        long maxTick = 0;
-
-        TrackResult(Map<Long, Float> tempoMap, Map<Long, List<MidiEvent>> events) {
-            this.tempoMap = tempoMap;
-            this.events = events;
-        }
-    }
-
     public LightweightSequencer(ESeqMode seqMode) {
         this.seqMode = seqMode;
     }
-    
+
     public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
         ignoreNotesValidOfMonitor = true;
         ignoreNotesLowestOfMonitor = lowest;
@@ -137,22 +137,22 @@ public class LightweightSequencer implements Sequencer {
             ignoreNotesValidOfMonitor = false;
         }
     }
-    
+
     public boolean isValidIgnoreNotesOfMonitor() {
         return ignoreNotesValidOfMonitor;
     }
-    
+
     public boolean isGhostNotesOfMonitor(int velocity) {
         if (ignoreNotesValidOfMonitor == false) {
             return false;
         }
-        
+
         if (ignoreNotesLowestOfMonitor <= velocity && velocity <= ignoreNotesHighestOfMonitor) {
             return true;
         }
         return false;
     }
-    
+
     public void setIgnoreNotesVelocityOfAudio(int lowest, int highest) {
         ignoreNotesValidOfAudio = true;
         ignoreNotesLowestOfAudio = lowest;
@@ -175,16 +175,16 @@ public class LightweightSequencer implements Sequencer {
             ignoreNotesValidOfAudio = false;
         }
     }
-    
+
     public boolean isValidIgnoreNotesOfAudio() {
         return ignoreNotesValidOfAudio;
     }
-    
+
     public boolean isGhostNotesOfAudio(int velocity) {
         if (ignoreNotesValidOfAudio == false) {
             return false;
         }
-        
+
         if (ignoreNotesLowestOfAudio <= velocity && velocity <= ignoreNotesHighestOfAudio) {
             return true;
         }
@@ -250,11 +250,18 @@ public class LightweightSequencer implements Sequencer {
                             catch (InvalidMidiDataException e) {
                                 e.printStackTrace();
                             }
-                            
+
                         }
 
                         @Override
                         public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
+//                            try {
+//                                MetaMessage meta = new MetaMessage(type, metaData, length);
+//                                results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(meta, tick));
+//                            }
+//                            catch (InvalidMidiDataException e) {
+//                                e.printStackTrace();
+//                            }
                         }
                     });
                 }
@@ -419,34 +426,34 @@ public class LightweightSequencer implements Sequencer {
                     Thread.sleep(10);
                     continue;
                 }
-    
+
                 nowNs = System.nanoTime();
                 deltaUs = (nowNs - lastTimeNs) / 1000;
                 lastTimeNs = nowNs;
-    
+
                 // Δtick = Δμ秒 / (テンポ（μs/拍） / resolution)
                 microPerQuarter = 60_000_000.0 / tempoBPM;
                 ticksDelta = (double) (deltaUs * resolution) / microPerQuarter;
-    
+
                 tickRemainder += ticksDelta;
                 ticksToAdvance = (long) tickRemainder;
                 tickRemainder -= ticksToAdvance;
-    
+
                 for (i = 0; i < ticksToAdvance; i++) {
                     if (tempoChanges.containsKey(tickPosition)) {
                         setTempoInBPM(tempoChanges.get(tickPosition));
-    
+
                         // microPerQuarter を更新
                         microPerQuarter = 60_000_000.0 / tempoBPM;
                     }
-    
+
                     if (i >= getTickLength()) {
                         stop();
                         break;
                     }
                     tickPosition++;
                 }
-    
+
                 midiMsgPump.nextTick(tickPosition);
                 if (isMidioutDump == true) {
                     // busy waitを軽減
@@ -455,7 +462,8 @@ public class LightweightSequencer implements Sequencer {
                     }
                 }
                 Thread.sleep(1);
-            } catch (Throwable e) {
+            }
+            catch (Throwable e) {
                 JMPCore.getSystemManager().errorHandle(e);
             }
         }
@@ -504,7 +512,7 @@ public class LightweightSequencer implements Sequencer {
                     }
                 }
             }
-            
+
             if (isMidioutDump == true) {
                 // 音声出力がビジーと判断し、NoteONをスキップする
                 return;
@@ -1049,10 +1057,10 @@ public class LightweightSequencer implements Sequencer {
                         Thread.sleep(100);
                         continue;
                     }
-    
+
                     if (waitFlag.get() == false) {
                         offEventMap.clear();
-    
+
                         long startTick = blockTick * readBlockIndex;
                         long endTick = (blockTick * (readBlockIndex + 1)) - 1;
                         if (startTick < 0) {
@@ -1067,17 +1075,17 @@ public class LightweightSequencer implements Sequencer {
                         else if (getTickLength() < endTick) {
                             endTick = getTickLength();
                         }
-    
+
                         if (endTick >= startTick) {
                             // conflict args
                             extractMidiEvent(offEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
                         }
-    
+
                         waitFlag.set(true);
                     }
                     Thread.sleep(1);
                 }
-                catch (Throwable  e) {
+                catch (Throwable e) {
                     JMPCore.getSystemManager().errorHandle(e);
                 }
             }
@@ -1155,11 +1163,11 @@ public class LightweightSequencer implements Sequencer {
                                 waitFlag.set(false);
                             }
                         }
-    
+
                         if (waitFlag.get() == false) {
                             cur = curTickPosition;
                             next = nextTickPosition;
-    
+
                             for (t = cur; t < next; t++) {
                                 blockIndex = t / blockTick;
                                 if (curBlockIndex == -1) {
@@ -1167,7 +1175,7 @@ public class LightweightSequencer implements Sequencer {
                                     currentEventMap = eventMap1;
                                     offEventMap = eventMap2;
                                     currentEventMap.clear();
-    
+
                                     long startTick = blockTick * curBlockIndex;
                                     long endTick = blockTick * (curBlockIndex + 1) - 1;
                                     if (startTick < 0) {
@@ -1182,7 +1190,7 @@ public class LightweightSequencer implements Sequencer {
                                     else if (getTickLength() < endTick) {
                                         endTick = getTickLength();
                                     }
-    
+
                                     if (seqMode != ESeqMode.TickOnly) {
                                         if (endTick > startTick) {
                                             // conflict args
@@ -1196,7 +1204,7 @@ public class LightweightSequencer implements Sequencer {
                                         if (blockIndex != curBlockIndex) {
                                             curBlockIndex = blockIndex;
                                             extractWorker.waitForRead();
-    
+
                                             Map<Long, List<MidiEvent>> temp = currentEventMap;
                                             currentEventMap = offEventMap;
                                             offEventMap = temp;
@@ -1204,7 +1212,7 @@ public class LightweightSequencer implements Sequencer {
                                         }
                                     }
                                 }
-    
+
                                 onMeta(t);
                                 if (seqMode != ESeqMode.TickOnly) {
                                     onTick(t);
@@ -1220,10 +1228,11 @@ public class LightweightSequencer implements Sequencer {
                         // シーク中のリクエストは破棄
                         waitFlag.set(true);
                     }
-    
+
                     // 過負荷を防ぐため、最小限のSleep
                     Thread.sleep(1);
-                } catch (Throwable e) {
+                }
+                catch (Throwable e) {
                     JMPCore.getSystemManager().errorHandle(e);
                 }
             }

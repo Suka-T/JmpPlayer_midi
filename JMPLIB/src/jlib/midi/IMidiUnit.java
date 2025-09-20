@@ -111,4 +111,6 @@ public interface IMidiUnit {
     abstract void setIgnoreNotesVelocityOfAudio(int lowest, int highest);
     abstract boolean isValidIgnoreNotesOfAudio();
     abstract boolean isGhostNotesOfAudio(int velocity);
+    
+    abstract SignatureInfo getSignatureInfo();
 }

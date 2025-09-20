@@ -12,6 +12,7 @@ import javax.sound.midi.Transmitter;
 import jlib.midi.IMidiFilter;
 import jlib.midi.IMidiUnit;
 import jlib.midi.MappedParseFunc;
+import jlib.midi.SignatureInfo;
 import jmp.midi.LightweightSequencer.ESeqMode;
 import jmp.player.MidiPlayer;
 
@@ -185,5 +186,10 @@ public class MidiUnit implements IMidiUnit {
     @Override
     public boolean isGhostNotesOfAudio(int velocity) {
         return getSequencer().isGhostNotesOfAudio(velocity);
+    }
+
+    @Override
+    public SignatureInfo getSignatureInfo() {
+        return getMidiPlayer().getSignatureInfo();
     }
 }
