@@ -302,9 +302,28 @@ public class LightweightSequencer implements Sequencer {
         }
     }
 
+    private boolean analyzing = false;
     private long tempMaxTick = 0;
     private long tempNotesCount = 0;
+    private long tempCurFinTrk = 0;
     private long tempFinTrk = 0;
+    private long tempBlockTick = 200000;
+    private long tempStartTick = 0;
+    private long tempEndTick = 0;
+    
+    // Analyze進捗確認用の関数
+    public boolean isProgressNowAnalyzing() {
+        return analyzing;
+    }
+    public long getProgressFinTrackNum() {
+        return tempFinTrk;
+    }
+    public long getProgressNotesCount() {
+        return tempNotesCount;
+    }
+    public long getProgressReadTick() {
+        return tempStartTick;
+    }
     
     private void analyzeSequence(MappedSequence seq) {
 
@@ -337,12 +356,14 @@ public class LightweightSequencer implements Sequencer {
 
         tempMaxTick = 0;
         tempNotesCount = 0;
+        tempBlockTick = 200000;
+        tempStartTick = 0;
+        tempEndTick = tempStartTick + tempBlockTick;
+        tempFinTrk = 0;
+        analyzing = true;
         
-        long tempBlockTick = 200000;
-        long tempStartTick = 0;
-        long tempEndTick = tempStartTick + tempBlockTick;
         do {
-            tempFinTrk = 0;
+            tempCurFinTrk = 0;
             for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
     
                 try {
@@ -396,7 +417,7 @@ public class LightweightSequencer implements Sequencer {
                         
                         @Override
                         public void end() {
-                            tempFinTrk++;
+                            tempCurFinTrk++;
                         }
                     });
                 }
@@ -404,10 +425,10 @@ public class LightweightSequencer implements Sequencer {
                     JMPCore.getSystemManager().errorHandle(e);
                 }
             }
-            
+            tempFinTrk = tempCurFinTrk;
+            System.out.println(tempEndTick + ": " + tempFinTrk + " / " + seq.getNumTracks() + " cnt: " + tempNotesCount);
             tempStartTick = tempEndTick + 1;
-            tempEndTick = tempStartTick + tempBlockTick;
-            System.out.println(tempStartTick + "-" + tempEndTick + ": " + tempFinTrk + " / " + seq.getNumTracks() + " cnt: " + tempNotesCount);
+            tempEndTick += tempBlockTick;
         } while (tempFinTrk < seq.getNumTracks());
         
         seq.setTickLength(tempMaxTick);
@@ -424,6 +445,7 @@ public class LightweightSequencer implements Sequencer {
             blockTick = calcBlockTick(tempMaxTick);
         }
 
+        analyzing = false;
         seekingFlag = false;
     }
 

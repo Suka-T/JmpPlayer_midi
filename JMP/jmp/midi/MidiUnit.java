@@ -192,4 +192,24 @@ public class MidiUnit implements IMidiUnit {
     public SignatureInfo getSignatureInfo() {
         return getMidiPlayer().getSignatureInfo();
     }
+
+    @Override
+    public boolean isProgressNowAnalyzing() {
+        return getSequencer().isProgressNowAnalyzing();
+    }
+
+    @Override
+    public long getProgressFinTrackNum() {
+        return getSequencer().getProgressFinTrackNum();
+    }
+
+    @Override
+    public long getProgressNotesCount() {
+        return getSequencer().getProgressNotesCount();
+    }
+
+    @Override
+    public long getProgressReadTick() {
+        return getSequencer().getProgressReadTick();
+    }
 }

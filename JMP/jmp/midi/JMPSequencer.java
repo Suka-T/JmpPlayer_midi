@@ -362,4 +362,20 @@ public class JMPSequencer implements Sequencer {
     public void toInvalidSequence() {
         ((LightweightSequencer) abstractSequencer).toInvalid();
     }
+    
+    public boolean isProgressNowAnalyzing() {
+        return ((LightweightSequencer) abstractSequencer).isProgressNowAnalyzing();
+    }
+    
+    public long getProgressFinTrackNum() {
+        return ((LightweightSequencer) abstractSequencer).getProgressFinTrackNum();
+    }
+    
+    public long getProgressNotesCount() {
+        return ((LightweightSequencer) abstractSequencer).getProgressNotesCount();
+    }
+    
+    public long getProgressReadTick() {
+        return ((LightweightSequencer) abstractSequencer).getProgressReadTick();
+    }
 }

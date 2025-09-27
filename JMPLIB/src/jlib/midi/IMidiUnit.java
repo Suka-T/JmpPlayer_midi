@@ -104,6 +104,12 @@ public interface IMidiUnit {
      */
     abstract int getNumOfTrack();
     
+    // MIDI解析中の進捗取得メソッド 
+    abstract boolean isProgressNowAnalyzing();
+    abstract long getProgressFinTrackNum();
+    abstract long getProgressNotesCount();
+    abstract long getProgressReadTick();
+    
     abstract void setIgnoreNotesVelocityOfMonitor(int lowest, int highest);
     abstract boolean isValidIgnoreNotesOfMonitor();
     abstract boolean isGhostNotesOfMonitor(int velocity);
