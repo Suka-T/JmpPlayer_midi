@@ -110,6 +110,29 @@ public class LightweightSequencer implements Sequencer {
 
     // seek移動中はフラグを建てることで各スレッドを動作しない制御する
     private boolean seekingFlag = false;
+    
+    // Sequenceを削除するフラグ 
+    public void toInvalid() {
+        stop();
+        
+        try {
+            Thread.sleep(100);
+        }
+        catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        
+        sequence = null;
+        tickPosition = 0;
+        tempoChanges.clear(); // TreeMap<Long, Float>
+        metaMap.clear();
+        eventMap1.clear();
+        eventMap2.clear();
+        if (midiMsgPump != null) {
+            midiMsgPump.reset();
+        }
+        System.gc();
+    }
 
     public LightweightSequencer(ESeqMode seqMode) {
         this.seqMode = seqMode;
@@ -131,7 +154,7 @@ public class LightweightSequencer implements Sequencer {
         else if (ignoreNotesHighestOfMonitor > 127) {
             ignoreNotesHighestOfMonitor = 127;
         }
-        if (ignoreNotesLowestOfMonitor > ignoreNotesHighestOfMonitor) {
+        if ((ignoreNotesLowestOfMonitor > ignoreNotesHighestOfMonitor) || (ignoreNotesLowestOfMonitor == 0 && ignoreNotesHighestOfMonitor == 0)) {
             ignoreNotesLowestOfMonitor = 0;
             ignoreNotesHighestOfMonitor = 0;
             ignoreNotesValidOfMonitor = false;
@@ -169,7 +192,7 @@ public class LightweightSequencer implements Sequencer {
         else if (ignoreNotesHighestOfAudio > 127) {
             ignoreNotesHighestOfAudio = 127;
         }
-        if (ignoreNotesLowestOfAudio > ignoreNotesHighestOfAudio) {
+        if ((ignoreNotesLowestOfAudio > ignoreNotesHighestOfAudio) || (ignoreNotesLowestOfAudio == 0 && ignoreNotesHighestOfAudio == 0)) {
             ignoreNotesLowestOfAudio = 0;
             ignoreNotesHighestOfAudio = 0;
             ignoreNotesValidOfAudio = false;

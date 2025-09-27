@@ -348,5 +348,18 @@ public class JMPSequencer implements Sequencer {
     public boolean isGhostNotesOfAudio(int velocity) {
         return ((LightweightSequencer) abstractSequencer).isGhostNotesOfAudio(velocity);
     }
-
+    
+    public boolean isValidSequence() {
+        if (abstractSequencer == null) {
+            return false;
+        }
+        if (getSequence() == null) {
+            return false;
+        }
+        return true;
+    }
+    
+    public void toInvalidSequence() {
+        ((LightweightSequencer) abstractSequencer).toInvalid();
+    }
 }

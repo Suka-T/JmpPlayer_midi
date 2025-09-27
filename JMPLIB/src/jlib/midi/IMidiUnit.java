@@ -104,6 +104,12 @@ public interface IMidiUnit {
      */
     abstract int getNumOfTrack();
     
+    /**
+     * 現在ロード中のSequenceを削除  
+     * 
+     */
+    abstract void removeSequence();
+    
     abstract void setIgnoreNotesVelocityOfMonitor(int lowest, int highest);
     abstract boolean isValidIgnoreNotesOfMonitor();
     abstract boolean isGhostNotesOfMonitor(int velocity);
