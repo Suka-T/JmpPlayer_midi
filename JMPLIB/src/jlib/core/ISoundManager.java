@@ -202,5 +202,10 @@ public interface ISoundManager {
      * @return
      */
     abstract INotesMonitor getNotesMonitor();
-
+    
+    /**
+     * 現在ロード中のSequenceを削除  
+     * 
+     */
+    abstract void removeMidiSequence();
 }

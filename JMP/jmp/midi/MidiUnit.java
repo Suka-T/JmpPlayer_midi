@@ -192,9 +192,4 @@ public class MidiUnit implements IMidiUnit {
     public SignatureInfo getSignatureInfo() {
         return getMidiPlayer().getSignatureInfo();
     }
-
-    @Override
-    public void removeSequence() {
-        getSequencer().toInvalidSequence();
-    }
 }

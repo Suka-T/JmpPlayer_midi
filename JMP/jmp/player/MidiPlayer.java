@@ -729,4 +729,10 @@ public class MidiPlayer extends Player {
     public SignatureInfo getSignatureInfo() {
         return signatureInfo;
     }
+    
+    public void removeSequence() {
+        if (sequencer.isValidSequence() == true) {
+            sequencer.toInvalidSequence();
+        }
+    }
 }

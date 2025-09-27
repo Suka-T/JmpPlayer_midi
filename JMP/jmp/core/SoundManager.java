@@ -1177,4 +1177,13 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     public INotesMonitor getNotesMonitor() {
         return notesMonitor;
     }
+
+    @Override
+    public void removeMidiSequence() {
+        SMidiPlayer.removeSequence();
+        
+        if (getCurrentPlayer() == SMidiPlayer) {
+            JMPCore.getWindowManager().getMainWindow().clearStatusMessage();
+        }
+    }
 }
