@@ -6,21 +6,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MetaMessage;
-import javax.sound.midi.MidiEvent;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.SysexMessage;
 
 import jlib.midi.MappedParseFunc;
 
 public class MappedSequence extends Sequence {
     private File file = null;
-    private long tickLength = 0;
+    private long fileSize = 0;
+    private long tickLength = -1;
     private int numTracks = 0;
     private long numOfNotes = 0;
     //private List<MappedByteBuffer> mappedByteBuffers = null;
@@ -87,7 +84,7 @@ public class MappedSequence extends Sequence {
             if (startTick < 0) {
                 startTick = 0;
             }
-            else if (getTickLength() < startTick) {
+            else if (getTickLength() != -1 && getTickLength() < startTick) {
                 startTick = getTickLength();
             }
         }
@@ -95,7 +92,7 @@ public class MappedSequence extends Sequence {
             if (endTick < 0) {
                 endTick = 0;
             }
-            else if (getTickLength() < endTick) {
+            else if (getTickLength() != -1 && getTickLength() < endTick) {
                 endTick = getTickLength();
             }
         }
@@ -106,6 +103,11 @@ public class MappedSequence extends Sequence {
                 return;
             }
         }
+        
+        if (getTickLength() != -1 && startTick == endTick && endTick == getTickLength()) {
+            // 両方ticklengthに張り付いている場合は読み飛ばす 
+            return;
+        }
         // renew tick
         func.setStartTick(startTick);
         func.setEndTick(endTick);
@@ -115,6 +117,7 @@ public class MappedSequence extends Sequence {
         func.parse(trkIndex, copy);
     }
 
+/*
     public List<MidiEvent> parseTrackBuffer(short trkIndex) throws Exception {
         ByteBuffer buf = getMap(trkIndex);
         List<MidiEvent> events = new ArrayList<>();
@@ -168,7 +171,7 @@ public class MappedSequence extends Sequence {
         System.out.println("parsed track " + (trkIndex + 1));
         return events;
     }
-
+*/
     private static int readVariableLength(ByteBuffer buf) throws IOException {
         int value = 0;
         int b;
@@ -209,5 +212,17 @@ public class MappedSequence extends Sequence {
 
     public void setFile(File file) {
         this.file = file;
+        
+        fileSize = 0;
+        try {
+            fileSize = Files.size(file.toPath());
+        }
+        catch (Exception e) {
+            fileSize = 0;
+        }
+    }
+
+    public long getFileSize() {
+        return fileSize;
     }
 }

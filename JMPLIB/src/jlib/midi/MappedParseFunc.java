@@ -59,6 +59,10 @@ public class MappedParseFunc {
     public boolean interrupt() {
         return false;
     }
+    
+    public void end() {
+        
+    }
 
     public void parse(int trk, MappedByteBuffer buf) throws IOException {
         buf.rewind();
@@ -106,13 +110,12 @@ public class MappedParseFunc {
             calcTick(trk, tick);
 
             if (tick > this.endTick && this.endTick != -1) {
-                break;
+                return;
             }
 
             statusByte = buf.get() & 0xFF;
             if (statusByte < 0x80) {
-                if (lastStatus == 0)
-                    throw new IOException("Invalid running status");
+                //if (lastStatus == 0) throw new IOException("Invalid running status");
                 buf.position(buf.position() - 1);
                 statusByte = lastStatus;
             }
@@ -149,9 +152,11 @@ public class MappedParseFunc {
                 }
             }
             else {
-                throw new IOException("Unknown status byte: " + statusByte);
+                //throw new IOException("Unknown status byte: " + statusByte);
             }
         }
+        
+        end();
     }
 
     private static int readVariableLength(ByteBuffer buf) throws IOException {
