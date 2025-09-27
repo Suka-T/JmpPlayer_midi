@@ -57,11 +57,11 @@ public class LightweightSequencer implements Sequencer {
     // タスク定義：1トラックごとにテンポ & イベントを収集
     class TrackResult {
         final Map<Long, Float> tempoMap;
-        final Map<Long, List<MidiEvent>> events;
+        final Map<Long, List<Long>> events;
         long notesCount = 0;
         long maxTick = 0;
 
-        TrackResult(Map<Long, Float> tempoMap, Map<Long, List<MidiEvent>> events) {
+        TrackResult(Map<Long, Float> tempoMap, Map<Long, List<Long>> events) {
             this.tempoMap = tempoMap;
             this.events = events;
         }
@@ -87,12 +87,13 @@ public class LightweightSequencer implements Sequencer {
     private boolean isMidioutDump = false;
     private int midioutDumpCnt = 0;
 
+    private MidiShortMessagePool shortMsgPool = new MidiShortMessagePool(50);
     private TreeMap<Long, Float> tempoChanges = new TreeMap<>();
-    private TreeMap<Long, List<MidiEvent>> metaMap = new TreeMap<>();
-    private Map<Long, List<MidiEvent>> eventMap1 = new TreeMap<>();
-    private Map<Long, List<MidiEvent>> eventMap2 = new TreeMap<>();
-    private Map<Long, List<MidiEvent>> currentEventMap = null;
-    private Map<Long, List<MidiEvent>> offEventMap = null;
+    private TreeMap<Long, List<MidiEvent>> metaSysMap = new TreeMap<>();
+    private Map<Long, List<Long>> eventMap1 = new TreeMap<>();
+    private Map<Long, List<Long>> eventMap2 = new TreeMap<>();
+    private Map<Long, List<Long>> currentEventMap = null;
+    private Map<Long, List<Long>> offEventMap = null;
     private List<MetaEventListener> metaEventListeners = new ArrayList<MetaEventListener>();
 
     private LwTransmitter lwTransmitter = new LwTransmitter();
@@ -125,7 +126,7 @@ public class LightweightSequencer implements Sequencer {
         sequence = null;
         tickPosition = 0;
         tempoChanges.clear(); // TreeMap<Long, Float>
-        metaMap.clear();
+        metaSysMap.clear();
         eventMap1.clear();
         eventMap2.clear();
         if (midiMsgPump != null) {
@@ -229,7 +230,7 @@ public class LightweightSequencer implements Sequencer {
         return (second * 1_000_000.0 * (double) ticksPerQuarterNote) / (double) tempo;
     }
 
-    private void extractMidiEvent(Map<Long, List<MidiEvent>> map, long startTick, long endTick, double usage) {
+    private void extractMidiEvent(Map<Long, List<Long>> map, long startTick, long endTick, double usage) {
         MappedSequence seq = (MappedSequence) this.sequence;
         map.clear();
 
@@ -245,7 +246,7 @@ public class LightweightSequencer implements Sequencer {
 
         for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
             final short index = trkIndex;
-            Map<Long, List<MidiEvent>> localEvents = new HashMap<>();
+            Map<Long, List<Long>> localEvents = new HashMap<>();
             results.add(new TrackResult(null, localEvents));
 
             executor.submit(() -> {
@@ -254,26 +255,21 @@ public class LightweightSequencer implements Sequencer {
 
                         @Override
                         public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
-                            try {
-                                SysexMessage sysex = new SysexMessage(statusByte, sysexData, length);
-                                results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(sysex, tick));
-                            }
-                            catch (InvalidMidiDataException e) {
-                                e.printStackTrace();
-                            }
+//                            try {
+//                                SysexMessage sysex = new SysexMessage(statusByte, sysexData, length);
+//                                results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(sysex, tick));
+//                            }
+//                            catch (InvalidMidiDataException e) {
+//                                e.printStackTrace();
+//                            }
 
                         }
 
                         @Override
                         public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
-                            try {
-                                LightweightShortMessage sm = new LightweightShortMessage(statusByte | (data1 << 8) | (data2 << 16), (short) trk);
-                                results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(sm, tick));
-                            }
-                            catch (InvalidMidiDataException e) {
-                                e.printStackTrace();
-                            }
-
+                            int packedMsg = MidiShortMessagePool.packShortMsg(statusByte, data1, data2);
+                            long packedAll = MidiShortMessagePool.packTrackMsg(trk, packedMsg);
+                            results.get(trk).events.computeIfAbsent(tick, k -> new ArrayList<>()).add(packedAll);
                         }
 
                         @Override
@@ -306,7 +302,7 @@ public class LightweightSequencer implements Sequencer {
         // 結果をマージ
         for (TrackResult result : results) {
             // eventMap へ統合
-            for (Map.Entry<Long, List<MidiEvent>> entry : result.events.entrySet()) {
+            for (Map.Entry<Long, List<Long>> entry : result.events.entrySet()) {
                 map.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).addAll(entry.getValue());
             }
         }
@@ -328,7 +324,7 @@ public class LightweightSequencer implements Sequencer {
         }
 
         tempoChanges.clear(); // TreeMap<Long, Float>
-        metaMap.clear();
+        metaSysMap.clear();
         eventMap1.clear();
         eventMap2.clear();
 
@@ -350,7 +346,7 @@ public class LightweightSequencer implements Sequencer {
         for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
             final short index = trkIndex;
             Map<Long, Float> tempoMap = new HashMap<>();
-            Map<Long, List<MidiEvent>> localEvents = new HashMap<>();
+            Map<Long, List<Long>> localEvents = new HashMap<>();
             results.add(new TrackResult(tempoMap, localEvents));
 
             executor.submit(() -> {
@@ -366,7 +362,12 @@ public class LightweightSequencer implements Sequencer {
 
                         @Override
                         public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
-                            // TODO 自動生成されたメソッド・スタブ
+                            try {
+                                metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(new SysexMessage(statusByte, sysexData, length), tick));
+                            }
+                            catch (InvalidMidiDataException e) {
+                                e.printStackTrace();
+                            }
 
                         }
 
@@ -390,7 +391,7 @@ public class LightweightSequencer implements Sequencer {
                             }
 
                             try {
-                                metaMap.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(new MetaMessage(type, metaData, length), tick));
+                                metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(new MetaMessage(type, metaData, length), tick));
                             }
                             catch (InvalidMidiDataException e) {
                                 e.printStackTrace();
@@ -495,11 +496,17 @@ public class LightweightSequencer implements Sequencer {
     protected void onTick(long tick) {
 
         // Note On / Off 処理
-        List<MidiEvent> events = currentEventMap.get(tick);
+        List<Long> events = currentEventMap.get(tick);
         if (events != null && lwTransmitter.getReceiver() != null) {
-            for (MidiEvent event : events) {
-                MidiMessage msg = event.getMessage();
-                sendMidiEvent(msg, -1); // 即時送信
+            for (long packedAll : events) {
+                try {
+                    LightweightShortMessage msg = shortMsgPool.borrow(packedAll);
+                    sendMidiEvent(msg, -1); // 即時送信
+                    shortMsgPool.release(msg);
+                }
+                catch (InvalidMidiDataException e) {
+                    e.printStackTrace();
+                }
             }
 
             // 処理済みの tick を削除
@@ -508,13 +515,19 @@ public class LightweightSequencer implements Sequencer {
 
     }
 
-    protected void onMeta(long tick) {
+    protected void onSysMeta(long tick) {
         // MetaMsg 処理
-        List<MidiEvent> events = metaMap.get(tick);
+        List<MidiEvent> events = metaSysMap.get(tick);
         if (events != null && lwTransmitter.getReceiver() != null) {
+            MidiMessage msg = null;
             for (MidiEvent event : events) {
-                MetaMessage msg = (MetaMessage) event.getMessage();
-                sendMetaEvent(msg, -1); // 即時送信
+                msg = event.getMessage();
+                if (msg instanceof MetaMessage) {
+                    sendMetaEvent((MetaMessage) msg, -1); // 即時送信
+                }
+                else if (msg instanceof SysexMessage) {
+                    sendSysExEvent((SysexMessage) msg, -1); // 即時送信
+                }
             }
         }
     }
@@ -544,6 +557,15 @@ public class LightweightSequencer implements Sequencer {
         }
     }
 
+    private void sendSysExEvent(SysexMessage msg, int timeStamp) {
+        SoundManager sm = JMPCore.getSoundManager();
+        IMidiEventListener notesMonitor = (IMidiEventListener) sm.getNotesMonitor();
+        if (notesMonitor != null) {
+            notesMonitor.catchMidiEvent(msg, timeStamp, IMidiEventListener.SENDER_MIDI_OUT);
+        }
+        lwTransmitter.getReceiver().send(msg, timeStamp); // 即時送信
+    }
+    
     private void sendMetaEvent(MetaMessage msg, int timeStamp) {
         SoundManager sm = JMPCore.getSoundManager();
         IMidiEventListener notesMonitor = (IMidiEventListener) sm.getNotesMonitor();
@@ -1228,7 +1250,7 @@ public class LightweightSequencer implements Sequencer {
                                             curBlockIndex = blockIndex;
                                             extractWorker.waitForRead();
 
-                                            Map<Long, List<MidiEvent>> temp = currentEventMap;
+                                            Map<Long, List<Long>> temp = currentEventMap;
                                             currentEventMap = offEventMap;
                                             offEventMap = temp;
                                             extractWorker.read(curBlockIndex + 1);
@@ -1236,7 +1258,7 @@ public class LightweightSequencer implements Sequencer {
                                     }
                                 }
 
-                                onMeta(t);
+                                onSysMeta(t);
                                 if (seqMode != ESeqMode.TickOnly) {
                                     onTick(t);
                                 }

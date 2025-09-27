@@ -14,6 +14,7 @@ import javax.swing.JOptionPane;
 import function.Platform;
 import function.Utility;
 import jlib.core.ISystemManager;
+import jlib.midi.IMidiEventListener;
 import jlib.plugin.IPlugin;
 import jmp.JMPFlags;
 import jmp.JMPLoader;
@@ -27,7 +28,6 @@ import jmp.plugin.JMPPluginLoader;
 import jmp.plugin.PluginObserver;
 import jmp.plugin.PluginWrapper;
 import jmp.plugin.PluginWrapper.PluginState;
-import jmp.task.TaskOfMidiEvent.JmpMidiPacket;
 import jmp.util.JmpUtil;
 import lib.JmsProperty;
 import lib.MakeJmpLib;
@@ -860,14 +860,26 @@ public class PluginManager extends AbstractManager {
     public void updateSequencer() {
         observers.updateSequencer();
     }
-
-    public void catchMidiEvent(MidiMessage message, long timeStamp, short senderType) {
-        // Midiイベント受信後の処理は別スレッドに委譲する
-        JMPCore.getTaskManager().addMidiEvent(message, timeStamp, senderType);
+    
+    public void processMidiEvent(MidiMessage message, long timeStamp, short senderType) {
+        WindowManager wm = JMPCore.getWindowManager();
+        IMidiEventListener midiEventMonitor = (IMidiEventListener) wm.getWindow(WindowManager.WINDOW_NAME_MIDI_MONITOR);
+        if (message != null) {
+            observers.catchMidiEvent(message, timeStamp, senderType);
+            if (midiEventMonitor != null) {
+                midiEventMonitor.catchMidiEvent(message, timeStamp, senderType);
+            }
+        }
     }
 
-    public void send(JmpMidiPacket packet) {
-        observers.catchMidiEvent(packet.message, packet.timeStamp, packet.senderType);
+    public void catchMidiEvent(MidiMessage message, long timeStamp, short senderType) {
+        if (JMPFlags.UseUnsynchronizedMidiPacket == true) {
+            // Midiイベント受信後の処理は別スレッドに委譲する
+            JMPCore.getTaskManager().addMidiEvent(message, timeStamp, senderType);
+        }
+        else {
+            processMidiEvent(message, timeStamp, senderType);
+        }
     }
 
     @Override

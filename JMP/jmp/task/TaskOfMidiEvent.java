@@ -8,10 +8,8 @@ import java.util.List;
 import javax.sound.midi.MidiMessage;
 
 import jlib.midi.IMidiEventListener;
-import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.PluginManager;
-import jmp.core.WindowManager;
 import jmp.midi.NotesMonitor;
 
 public class TaskOfMidiEvent extends TaskOfBase {
@@ -38,15 +36,7 @@ public class TaskOfMidiEvent extends TaskOfBase {
 
     public void add(MidiMessage message, long timeStamp, short senderType) {
 
-        JmpMidiPacket packet;
-        if (JMPFlags.UseUnsynchronizedMidiPacket == true) {
-            // 非同期にするため、MidiMessageをクローンする
-            packet = new JmpMidiPacket((MidiMessage) message.clone(), timeStamp, senderType);
-        }
-        else {
-            packet = new JmpMidiPacket(message, timeStamp, senderType);
-        }
-
+        JmpMidiPacket packet = new JmpMidiPacket(message, timeStamp, senderType);
         synchronized (mutex) {
             // プラグインに送信するパケットを発行
             stack.add(packet);
@@ -67,23 +57,13 @@ public class TaskOfMidiEvent extends TaskOfBase {
 
     @Override
     void loop() {
-        WindowManager wm = JMPCore.getWindowManager();
         PluginManager pm = JMPCore.getPluginManager();
-        IMidiEventListener midiEventMonitor = (IMidiEventListener) wm.getWindow(WindowManager.WINDOW_NAME_MIDI_MONITOR);
-
         synchronized (mutex) {
             // スタックされたパケットをプラグインに送信
             Iterator<JmpMidiPacket> i = stack.iterator();
             while (i.hasNext()) {
                 JmpMidiPacket packet = i.next();
-
-                if (packet.message != null) {
-                    pm.send(packet);
-                    if (midiEventMonitor != null) {
-                        midiEventMonitor.catchMidiEvent(packet.message, packet.timeStamp, packet.senderType);
-                    }
-                }
-
+                pm.processMidiEvent(packet.message, packet.timeStamp, packet.senderType);
                 i.remove();
             }
         }

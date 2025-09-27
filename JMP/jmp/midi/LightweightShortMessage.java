@@ -65,6 +65,16 @@ public class LightweightShortMessage extends ShortMessage implements ITrackMidiM
 
         setTrackIndex((short) 0);
     }
+    
+    public LightweightShortMessage() {
+        this.packedMsg = 0;
+
+        setTrackIndex((short) 0);
+    }
+    
+    public void setPackedMsg(int packedMsg) {
+        this.packedMsg = packedMsg;
+    }
 
     /**
      * get packedMsg
