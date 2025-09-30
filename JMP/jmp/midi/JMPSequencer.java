@@ -20,6 +20,12 @@ import jmp.midi.LightweightSequencer.ESeqMode;
 public class JMPSequencer implements Sequencer {
 
     private Sequencer abstractSequencer = null;
+    
+    private int ignoreNotesLowestOfMonitor = 0;
+    private int ignoreNotesHighestOfMonitor = 0;
+
+    private int ignoreNotesLowestOfAudio = 0;
+    private int ignoreNotesHighestOfAudio = 0;
 
     public JMPSequencer(Sequencer abstractSequenser) {
         this.abstractSequencer = abstractSequenser;
@@ -74,14 +80,23 @@ public class JMPSequencer implements Sequencer {
     public List<Transmitter> getTransmitters() {
         return abstractSequencer.getTransmitters();
     }
+    
+    private void commitIgnoreNotes() {
+        ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfMonitor(ignoreNotesLowestOfMonitor, ignoreNotesHighestOfMonitor);
+        ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfAudio(ignoreNotesLowestOfAudio, ignoreNotesHighestOfAudio);
+    }
 
     @Override
     public void setSequence(Sequence sequence) throws InvalidMidiDataException {
+        commitIgnoreNotes();
+        
         abstractSequencer.setSequence(sequence);
     }
 
     @Override
     public void setSequence(InputStream stream) throws IOException, InvalidMidiDataException {
+        commitIgnoreNotes();
+        
         abstractSequencer.setSequence(stream);
     }
 
@@ -326,7 +341,9 @@ public class JMPSequencer implements Sequencer {
     }
     
     public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
-        ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfMonitor(lowest, highest);
+        // ロード時にSequencerに設定する 
+        ignoreNotesLowestOfMonitor = lowest;
+        ignoreNotesHighestOfMonitor = highest;
     }
     
     public boolean isValidIgnoreNotesOfMonitor() {
@@ -338,7 +355,9 @@ public class JMPSequencer implements Sequencer {
     }
     
     public void setIgnoreNotesVelocityOfAudio(int lowest, int highest) {
-        ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfAudio(lowest, highest);
+        // ロード時にSequencerに設定する 
+        ignoreNotesLowestOfAudio = lowest;
+        ignoreNotesHighestOfAudio = highest;
     }
     
     public boolean isValidIgnoreNotesOfAudio() {
