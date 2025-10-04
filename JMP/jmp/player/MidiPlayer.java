@@ -293,25 +293,22 @@ public class MidiPlayer extends Player {
             receiverWrapper.changeAbsReceiver(receiver);
             currentReceiver = receiverWrapper;
 
+            ESeqMode seqMode = ESeqMode.Normal;
+            if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
+                seqMode = ESeqMode.TickOnly;
+            }
+            
             Sequence oldSequence = null;
             if (sequencer != null) {
                 oldSequence = sequencer.getSequence();
                 if (sequencer.isOpen() == true) {
                     sequencer.close();
                 }
+                sequencer.renewSequencer(new LightweightSequencer(seqMode));
             }
-
-            ESeqMode seqMode = ESeqMode.Normal;
-            if (name.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME) == true) {
-                seqMode = ESeqMode.TickOnly;
+            else {
+                sequencer = new JMPSequencer(new LightweightSequencer(seqMode));
             }
-            sequencer = new JMPSequencer(new LightweightSequencer(seqMode));
-            // if (name.equalsIgnoreCase(SoundManager.NULL_RECEIVER_NAME)) {
-            // sequencer = new JMPSequencer(new LightweightSequencer());
-            // }
-            // else {
-            // sequencer = new JMPSequencer(MidiSystem.getSequencer(false));
-            // }
 
             if (oldSequence != null) {
                 try {

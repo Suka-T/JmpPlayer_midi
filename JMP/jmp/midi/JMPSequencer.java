@@ -30,6 +30,10 @@ public class JMPSequencer implements Sequencer {
     private double usageRamOfMidiEventBuffer = 0.25;
 
     public JMPSequencer(Sequencer abstractSequenser) {
+        renewSequencer(abstractSequenser);
+    }
+    
+    public void renewSequencer(Sequencer abstractSequenser) {
         this.abstractSequencer = abstractSequenser;
     }
 
