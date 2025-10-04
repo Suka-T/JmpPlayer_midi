@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -370,6 +374,13 @@ public class LightweightSequencer implements Sequencer {
             }
         }
 
+        if (midiMsgPump == null) {
+            midiMsgPump = new MidiMessagePump();
+        }
+        if (extractWorker == null) {
+            extractWorker = new ExtractWorker();
+        }
+
         tempoChanges.clear(); // TreeMap<Long, Float>
         metaSysMap.clear();
         eventMap1.clear();
@@ -392,83 +403,137 @@ public class LightweightSequencer implements Sequencer {
         tempFinTrk = 0;
         analyzing = true;
 
+        tempCurFinTrk = 0;
+
+        int threadCount = 5;
+        long threadStartTick[] = new long[threadCount];
+        long threadEndTick[] = new long[threadCount];
+        long threadMaxTick[] = new long[threadCount];
+        long threadNotesCount[] = new long[threadCount];
+        int threadFinTrack[] = new int[threadCount];
+        
+        int coreCount = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(coreCount);
+
         do {
-            tempCurFinTrk = 0;
-            for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
+            List<Future<Integer>> futures = new ArrayList<>();
+            for (int i = 0; i < threadCount; i++) {
+                threadStartTick[i] = tempStartTick;
+                threadEndTick[i] = tempEndTick;
+                threadMaxTick[i] = 0;
+                threadNotesCount[i] = 0;
+                threadFinTrack[i] = 0;
 
-                try {
-                    seq.parse(trkIndex, new MappedParseFunc(tempStartTick, tempEndTick) {
+                tempStartTick = tempEndTick + 1;
+                tempEndTick += tempBlockTick;
+            }
+            
+            Object thMutex = new Object();
 
-                        @Override
-                        public void calcTick(int trk, int tick) {
-                            if (tempMaxTick < tick) {
-                                tempMaxTick = tick;
-                            }
-                        }
+            for (int thId = 0; thId < threadCount; thId++) {
+                final int exThId = thId;
+                futures.add(executor.submit(() -> {
+                    for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
 
-                        @Override
-                        public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
-                            try {
-                                metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>())
-                                        .add(new MidiEvent(new SysexMessage(statusByte, sysexData, length), tick));
-                            }
-                            catch (InvalidMidiDataException e) {
-                                e.printStackTrace();
-                            }
+                        try {
+                            seq.parse(trkIndex, new MappedParseFunc(threadStartTick[exThId], threadEndTick[exThId]) {
 
-                        }
-
-                        @Override
-                        public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
-                            int command = statusByte & 0xF0;
-                            if (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 > 0) {
-                                tempNotesCount++;
-                            }
-                        }
-
-                        @Override
-                        public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
-                            // テンポイベント検出
-                            if (type == 0x51) {
-                                if (length == 3) {
-                                    int mpq = ((metaData[0] & 0xFF) << 16) | ((metaData[1] & 0xFF) << 8) | (metaData[2] & 0xFF);
-                                    float bpm = 60_000_000f / mpq;
-                                    tempoChanges.put(tick, bpm);
+                                @Override
+                                public void calcTick(int trk, int tick) {
+                                    if (threadMaxTick[exThId] < tick) {
+                                        threadMaxTick[exThId] = tick;
+                                    }
                                 }
-                            }
 
-                            try {
-                                metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(new MetaMessage(type, metaData, length), tick));
-                            }
-                            catch (InvalidMidiDataException e) {
-                                e.printStackTrace();
-                            }
-                        }
+                                @Override
+                                public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
+                                    synchronized (thMutex) {
+                                        try {
+                                            metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>())
+                                                    .add(new MidiEvent(new SysexMessage(statusByte, sysexData, length), tick));
+                                        }
+                                        catch (InvalidMidiDataException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
 
-                        @Override
-                        public void end() {
-                            tempCurFinTrk++;
-                        }
+                                }
 
-                        @Override
-                        public boolean interrupt() {
-                            if (toInvalidFlag == true) {
-                                return true;
-                            }
-                            return super.interrupt();
+                                @Override
+                                public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
+                                    int command = statusByte & 0xF0;
+                                    if (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 > 0) {
+                                        threadNotesCount[exThId]++;
+                                    }
+                                }
+
+                                @Override
+                                public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
+                                    synchronized (thMutex) {
+                                        // テンポイベント検出
+                                        if (type == 0x51) {
+                                            if (length == 3) {
+                                                int mpq = ((metaData[0] & 0xFF) << 16) | ((metaData[1] & 0xFF) << 8) | (metaData[2] & 0xFF);
+                                                float bpm = 60_000_000f / mpq;
+                                                tempoChanges.put(tick, bpm);
+                                            }
+                                        }
+    
+                                        try {
+                                            metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>())
+                                                    .add(new MidiEvent(new MetaMessage(type, metaData, length), tick));
+                                        }
+                                        catch (InvalidMidiDataException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+
+                                @Override
+                                public void end() {
+                                    threadFinTrack[exThId]++;
+                                }
+
+                                @Override
+                                public boolean interrupt() {
+                                    if (toInvalidFlag == true) {
+                                        return true;
+                                    }
+                                    return super.interrupt();
+                                }
+                            });
                         }
-                    });
+                        catch (Throwable e) {
+                            JMPCore.getSystemManager().errorHandle(e);
+                        }
+                    }
+                    return exThId;
+                }));
+            }
+
+            // 終了を待つ
+            // 集約処理
+            for (Future<Integer> f : futures) {
+                try {
+                    int fid = f.get();
+                    if (tempMaxTick < threadMaxTick[fid]) {
+                        tempMaxTick = threadMaxTick[fid];
+                    }
+                    tempNotesCount += threadNotesCount[fid];
+                    tempCurFinTrk += threadFinTrack[fid];
                 }
-                catch (Throwable e) {
-                    JMPCore.getSystemManager().errorHandle(e);
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                catch (ExecutionException e) {
+                    e.printStackTrace();
                 }
             }
             tempFinTrk = tempCurFinTrk;
-            System.out.println(tempEndTick + ": " + tempFinTrk + " / " + seq.getNumTracks() + " cnt: " + tempNotesCount);
-            tempStartTick = tempEndTick + 1;
-            tempEndTick += tempBlockTick;
         }
         while (tempFinTrk < seq.getNumTracks() && toInvalidFlag == false);
+        
+        executor.shutdown();
 
         seq.setTickLength(tempMaxTick);
         seq.setNumOfNotes(tempNotesCount);
