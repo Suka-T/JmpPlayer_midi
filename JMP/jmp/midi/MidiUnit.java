@@ -212,4 +212,20 @@ public class MidiUnit implements IMidiUnit {
     public long getProgressReadTick() {
         return getSequencer().getProgressReadTick();
     }
+
+    @Override
+    public double getUsageRamOfMidiEventBuffer() {
+        return getSequencer().getUsageRamOfMidiEventBuffer();
+    }
+
+    @Override
+    public void setUsageRamOfMidiEventBuffer(double usage) {
+        if (usage < 0.01) {
+            usage = 0.01;
+        }
+        else if (usage > 1.0) {
+            usage = 1.0;
+        }
+        getSequencer().setUsageRamOfMidiEventBuffer(usage);
+    }
 }

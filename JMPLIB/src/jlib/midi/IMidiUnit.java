@@ -118,5 +118,19 @@ public interface IMidiUnit {
     abstract boolean isValidIgnoreNotesOfAudio();
     abstract boolean isGhostNotesOfAudio(int velocity);
     
+    /**
+     * 音声出力で一時格納するMIDIイベントバッファーのRAM使用率を指定 
+     * 
+     * @return double 使用率(0.01 ~ 1.0)
+     */
+    abstract double getUsageRamOfMidiEventBuffer();
+    
+    /**
+     * 音声出力で一時格納するMIDIイベントバッファーのRAM使用率を指定する 
+     * 
+     * @param usage 0.01 ~ 1.0
+     */
+    abstract void setUsageRamOfMidiEventBuffer(double usage);
+    
     abstract SignatureInfo getSignatureInfo();
 }

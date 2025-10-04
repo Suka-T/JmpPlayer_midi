@@ -26,6 +26,8 @@ public class JMPSequencer implements Sequencer {
 
     private int ignoreNotesLowestOfAudio = 0;
     private int ignoreNotesHighestOfAudio = 0;
+    
+    private double usageRamOfMidiEventBuffer = 0.25;
 
     public JMPSequencer(Sequencer abstractSequenser) {
         this.abstractSequencer = abstractSequenser;
@@ -81,21 +83,22 @@ public class JMPSequencer implements Sequencer {
         return abstractSequencer.getTransmitters();
     }
     
-    private void commitIgnoreNotes() {
+    private void commitSettings() {
         ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfMonitor(ignoreNotesLowestOfMonitor, ignoreNotesHighestOfMonitor);
         ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfAudio(ignoreNotesLowestOfAudio, ignoreNotesHighestOfAudio);
+        ((LightweightSequencer) abstractSequencer).setUsageExtractRam(usageRamOfMidiEventBuffer);
     }
 
     @Override
     public void setSequence(Sequence sequence) throws InvalidMidiDataException {
-        commitIgnoreNotes();
+        commitSettings();
         
         abstractSequencer.setSequence(sequence);
     }
 
     @Override
     public void setSequence(InputStream stream) throws IOException, InvalidMidiDataException {
-        commitIgnoreNotes();
+        commitSettings();
         
         abstractSequencer.setSequence(stream);
     }
@@ -396,5 +399,13 @@ public class JMPSequencer implements Sequencer {
     
     public long getProgressReadTick() {
         return ((LightweightSequencer) abstractSequencer).getProgressReadTick();
+    }
+
+    public double getUsageRamOfMidiEventBuffer() {
+        return usageRamOfMidiEventBuffer;
+    }
+
+    public void setUsageRamOfMidiEventBuffer(double usageRamOfMidiEventBuffer) {
+        this.usageRamOfMidiEventBuffer = usageRamOfMidiEventBuffer;
     }
 }

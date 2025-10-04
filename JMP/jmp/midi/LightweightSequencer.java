@@ -49,7 +49,7 @@ public class LightweightSequencer implements Sequencer {
             }
         }
     }
-    
+
     public class PackedLongList {
         private int capacity = 16;
         private long[] data;
@@ -58,7 +58,7 @@ public class LightweightSequencer implements Sequencer {
         public PackedLongList() {
             data = null;
         }
-        
+
         public void add(int trk, int statusByte, int data1, int data2) {
             int packedMsg = MidiShortMessagePool.packShortMsg(statusByte, data1, data2);
             long packedAll = MidiShortMessagePool.packTrackMsg(trk, packedMsg);
@@ -69,7 +69,7 @@ public class LightweightSequencer implements Sequencer {
             if (data == null) {
                 data = new long[capacity];
             }
-            
+
             if (size == data.length) {
                 long[] newData = new long[data.length * 2];
                 System.arraycopy(data, 0, newData, 0, data.length);
@@ -131,16 +131,19 @@ public class LightweightSequencer implements Sequencer {
 
     // seek移動中はフラグを建てることで各スレッドを動作しない制御する
     private boolean seekingFlag = false;
-    
+
     private boolean toInvalidFlag = false;
+
+    // MIDI抽出のRAM使用率
+    private double usageExtractRam = 0.25;
 
     // Sequenceを削除するフラグ
     public void toInvalid() {
         stop();
-        
+
         toInvalidFlag = true;
     }
-    
+
     protected void toInvalidProcess() {
         if (toInvalidFlag == true) {
             tickPosition = 0;
@@ -153,7 +156,7 @@ public class LightweightSequencer implements Sequencer {
             }
             sequence = null;
             toInvalidFlag = false;
-            
+
             System.gc();
         }
     }
@@ -238,9 +241,18 @@ public class LightweightSequencer implements Sequencer {
         return false;
     }
 
-    private long calcBlockTick(long tickLength) {
-        // 1秒のtick数を1ブロックとする
-        return (long) getTickPerSecond((int) getTempoInBPM(), 15.0);
+    private long calcBlockTick(double usage) {
+
+        // 1秒のtick数を1ブロックを最小にする
+        long minimum = (long) getTickPerSecond((int) getTempoInBPM(), 15.0) * 2;
+
+        // tickLengthを基準に使用RAM指定から求める
+        long total = (long) ((double) sequence.getTickLength() * usage);
+        if (total < minimum) {
+            // 最小ブロック数
+            total = minimum;
+        }
+        return total / 2; // Map2つ分
     }
 
     public double getTickPerSecond(int bpm, double second) {
@@ -256,7 +268,7 @@ public class LightweightSequencer implements Sequencer {
     private void extractMidiEvent(Map<Long, PackedLongList> map, long startTick, long endTick, double usage) {
         MappedSequence seq = (MappedSequence) this.sequence;
         map.clear();
-        
+
         System.out.println("extract events : " + startTick + "-" + endTick);
 
         for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
@@ -301,7 +313,7 @@ public class LightweightSequencer implements Sequencer {
                         // e.printStackTrace();
                         // }
                     }
-                    
+
                     @Override
                     public boolean interrupt() {
                         if (toInvalidFlag == true) {
@@ -325,21 +337,24 @@ public class LightweightSequencer implements Sequencer {
     private long tempBlockTick = 200000;
     private long tempStartTick = 0;
     private long tempEndTick = 0;
-    
+
     // Analyze進捗確認用の関数
     public boolean isProgressNowAnalyzing() {
         return analyzing;
     }
+
     public long getProgressFinTrackNum() {
         return tempFinTrk;
     }
+
     public long getProgressNotesCount() {
         return tempNotesCount;
     }
+
     public long getProgressReadTick() {
         return tempStartTick;
     }
-    
+
     private void analyzeSequence(MappedSequence seq) {
 
         seekingFlag = true;
@@ -376,21 +391,21 @@ public class LightweightSequencer implements Sequencer {
         tempEndTick = tempStartTick + tempBlockTick;
         tempFinTrk = 0;
         analyzing = true;
-        
+
         do {
             tempCurFinTrk = 0;
             for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
-    
+
                 try {
                     seq.parse(trkIndex, new MappedParseFunc(tempStartTick, tempEndTick) {
-    
+
                         @Override
                         public void calcTick(int trk, int tick) {
                             if (tempMaxTick < tick) {
                                 tempMaxTick = tick;
                             }
                         }
-    
+
                         @Override
                         public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
                             try {
@@ -400,9 +415,9 @@ public class LightweightSequencer implements Sequencer {
                             catch (InvalidMidiDataException e) {
                                 e.printStackTrace();
                             }
-    
+
                         }
-    
+
                         @Override
                         public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
                             int command = statusByte & 0xF0;
@@ -410,7 +425,7 @@ public class LightweightSequencer implements Sequencer {
                                 tempNotesCount++;
                             }
                         }
-    
+
                         @Override
                         public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
                             // テンポイベント検出
@@ -421,7 +436,7 @@ public class LightweightSequencer implements Sequencer {
                                     tempoChanges.put(tick, bpm);
                                 }
                             }
-    
+
                             try {
                                 metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>()).add(new MidiEvent(new MetaMessage(type, metaData, length), tick));
                             }
@@ -429,12 +444,12 @@ public class LightweightSequencer implements Sequencer {
                                 e.printStackTrace();
                             }
                         }
-                        
+
                         @Override
                         public void end() {
                             tempCurFinTrk++;
                         }
-                        
+
                         @Override
                         public boolean interrupt() {
                             if (toInvalidFlag == true) {
@@ -452,8 +467,9 @@ public class LightweightSequencer implements Sequencer {
             System.out.println(tempEndTick + ": " + tempFinTrk + " / " + seq.getNumTracks() + " cnt: " + tempNotesCount);
             tempStartTick = tempEndTick + 1;
             tempEndTick += tempBlockTick;
-        } while (tempFinTrk < seq.getNumTracks() && toInvalidFlag == false);
-        
+        }
+        while (tempFinTrk < seq.getNumTracks() && toInvalidFlag == false);
+
         seq.setTickLength(tempMaxTick);
         seq.setNumOfNotes(tempNotesCount);
 
@@ -465,11 +481,12 @@ public class LightweightSequencer implements Sequencer {
             blockTick = tempMaxTick;
         }
         else {
-            blockTick = calcBlockTick(tempMaxTick);
+            blockTick = calcBlockTick(usageExtractRam);
         }
 
         analyzing = false;
         seekingFlag = false;
+        midiMsgPump.initialRead();
     }
 
     // 再生処理スレッド
@@ -483,7 +500,7 @@ public class LightweightSequencer implements Sequencer {
         while (running.get()) {
             try {
                 toInvalidProcess();
-                
+
                 if (paused.get()) {
                     Thread.sleep(10);
                     continue;
@@ -696,12 +713,6 @@ public class LightweightSequencer implements Sequencer {
     public void start() {
         System.out.print("lwSequencer RUN ");
         System.out.println(getSeqMode().toString());
-        if (midiMsgPump == null) {
-            midiMsgPump = new MidiMessagePump();
-        }
-        if (extractWorker == null) {
-            extractWorker = new ExtractWorker();
-        }
         isMidioutDump = false;
         midioutDumpCnt = 0;
         if (playThread != null) {
@@ -1233,6 +1244,38 @@ public class LightweightSequencer implements Sequencer {
             waitFlag.set(false);
         }
 
+        void initialRead() {
+            if (curBlockIndex == -1) {
+                curBlockIndex = 0;
+                currentEventMap = eventMap1;
+                offEventMap = eventMap2;
+                currentEventMap.clear();
+
+                long startTick = blockTick * curBlockIndex;
+                long endTick = blockTick * (curBlockIndex + 1) - 1;
+                if (startTick < 0) {
+                    startTick = 0;
+                }
+                else if (getTickLength() < startTick) {
+                    startTick = getTickLength();
+                }
+                if (endTick < 0) {
+                    endTick = 0;
+                }
+                else if (getTickLength() < endTick) {
+                    endTick = getTickLength();
+                }
+
+                if (seqMode != ESeqMode.TickOnly) {
+                    if (endTick > startTick) {
+                        // conflict args
+                        extractMidiEvent(currentEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
+                    }
+                    extractWorker.read(curBlockIndex + 1);
+                }
+            }
+        }
+
         @Override
         public void run() {
             long cur = 0;
@@ -1256,32 +1299,7 @@ public class LightweightSequencer implements Sequencer {
                                 blockIndex = t / blockTick;
                                 if (curBlockIndex == -1) {
                                     curBlockIndex = blockIndex;
-                                    currentEventMap = eventMap1;
-                                    offEventMap = eventMap2;
-                                    currentEventMap.clear();
-
-                                    long startTick = blockTick * curBlockIndex;
-                                    long endTick = blockTick * (curBlockIndex + 1) - 1;
-                                    if (startTick < 0) {
-                                        startTick = 0;
-                                    }
-                                    else if (getTickLength() < startTick) {
-                                        startTick = getTickLength();
-                                    }
-                                    if (endTick < 0) {
-                                        endTick = 0;
-                                    }
-                                    else if (getTickLength() < endTick) {
-                                        endTick = getTickLength();
-                                    }
-
-                                    if (seqMode != ESeqMode.TickOnly) {
-                                        if (endTick > startTick) {
-                                            // conflict args
-                                            extractMidiEvent(currentEventMap, startTick, endTick, EXTRACT_MIDI_USAGE);
-                                        }
-                                        extractWorker.read(curBlockIndex + 1);
-                                    }
+                                    initialRead();
                                 }
                                 else {
                                     if (seqMode != ESeqMode.TickOnly) {
@@ -1329,5 +1347,13 @@ public class LightweightSequencer implements Sequencer {
 
     public void setSeqMode(ESeqMode seqMode) {
         this.seqMode = seqMode;
+    }
+
+    public double getUsageExtractRam() {
+        return usageExtractRam;
+    }
+
+    public void setUsageExtractRam(double usageExtractRam) {
+        this.usageExtractRam = usageExtractRam;
     }
 } /* LightweightSequencer class end */
