@@ -890,6 +890,7 @@ public class LightweightSequencer implements Sequencer {
         seekingFlag = true;
         if (midiMsgPump != null) {
             midiMsgPump.reset(tick);
+            midiMsgPump.initialRead();
         }
 
         this.tickPosition = tick;
