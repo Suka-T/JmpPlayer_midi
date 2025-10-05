@@ -133,4 +133,18 @@ public interface IMidiUnit {
     abstract void setUsageRamOfMidiEventBuffer(double usage);
     
     abstract SignatureInfo getSignatureInfo();
+    
+    /**
+     * MIDIファイル解析で使用するスレッド数設定を取得する 
+     * 
+     * @return スレッド数
+     */
+    abstract int getUsageAnalyzeThreadCount();
+
+    /**
+     * MIDIファイル解析で使用するスレッド数を設定する
+     * 
+     * @param usageAnalyzeThreadCount スレッド数
+     */
+    abstract void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount);
 }

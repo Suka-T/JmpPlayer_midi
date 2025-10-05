@@ -140,6 +140,8 @@ public class LightweightSequencer implements Sequencer {
 
     // MIDI抽出のRAM使用率
     private double usageExtractRam = 0.25;
+    
+    private int usageAnalyzeThreadCount = 6;
 
     // Sequenceを削除するフラグ
     public void toInvalid() {
@@ -429,7 +431,7 @@ public class LightweightSequencer implements Sequencer {
 
         tempCurFinTrk = 0;
 
-        int threadCount = 6;
+        int threadCount = usageAnalyzeThreadCount;
         AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[threadCount];
         for (int i = 0; i < threadCount; i++) {
             analyzeResults[i] = new AnalyzeThreadResult(seq.getNumTracks());
@@ -1464,5 +1466,13 @@ public class LightweightSequencer implements Sequencer {
 
     public void setUsageExtractRam(double usageExtractRam) {
         this.usageExtractRam = usageExtractRam;
+    }
+    
+    public int getUsageAnalyzeThreadCount() {
+        return usageAnalyzeThreadCount;
+    }
+
+    public void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount) {
+        this.usageAnalyzeThreadCount = usageAnalyzeThreadCount;
     }
 } /* LightweightSequencer class end */

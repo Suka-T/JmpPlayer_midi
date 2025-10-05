@@ -228,4 +228,20 @@ public class MidiUnit implements IMidiUnit {
         }
         getSequencer().setUsageRamOfMidiEventBuffer(usage);
     }
+
+    @Override
+    public int getUsageAnalyzeThreadCount() {
+        return getSequencer().getUsageAnalyzeThreadCount();
+    }
+
+    @Override
+    public void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount) {
+        if (usageAnalyzeThreadCount < 1) {
+            usageAnalyzeThreadCount = 1;
+        }
+        else if (usageAnalyzeThreadCount > 24) {
+            usageAnalyzeThreadCount = 24;
+        }
+        getSequencer().setUsageAnalyzeThreadCount(usageAnalyzeThreadCount);
+    }
 }

@@ -28,6 +28,8 @@ public class JMPSequencer implements Sequencer {
     private int ignoreNotesHighestOfAudio = 0;
     
     private double usageRamOfMidiEventBuffer = 0.25;
+    
+    private int usageAnalyzeThreadCount = 6;
 
     public JMPSequencer(Sequencer abstractSequenser) {
         renewSequencer(abstractSequenser);
@@ -91,6 +93,7 @@ public class JMPSequencer implements Sequencer {
         ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfMonitor(ignoreNotesLowestOfMonitor, ignoreNotesHighestOfMonitor);
         ((LightweightSequencer) abstractSequencer).setIgnoreNotesVelocityOfAudio(ignoreNotesLowestOfAudio, ignoreNotesHighestOfAudio);
         ((LightweightSequencer) abstractSequencer).setUsageExtractRam(usageRamOfMidiEventBuffer);
+        ((LightweightSequencer) abstractSequencer).setUsageAnalyzeThreadCount(usageAnalyzeThreadCount);
     }
 
     @Override
@@ -411,5 +414,13 @@ public class JMPSequencer implements Sequencer {
 
     public void setUsageRamOfMidiEventBuffer(double usageRamOfMidiEventBuffer) {
         this.usageRamOfMidiEventBuffer = usageRamOfMidiEventBuffer;
+    }
+
+    public int getUsageAnalyzeThreadCount() {
+        return usageAnalyzeThreadCount;
+    }
+
+    public void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount) {
+        this.usageAnalyzeThreadCount = usageAnalyzeThreadCount;
     }
 }
