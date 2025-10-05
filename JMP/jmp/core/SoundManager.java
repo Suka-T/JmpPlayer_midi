@@ -647,6 +647,20 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         boolean res = super.operate(asset);
 
         getNotesMonitor().clearNumOfNotes();
+        
+        String recvName = getConfigParam(IDataManager.CFG_KEY_MIDIOUT);
+        if (recvName.equals(SoundManager.NULL_RECEIVER_NAME)) {
+            SMidiPlayer.setSeqMode(ESeqMode.NonSound);
+        }
+        else if (recvName.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME)) {
+            SMidiPlayer.setSeqMode(ESeqMode.TickOnly);
+        }
+//        else if (recvName.equals("") == true || recvName.isEmpty() == true || recvName.equals(SoundManager.AUTO_RECEIVER_NAME) == true) {
+//            SMidiPlayer.setSeqMode(ESeqMode.Normal);
+//        }
+        else {
+            SMidiPlayer.setSeqMode(ESeqMode.Normal);
+        }
 
         if (asset.getOperateType() == OperateType.FileLoad) {
             /* ファイルロード処理 */
@@ -658,12 +672,6 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 changePlayer(fileAsset.file);
                 if (tmpPlayer != PlayerAccessor.getCurrent()) {
                     tmpPlayer.changingPlayer();
-                }
-
-                if (PlayerAccessor.getCurrent() instanceof MidiPlayer) {
-                    if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
-                        SMidiPlayer.setSeqMode(ESeqMode.Normal);
-                    }
                 }
 
                 if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {
@@ -699,15 +707,20 @@ public class SoundManager extends AbstractManager implements ISoundManager {
             DualFileLoadCoreAsset fileAsset = (DualFileLoadCoreAsset) asset;
             Player tmpPlayer = PlayerAccessor.getCurrent();
             boolean loadResult = true;
+            
+            if (SMidiPlayer.getSeqMode() == ESeqMode.Normal) {
+                if (JMPFlags.DualFileLoadToSoundFunc == 1) {
+                    SMidiPlayer.setSeqMode(ESeqMode.NonSound);
+                }
+                else if (JMPFlags.DualFileLoadToSoundFunc == 2) {
+                    SMidiPlayer.setSeqMode(ESeqMode.TickOnly);
+                }
+            }
 
             try {
                 PlayerAccessor.changeDualPlayerSynchronizer();
                 if (tmpPlayer != PlayerAccessor.getCurrent()) {
                     tmpPlayer.changingPlayer();
-                }
-
-                if (getConfigParam(IDataManager.CFG_KEY_MIDIOUT).equals("") == true) {
-                    SMidiPlayer.setSeqMode(ESeqMode.NonSound);
                 }
 
                 if (PlayerAccessor.getCurrent().loadFile(fileAsset.file) == false) {

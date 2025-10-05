@@ -102,5 +102,13 @@ public class JMPFlags {
 
     /** MidiEventのキャッシュを作成するフラグ */
     public static boolean MakeNativeMidiEventFlag = true;
+    
+    /** 
+     * MIDI, WAV同時ロード時の挙動。MIDIをミュートするか？
+     *  0 : そのまま。(WavとMIDI両方の音声が出力する
+     *  1 : MIDIの音声が出ない。ただし、Eventの通知は行う 
+     *  2 : MIDIの音声が完全に出ない。Tickのカウントアップのみ行う   
+     */
+    public static int DualFileLoadToSoundFunc = 0;
 
 }
