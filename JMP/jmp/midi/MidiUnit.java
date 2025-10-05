@@ -244,4 +244,20 @@ public class MidiUnit implements IMidiUnit {
         }
         getSequencer().setUsageAnalyzeThreadCount(usageAnalyzeThreadCount);
     }
+
+    @Override
+    public int getUsageExtractThreadCount() {
+        return getSequencer().getUsageExtractThreadCount();
+    }
+
+    @Override
+    public void setUsageExtractThreadCount(int usageExtractThreadCount) {
+        if (usageExtractThreadCount < 1) {
+            usageExtractThreadCount = 1;
+        }
+        else if (usageExtractThreadCount > 24) {
+            usageExtractThreadCount = 24;
+        }
+        getSequencer().setUsageExtractThreadCount(usageExtractThreadCount);
+    }
 }

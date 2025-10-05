@@ -147,4 +147,18 @@ public interface IMidiUnit {
      * @param usageAnalyzeThreadCount スレッド数
      */
     abstract void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount);
+    
+    /**
+     * MIDIイベント抽出で使用するスレッド数設定を取得する
+     * 
+     * @return スレッド数
+     */
+    abstract int getUsageExtractThreadCount();
+
+    /**
+     * MIDIイベント抽出で使用するスレッド数を設定する
+     * 
+     * @param usageExtractThreadCount スレッド数
+     */
+    abstract void setUsageExtractThreadCount(int usageExtractThreadCount);
 }

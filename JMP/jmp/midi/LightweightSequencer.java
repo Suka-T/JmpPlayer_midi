@@ -3,6 +3,7 @@ package jmp.midi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -90,6 +91,48 @@ public class LightweightSequencer implements Sequencer {
             return size;
         }
     }
+    
+    private class AnalyzeThreadResult {
+        public long startTick = 0;
+        public long endTick = 0;
+        public long maxTick = 0;
+        public long notesCount = 0;
+        public boolean finTrackState[];
+        public int numOfTrack = 0;
+        public AnalyzeThreadResult(int numOfTrack) {
+            this.numOfTrack = numOfTrack;
+            finTrackState = new boolean[this.numOfTrack];
+            init();
+        }
+        
+        public void init() {
+            startTick = 0;
+            endTick = 0;
+            maxTick = 0;
+            notesCount = 0;
+            for (int j = 0; j < this.numOfTrack; j++) {
+                finTrackState[j] = false;
+            }
+        }
+    }
+    
+    private class ExtractThreadResult {
+        public long startTick = 0;
+        public long endTick = 0;
+        public Map<Long, PackedLongList> map;
+        public int numOfTrack = 0;
+        public ExtractThreadResult(int numOfTrack) {
+            this.numOfTrack = numOfTrack;
+            map = new HashMap<Long, PackedLongList>();
+            init();
+        }
+        
+        public void init() {
+            startTick = 0;
+            endTick = 0;
+            map.clear();
+        }
+    }
 
     static final double EXTRACT_MIDI_USAGE = 0.3;
     private float tempoBPM = 120.0f;
@@ -141,7 +184,8 @@ public class LightweightSequencer implements Sequencer {
     // MIDI抽出のRAM使用率
     private double usageExtractRam = 0.25;
     
-    private int usageAnalyzeThreadCount = 6;
+    private int usageAnalyzeThreadCount = 8;
+    private int usageExtractThreadCount = 4;
 
     // Sequenceを削除するフラグ
     public void toInvalid() {
@@ -270,71 +314,133 @@ public class LightweightSequencer implements Sequencer {
         int ticksPerQuarterNote = sequence.getResolution();
         return (second * 1_000_000.0 * (double) ticksPerQuarterNote) / (double) tempo;
     }
-
+    
     private void extractMidiEvent(Map<Long, PackedLongList> map, long startTick, long endTick, double usage) {
         MappedSequence seq = (MappedSequence) this.sequence;
         map.clear();
 
         System.out.println("extract events : " + startTick + "-" + endTick);
-
-        for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
-            final short index = trkIndex;
-
-            try {
-                seq.parse(index, new MappedParseFunc(startTick, endTick) {
-
-                    @Override
-                    public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
-                        // try {
-                        // SysexMessage sysex = new SysexMessage(statusByte,
-                        // sysexData, length);
-                        // results.get(trk).events.computeIfAbsent(tick, k
-                        // -> new ArrayList<>()).add(new MidiEvent(sysex,
-                        // tick));
-                        // }
-                        // catch (InvalidMidiDataException e) {
-                        // e.printStackTrace();
-                        // }
-
-                    }
-
-                    @Override
-                    public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
-                        if (map.get(tick) == null) {
-                            map.put(tick, new PackedLongList());
-                        }
-                        map.get(tick).add(trk, statusByte, data1, data2);
-                    }
-
-                    @Override
-                    public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
-                        // try {
-                        // MetaMessage meta = new MetaMessage(type,
-                        // metaData, length);
-                        // results.get(trk).events.computeIfAbsent(tick, k
-                        // -> new ArrayList<>()).add(new MidiEvent(meta,
-                        // tick));
-                        // }
-                        // catch (InvalidMidiDataException e) {
-                        // e.printStackTrace();
-                        // }
-                    }
-
-                    @Override
-                    public boolean interrupt() {
-                        if (toInvalidFlag == true) {
-                            return true;
-                        }
-                        return super.interrupt();
-                    }
-                });
-            }
-            catch (Throwable e) {
-                JMPCore.getSystemManager().errorHandle(e);
-            }
+        
+        int threadCount = usageExtractThreadCount;
+        ExtractThreadResult[] extractResults = new ExtractThreadResult[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            extractResults[i] = new ExtractThreadResult(seq.getNumTracks());
         }
-    }
+        
+        int coreCount = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
+        boolean endExtractFlag = false;
+        long localBlockTick = 200000;
+        long localStartTick = startTick;
+        long localEndTick = localStartTick + localBlockTick;
+        do {
+            List<Future<Integer>> futures = new ArrayList<>();
+            for (int i = 0; i < threadCount; i++) {
+                extractResults[i].init();
+                extractResults[i].startTick = localStartTick;
+                extractResults[i].endTick = localEndTick;
+
+                localStartTick = localEndTick + 1;
+                localEndTick += localBlockTick;
+            }
+            
+            //Object thMutex = new Object();
+            
+            for (int thId = 0; thId < threadCount; thId++) {
+                final int exThId = thId;
+                
+                if (extractResults[exThId].startTick <= endTick && extractResults[exThId].endTick > endTick) {
+                    extractResults[exThId].endTick = endTick;
+                    endExtractFlag = true;
+                }
+                else if (extractResults[exThId].startTick > endTick && extractResults[exThId].endTick > endTick) {
+                    endExtractFlag = true;
+                    continue;
+                }
+                
+                //System.out.println("extTh : s=" + extractResults[exThId].startTick + " e=" + extractResults[exThId].endTick);
+                
+                futures.add(executor.submit(() -> {
+                    final int executorId = exThId;
+                    for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
+                        try {
+                            seq.parse(trkIndex, new MappedParseFunc(startTick, endTick) {
+            
+                                @Override
+                                public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
+                                    // try {
+                                    // SysexMessage sysex = new SysexMessage(statusByte,
+                                    // sysexData, length);
+                                    // results.get(trk).events.computeIfAbsent(tick, k
+                                    // -> new ArrayList<>()).add(new MidiEvent(sysex,
+                                    // tick));
+                                    // }
+                                    // catch (InvalidMidiDataException e) {
+                                    // e.printStackTrace();
+                                    // }
+            
+                                }
+            
+                                @Override
+                                public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
+                                    if (extractResults[exThId].map.get(tick) == null) {
+                                        extractResults[exThId].map.put(tick, new PackedLongList());
+                                    }
+                                    extractResults[exThId].map.get(tick).add(trk, statusByte, data1, data2);
+                                }
+            
+                                @Override
+                                public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
+                                    // try {
+                                    // MetaMessage meta = new MetaMessage(type,
+                                    // metaData, length);
+                                    // results.get(trk).events.computeIfAbsent(tick, k
+                                    // -> new ArrayList<>()).add(new MidiEvent(meta,
+                                    // tick));
+                                    // }
+                                    // catch (InvalidMidiDataException e) {
+                                    // e.printStackTrace();
+                                    // }
+                                }
+            
+                                @Override
+                                public boolean interrupt() {
+                                    if (toInvalidFlag == true) {
+                                        return true;
+                                    }
+                                    return super.interrupt();
+                                }
+                            });
+                        }
+                        catch (Throwable e) {
+                            //JMPCore.getSystemManager().errorHandle(e);
+                        }
+                    }
+                    return executorId;
+                }));
+            }
+            
+            for (Future<Integer> f : futures) {
+                try {
+                    int fid = f.get();
+                    ExtractThreadResult thResult = extractResults[fid];
+                    for (Map.Entry<Long, PackedLongList> e : thResult.map.entrySet()) {
+                        map.putIfAbsent(e.getKey(), e.getValue());
+                    }
+                }
+                catch (InterruptedException e) {
+                    JMPCore.getSystemManager().errorHandle(e);
+                }
+                catch (ExecutionException e) {
+                    JMPCore.getSystemManager().errorHandle(e);
+                }
+            }
+            
+        }
+        while (endExtractFlag == false && toInvalidFlag == false);
+    }
+    
     private boolean analyzing = false;
     private long tempMaxTick = 0;
     private long tempNotesCount = 0;
@@ -359,30 +465,6 @@ public class LightweightSequencer implements Sequencer {
 
     public long getProgressReadTick() {
         return tempStartTick;
-    }
-
-    private class AnalyzeThreadResult {
-        public long startTick = 0;
-        public long endTick = 0;
-        public long maxTick = 0;
-        public long notesCount = 0;
-        public boolean finTrackState[];
-        public int numOfTrack = 0;
-        public AnalyzeThreadResult(int numOfTrack) {
-            this.numOfTrack = numOfTrack;
-            finTrackState = new boolean[this.numOfTrack];
-            init();
-        }
-        
-        public void init() {
-            startTick = 0;
-            endTick = 0;
-            maxTick = 0;
-            notesCount = 0;
-            for (int j = 0; j < this.numOfTrack; j++) {
-                finTrackState[j] = false;
-            }
-        }
     }
     
     private void analyzeSequence(MappedSequence seq) {
@@ -1474,5 +1556,13 @@ public class LightweightSequencer implements Sequencer {
 
     public void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount) {
         this.usageAnalyzeThreadCount = usageAnalyzeThreadCount;
+    }
+
+    public int getUsageExtractThreadCount() {
+        return usageExtractThreadCount;
+    }
+
+    public void setUsageExtractThreadCount(int usageExtractThreadCount) {
+        this.usageExtractThreadCount = usageExtractThreadCount;
     }
 } /* LightweightSequencer class end */
