@@ -63,6 +63,9 @@ public class MappedParseFunc {
     public void end() {
         
     }
+    
+    public void endTrack(int trk) {
+    }
 
     public void parse(int trk, MappedByteBuffer buf) throws IOException {
         buf.rewind();
@@ -156,6 +159,7 @@ public class MappedParseFunc {
             }
         }
         
+        endTrack(trk);
         end();
     }
 

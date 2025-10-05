@@ -359,6 +359,30 @@ public class LightweightSequencer implements Sequencer {
         return tempStartTick;
     }
 
+    private class AnalyzeThreadResult {
+        public long startTick = 0;
+        public long endTick = 0;
+        public long maxTick = 0;
+        public long notesCount = 0;
+        public boolean finTrackState[];
+        public int numOfTrack = 0;
+        public AnalyzeThreadResult(int numOfTrack) {
+            this.numOfTrack = numOfTrack;
+            finTrackState = new boolean[this.numOfTrack];
+            init();
+        }
+        
+        public void init() {
+            startTick = 0;
+            endTick = 0;
+            maxTick = 0;
+            notesCount = 0;
+            for (int j = 0; j < this.numOfTrack; j++) {
+                finTrackState[j] = false;
+            }
+        }
+    }
+    
     private void analyzeSequence(MappedSequence seq) {
 
         seekingFlag = true;
@@ -405,12 +429,12 @@ public class LightweightSequencer implements Sequencer {
 
         tempCurFinTrk = 0;
 
-        int threadCount = 5;
-        long threadStartTick[] = new long[threadCount];
-        long threadEndTick[] = new long[threadCount];
-        long threadMaxTick[] = new long[threadCount];
-        long threadNotesCount[] = new long[threadCount];
-        int threadFinTrack[] = new int[threadCount];
+        int threadCount = 6;
+        AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            analyzeResults[i] = new AnalyzeThreadResult(seq.getNumTracks());
+        }
+        boolean threadFinTrackStateTotal[] = new boolean[seq.getNumTracks()];
         
         int coreCount = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(coreCount);
@@ -418,11 +442,9 @@ public class LightweightSequencer implements Sequencer {
         do {
             List<Future<Integer>> futures = new ArrayList<>();
             for (int i = 0; i < threadCount; i++) {
-                threadStartTick[i] = tempStartTick;
-                threadEndTick[i] = tempEndTick;
-                threadMaxTick[i] = 0;
-                threadNotesCount[i] = 0;
-                threadFinTrack[i] = 0;
+                analyzeResults[i].init();
+                analyzeResults[i].startTick = tempStartTick;
+                analyzeResults[i].endTick = tempEndTick;
 
                 tempStartTick = tempEndTick + 1;
                 tempEndTick += tempBlockTick;
@@ -433,15 +455,16 @@ public class LightweightSequencer implements Sequencer {
             for (int thId = 0; thId < threadCount; thId++) {
                 final int exThId = thId;
                 futures.add(executor.submit(() -> {
+                    final int executorId = exThId;
                     for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
 
                         try {
-                            seq.parse(trkIndex, new MappedParseFunc(threadStartTick[exThId], threadEndTick[exThId]) {
+                            seq.parse(trkIndex, new MappedParseFunc(analyzeResults[executorId].startTick, analyzeResults[executorId].endTick) {
 
                                 @Override
                                 public void calcTick(int trk, int tick) {
-                                    if (threadMaxTick[exThId] < tick) {
-                                        threadMaxTick[exThId] = tick;
+                                    if (analyzeResults[executorId].maxTick < tick) {
+                                        analyzeResults[executorId].maxTick = tick;
                                     }
                                 }
 
@@ -463,7 +486,7 @@ public class LightweightSequencer implements Sequencer {
                                 public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
                                     int command = statusByte & 0xF0;
                                     if (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 > 0) {
-                                        threadNotesCount[exThId]++;
+                                        analyzeResults[executorId].notesCount++;
                                     }
                                 }
 
@@ -491,7 +514,11 @@ public class LightweightSequencer implements Sequencer {
 
                                 @Override
                                 public void end() {
-                                    threadFinTrack[exThId]++;
+                                }
+                                
+                                @Override
+                                public void endTrack(int trk) {
+                                    analyzeResults[executorId].finTrackState[trk] = true;
                                 }
 
                                 @Override
@@ -507,26 +534,42 @@ public class LightweightSequencer implements Sequencer {
                             JMPCore.getSystemManager().errorHandle(e);
                         }
                     }
-                    return exThId;
+                    return executorId;
                 }));
             }
 
             // 終了を待つ
             // 集約処理
+            for (int j = 0; j < seq.getNumTracks(); j++) {
+                threadFinTrackStateTotal[j] = false;
+            }
             for (Future<Integer> f : futures) {
                 try {
                     int fid = f.get();
-                    if (tempMaxTick < threadMaxTick[fid]) {
-                        tempMaxTick = threadMaxTick[fid];
+                    AnalyzeThreadResult thResult = analyzeResults[fid];
+                    if (tempMaxTick < thResult.maxTick) {
+                        tempMaxTick = thResult.maxTick;
                     }
-                    tempNotesCount += threadNotesCount[fid];
-                    tempCurFinTrk += threadFinTrack[fid];
+                    tempNotesCount += thResult.notesCount;
+                    
+                    for (int j = 0; j<seq.getNumTracks(); j++) {
+                        if (thResult.finTrackState[j] == true) {
+                            threadFinTrackStateTotal[j] = true;
+                        }
+                    }
                 }
                 catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 catch (ExecutionException e) {
                     e.printStackTrace();
+                }
+            }
+            
+            tempCurFinTrk = 0;
+            for (int j = 0; j<seq.getNumTracks(); j++) {
+                if (threadFinTrackStateTotal[j] == true) {
+                    tempCurFinTrk++;
                 }
             }
             tempFinTrk = tempCurFinTrk;
