@@ -33,6 +33,7 @@ import javax.sound.midi.Transmitter;
 import jlib.midi.IMidiEventListener;
 import jlib.midi.MappedParseFunc;
 import jlib.midi.MidiByte;
+import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.SoundManager;
 
@@ -722,7 +723,7 @@ public class LightweightSequencer implements Sequencer {
         long loopStart = System.nanoTime();
         long loopEnd = System.nanoTime();
         long elapsed = loopEnd - loopStart;
-        long target = 5_000_000; // 5ms周期想定
+        long target = JMPFlags.Sequencer1CycleNanos; // 周期設定 
         long sleepNs = 0;
 
         while (running.get()) {

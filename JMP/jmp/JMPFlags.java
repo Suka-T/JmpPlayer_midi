@@ -110,5 +110,10 @@ public class JMPFlags {
      *  2 : MIDIの音声が完全に出ない。Tickのカウントアップのみ行う   
      */
     public static int DualFileLoadToSoundFunc = 0;
+    
+    /**
+     * MidiSequencer1ループ周期の時間を設定する 
+     */
+    public static long Sequencer1CycleNanos = 5_000_000; //ns単位
 
 }
