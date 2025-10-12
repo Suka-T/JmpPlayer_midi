@@ -718,8 +718,17 @@ public class LightweightSequencer implements Sequencer {
         double ticksDelta = 0.0;
         long ticksToAdvance = 0;
         long i = 0;
+
+        long loopStart = System.nanoTime();
+        long loopEnd = System.nanoTime();
+        long elapsed = loopEnd - loopStart;
+        long target = 5_000_000; // 5ms周期想定
+        long sleepNs = 0;
+
         while (running.get()) {
             try {
+                loopStart = System.nanoTime();
+
                 toInvalidProcess();
 
                 if (paused.get()) {
@@ -761,7 +770,14 @@ public class LightweightSequencer implements Sequencer {
                         LockSupport.parkNanos(500_000); // 0.5ms sleep相当
                     }
                 }
-                Thread.sleep(1);
+
+                loopEnd = System.nanoTime();
+                elapsed = loopEnd - loopStart;
+                sleepNs = target - elapsed;
+
+                // あまりプロセスを占有しないようにwaitを調整する
+                if (sleepNs > 0)
+                    LockSupport.parkNanos(sleepNs);
             }
             catch (Throwable e) {
                 JMPCore.getSystemManager().errorHandle(e);
@@ -973,7 +989,7 @@ public class LightweightSequencer implements Sequencer {
         pause();
 
         allSoundOff();
-        
+
         if (tickPosition > getTickLength()) {
             tickPosition = getTickLength();
         }
