@@ -1,11 +1,13 @@
 package jmp.midi;
 
-import java.util.concurrent.ArrayBlockingQueue;
-
 import javax.sound.midi.InvalidMidiDataException;
 
+import jlib.util.ObjectPool;
+import jlib.util.ObjectPool.QueueType;
+
 public class MidiShortMessagePool {
-    private final ArrayBlockingQueue<LightweightShortMessage> pool;
+    // private final ArrayBlockingQueue<LightweightShortMessage> pool;
+    private ObjectPool<LightweightShortMessage> pool;
 
     // ====== pack/unpack (ShortMessage → int) ======
     public static int packShortMsg(int status, int data1, int data2) {
@@ -38,30 +40,21 @@ public class MidiShortMessagePool {
     }
 
     public MidiShortMessagePool(int size) {
-        pool = new ArrayBlockingQueue<>(size);
-        for (int i = 0; i < size; i++) {
-            pool.offer(new LightweightShortMessage());
-        }
+        pool = new ObjectPool<LightweightShortMessage>(QueueType.ConcurrentLinkedQueue, size, LightweightShortMessage::new);
     }
 
     public LightweightShortMessage borrow(long packed) throws InvalidMidiDataException {
-        LightweightShortMessage msg = pool.poll();
-        if (msg == null) {
-            // 足りない場合は新しく生成（ただしGCが出る）
-            msg = new LightweightShortMessage();
-            System.out.println("Over pool");
-        }
-        
+        LightweightShortMessage msg = pool.borrow();
+
         int trkPacked = getTrack(packed);
         int msgPacked = getShortMsg(packed);
-        
-        msg.setTrackIndex((short)trkPacked);
+
+        msg.setTrackIndex((short) trkPacked);
         msg.setPackedMsg(msgPacked);
         return msg;
     }
 
     public void release(LightweightShortMessage msg) {
-        pool.offer(msg);
+        pool.release(msg);
     }
-
 }

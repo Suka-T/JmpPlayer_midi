@@ -3,6 +3,7 @@ package jmp.midi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,6 @@ import javax.sound.midi.Transmitter;
 import jlib.midi.IMidiEventListener;
 import jlib.midi.MappedParseFunc;
 import jlib.midi.MidiByte;
-import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.SoundManager;
 
@@ -91,7 +91,7 @@ public class LightweightSequencer implements Sequencer {
             return size;
         }
     }
-    
+
     private class AnalyzeThreadResult {
         public long startTick = 0;
         public long endTick = 0;
@@ -99,34 +99,43 @@ public class LightweightSequencer implements Sequencer {
         public long notesCount = 0;
         public boolean finTrackState[];
         public int numOfTrack = 0;
-        public AnalyzeThreadResult(int numOfTrack) {
-            this.numOfTrack = numOfTrack;
-            finTrackState = new boolean[this.numOfTrack];
+
+        public AnalyzeThreadResult() {
             init();
         }
-        
+
+        public void setNumOfTrack(int numOfTrack) {
+            this.numOfTrack = numOfTrack;
+            finTrackState = new boolean[this.numOfTrack];
+            for (int j = 0; j < this.numOfTrack; j++) {
+                finTrackState[j] = false;
+            }
+        }
+
         public void init() {
             startTick = 0;
             endTick = 0;
             maxTick = 0;
             notesCount = 0;
-            for (int j = 0; j < this.numOfTrack; j++) {
-                finTrackState[j] = false;
+            if (finTrackState != null) {
+                for (int j = 0; j < this.numOfTrack; j++) {
+                    finTrackState[j] = false;
+                }
             }
         }
     }
-    
+
     private class ExtractThreadResult {
         public long startTick = 0;
         public long endTick = 0;
         public Map<Long, PackedLongList> map;
         public int numOfTrack = 0;
-        public ExtractThreadResult(int numOfTrack) {
-            this.numOfTrack = numOfTrack;
+
+        public ExtractThreadResult() {
             map = new HashMap<Long, PackedLongList>();
             init();
         }
-        
+
         public void init() {
             startTick = 0;
             endTick = 0;
@@ -183,9 +192,14 @@ public class LightweightSequencer implements Sequencer {
 
     // MIDI抽出のRAM使用率
     private double usageExtractRam = 0.25;
-    
+
+    private static final int MaxUsageAnalyzeThreadCount = 24;
+    private static final int MaxUsageExtractThreadCount = 24;
     private int usageAnalyzeThreadCount = 8;
     private int usageExtractThreadCount = 4;
+
+    private ExtractThreadResult[] extractResults = new ExtractThreadResult[MaxUsageExtractThreadCount];
+    private AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[MaxUsageAnalyzeThreadCount];
 
     // Sequenceを削除するフラグ
     public void toInvalid() {
@@ -213,6 +227,14 @@ public class LightweightSequencer implements Sequencer {
 
     public LightweightSequencer(ESeqMode seqMode) {
         this.seqMode = seqMode;
+        for (int i = 0; i < MaxUsageExtractThreadCount; i++) {
+            extractResults[i] = new ExtractThreadResult();
+            extractResults[i].init();
+        }
+        for (int i = 0; i < MaxUsageAnalyzeThreadCount; i++) {
+            analyzeResults[i] = new AnalyzeThreadResult();
+            analyzeResults[i].init();
+        }
     }
 
     public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
@@ -314,19 +336,19 @@ public class LightweightSequencer implements Sequencer {
         int ticksPerQuarterNote = sequence.getResolution();
         return (second * 1_000_000.0 * (double) ticksPerQuarterNote) / (double) tempo;
     }
-    
+
     private void extractMidiEvent(Map<Long, PackedLongList> map, long startTick, long endTick, double usage) {
         MappedSequence seq = (MappedSequence) this.sequence;
         map.clear();
 
         System.out.println("extract events : " + startTick + "-" + endTick);
-        
+
         int threadCount = usageExtractThreadCount;
-        ExtractThreadResult[] extractResults = new ExtractThreadResult[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            extractResults[i] = new ExtractThreadResult(seq.getNumTracks());
+            extractResults[i].numOfTrack = seq.getNumTracks();
+            extractResults[i].init();
         }
-        
+
         int coreCount = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
@@ -344,12 +366,12 @@ public class LightweightSequencer implements Sequencer {
                 localStartTick = localEndTick + 1;
                 localEndTick += localBlockTick;
             }
-            
-            //Object thMutex = new Object();
-            
+
+            // Object thMutex = new Object();
+
             for (int thId = 0; thId < threadCount; thId++) {
                 final int exThId = thId;
-                
+
                 if (extractResults[exThId].startTick <= endTick && extractResults[exThId].endTick > endTick) {
                     extractResults[exThId].endTick = endTick;
                     endExtractFlag = true;
@@ -358,30 +380,35 @@ public class LightweightSequencer implements Sequencer {
                     endExtractFlag = true;
                     continue;
                 }
-                
-                //System.out.println("extTh : s=" + extractResults[exThId].startTick + " e=" + extractResults[exThId].endTick);
-                
+
+                // System.out.println("extTh : s=" +
+                // extractResults[exThId].startTick + " e=" +
+                // extractResults[exThId].endTick);
+
                 futures.add(executor.submit(() -> {
                     final int executorId = exThId;
                     for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
                         try {
                             seq.parse(trkIndex, new MappedParseFunc(startTick, endTick) {
-            
+
                                 @Override
                                 public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
                                     // try {
-                                    // SysexMessage sysex = new SysexMessage(statusByte,
+                                    // SysexMessage sysex = new
+                                    // SysexMessage(statusByte,
                                     // sysexData, length);
-                                    // results.get(trk).events.computeIfAbsent(tick, k
-                                    // -> new ArrayList<>()).add(new MidiEvent(sysex,
+                                    // results.get(trk).events.computeIfAbsent(tick,
+                                    // k
+                                    // -> new ArrayList<>()).add(new
+                                    // MidiEvent(sysex,
                                     // tick));
                                     // }
                                     // catch (InvalidMidiDataException e) {
                                     // e.printStackTrace();
                                     // }
-            
+
                                 }
-            
+
                                 @Override
                                 public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
                                     if (extractResults[exThId].map.get(tick) == null) {
@@ -389,21 +416,23 @@ public class LightweightSequencer implements Sequencer {
                                     }
                                     extractResults[exThId].map.get(tick).add(trk, statusByte, data1, data2);
                                 }
-            
+
                                 @Override
                                 public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
                                     // try {
                                     // MetaMessage meta = new MetaMessage(type,
                                     // metaData, length);
-                                    // results.get(trk).events.computeIfAbsent(tick, k
-                                    // -> new ArrayList<>()).add(new MidiEvent(meta,
+                                    // results.get(trk).events.computeIfAbsent(tick,
+                                    // k
+                                    // -> new ArrayList<>()).add(new
+                                    // MidiEvent(meta,
                                     // tick));
                                     // }
                                     // catch (InvalidMidiDataException e) {
                                     // e.printStackTrace();
                                     // }
                                 }
-            
+
                                 @Override
                                 public boolean interrupt() {
                                     if (toInvalidFlag == true) {
@@ -414,13 +443,13 @@ public class LightweightSequencer implements Sequencer {
                             });
                         }
                         catch (Throwable e) {
-                            //JMPCore.getSystemManager().errorHandle(e);
+                            // JMPCore.getSystemManager().errorHandle(e);
                         }
                     }
                     return executorId;
                 }));
             }
-            
+
             for (Future<Integer> f : futures) {
                 try {
                     int fid = f.get();
@@ -436,11 +465,11 @@ public class LightweightSequencer implements Sequencer {
                     JMPCore.getSystemManager().errorHandle(e);
                 }
             }
-            
+
         }
         while (endExtractFlag == false && toInvalidFlag == false);
     }
-    
+
     private boolean analyzing = false;
     private long tempMaxTick = 0;
     private long tempNotesCount = 0;
@@ -466,7 +495,7 @@ public class LightweightSequencer implements Sequencer {
     public long getProgressReadTick() {
         return tempStartTick;
     }
-    
+
     private void analyzeSequence(MappedSequence seq) {
 
         seekingFlag = true;
@@ -514,12 +543,12 @@ public class LightweightSequencer implements Sequencer {
         tempCurFinTrk = 0;
 
         int threadCount = usageAnalyzeThreadCount;
-        AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[threadCount];
         for (int i = 0; i < threadCount; i++) {
-            analyzeResults[i] = new AnalyzeThreadResult(seq.getNumTracks());
+            analyzeResults[i].setNumOfTrack(seq.getNumTracks());
+            analyzeResults[i].init();
         }
         boolean threadFinTrackStateTotal[] = new boolean[seq.getNumTracks()];
-        
+
         int coreCount = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(coreCount);
 
@@ -533,7 +562,7 @@ public class LightweightSequencer implements Sequencer {
                 tempStartTick = tempEndTick + 1;
                 tempEndTick += tempBlockTick;
             }
-            
+
             Object thMutex = new Object();
 
             for (int thId = 0; thId < threadCount; thId++) {
@@ -585,7 +614,7 @@ public class LightweightSequencer implements Sequencer {
                                                 tempoChanges.put(tick, bpm);
                                             }
                                         }
-    
+
                                         try {
                                             metaSysMap.computeIfAbsent(tick, k -> new ArrayList<>())
                                                     .add(new MidiEvent(new MetaMessage(type, metaData, length), tick));
@@ -599,7 +628,7 @@ public class LightweightSequencer implements Sequencer {
                                 @Override
                                 public void end() {
                                 }
-                                
+
                                 @Override
                                 public void endTrack(int trk) {
                                     analyzeResults[executorId].finTrackState[trk] = true;
@@ -635,8 +664,8 @@ public class LightweightSequencer implements Sequencer {
                         tempMaxTick = thResult.maxTick;
                     }
                     tempNotesCount += thResult.notesCount;
-                    
-                    for (int j = 0; j<seq.getNumTracks(); j++) {
+
+                    for (int j = 0; j < seq.getNumTracks(); j++) {
                         if (thResult.finTrackState[j] == true) {
                             threadFinTrackStateTotal[j] = true;
                         }
@@ -649,9 +678,9 @@ public class LightweightSequencer implements Sequencer {
                     e.printStackTrace();
                 }
             }
-            
+
             tempCurFinTrk = 0;
-            for (int j = 0; j<seq.getNumTracks(); j++) {
+            for (int j = 0; j < seq.getNumTracks(); j++) {
                 if (threadFinTrackStateTotal[j] == true) {
                     tempCurFinTrk++;
                 }
@@ -659,7 +688,7 @@ public class LightweightSequencer implements Sequencer {
             tempFinTrk = tempCurFinTrk;
         }
         while (tempFinTrk < seq.getNumTracks() && toInvalidFlag == false);
-        
+
         executor.shutdown();
 
         seq.setTickLength(tempMaxTick);
@@ -944,6 +973,10 @@ public class LightweightSequencer implements Sequencer {
         pause();
 
         allSoundOff();
+        
+        if (tickPosition > getTickLength()) {
+            tickPosition = getTickLength();
+        }
     }
 
     @Override
@@ -958,10 +991,44 @@ public class LightweightSequencer implements Sequencer {
 
     public float getFirstTempoInBPM() {
         float bpm = 120.0f;
-        if (tempoChanges.isEmpty() == true) {
+        if (tempoChanges.isEmpty() == false) {
             bpm = tempoChanges.get(tempoChanges.firstKey());
         }
         return bpm == 0.0f ? 120.0f : bpm;
+    }
+
+    public float getAverageTempoInBPM() {
+        float bpm = 0.0f;
+        if (tempoChanges.isEmpty() == false) {
+            for (float fval : tempoChanges.values()) {
+                bpm += fval;
+            }
+            bpm /= (float) tempoChanges.size();
+        }
+        return bpm == 0.0f ? 120.0f : bpm;
+    }
+
+    public float getMedianTempoInBPM() {
+        if (tempoChanges.isEmpty())
+            return 120.0f;
+
+        // 値をリスト化
+        List<Float> values = new ArrayList<>(tempoChanges.values());
+
+        // 昇順ソート
+        Collections.sort(values);
+
+        int size = values.size();
+        if (size % 2 == 1) {
+            // 奇数個 → 真ん中の要素
+            return values.get(size / 2);
+        }
+        else {
+            // 偶数個 → 真ん中2つの平均
+            float lower = values.get(size / 2 - 1);
+            float upper = values.get(size / 2);
+            return (lower + upper) / 2.0f;
+        }
     }
 
     @Override
@@ -1031,9 +1098,6 @@ public class LightweightSequencer implements Sequencer {
         long previousTick = 0;
         float currentTempoBPM = 120.0f; // 初期テンポ
         double currentMicroPerQuarter = 60_000_000.0 / currentTempoBPM;
-        if (JMPFlags.NowLoadingFlag == true) {
-            return 0;
-        }
 
         for (Map.Entry<Long, Float> entry : tempoChanges.entrySet()) {
             long changeTick = entry.getKey();
@@ -1549,12 +1613,15 @@ public class LightweightSequencer implements Sequencer {
     public void setUsageExtractRam(double usageExtractRam) {
         this.usageExtractRam = usageExtractRam;
     }
-    
+
     public int getUsageAnalyzeThreadCount() {
         return usageAnalyzeThreadCount;
     }
 
     public void setUsageAnalyzeThreadCount(int usageAnalyzeThreadCount) {
+        if (MaxUsageAnalyzeThreadCount < usageAnalyzeThreadCount) {
+            usageAnalyzeThreadCount = MaxUsageAnalyzeThreadCount;
+        }
         this.usageAnalyzeThreadCount = usageAnalyzeThreadCount;
     }
 
@@ -1563,6 +1630,9 @@ public class LightweightSequencer implements Sequencer {
     }
 
     public void setUsageExtractThreadCount(int usageExtractThreadCount) {
+        if (MaxUsageExtractThreadCount < usageExtractThreadCount) {
+            usageExtractThreadCount = MaxUsageExtractThreadCount;
+        }
         this.usageExtractThreadCount = usageExtractThreadCount;
     }
 } /* LightweightSequencer class end */

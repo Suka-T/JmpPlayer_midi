@@ -30,7 +30,21 @@ public interface IMidiUnit {
      * @return
      */
     abstract double getFirstTempoInBPM();
+    
+    /**
+     * 全体BPMの平均値を取得
+     * 
+     * @return
+     */
+    abstract double getAverageTempoInBPM();
 
+    /**
+     * 全体BPMの中央値を取得
+     * 
+     * @return
+     */
+    abstract double getMedianTempoInBPM();
+    
     /**
      * 現在のティック取得
      *

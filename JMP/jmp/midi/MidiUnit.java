@@ -86,6 +86,17 @@ public class MidiUnit implements IMidiUnit {
     public double getFirstTempoInBPM() {
         return getSequencer().getFirstTempoInBPM();
     }
+    
+
+    @Override
+    public double getAverageTempoInBPM() {
+        return getSequencer().getAverageTempoInBPM();
+    }
+    
+    @Override
+    public double getMedianTempoInBPM() {
+        return getSequencer().getMedianTempoInBPM();
+    }
 
     @Override
     public long getTickPosition() {

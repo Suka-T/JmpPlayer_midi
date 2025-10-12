@@ -14,6 +14,7 @@ import javax.sound.midi.Sequencer;
 import javax.sound.midi.Track;
 import javax.sound.midi.Transmitter;
 
+import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.midi.LightweightSequencer.ESeqMode;
 
@@ -227,11 +228,17 @@ public class JMPSequencer implements Sequencer {
 
     @Override
     public long getMicrosecondLength() {
+        if (JMPFlags.NowLoadingFlag == true) {
+            return 0;
+        }
         return abstractSequencer.getMicrosecondLength();
     }
 
     @Override
     public long getMicrosecondPosition() {
+        if (JMPFlags.NowLoadingFlag == true) {
+            return 0;
+        }
         return abstractSequencer.getMicrosecondPosition();
     }
 
@@ -350,6 +357,14 @@ public class JMPSequencer implements Sequencer {
 
     public double getFirstTempoInBPM() {
         return ((LightweightSequencer) abstractSequencer).getFirstTempoInBPM();
+    }
+    
+    public double getAverageTempoInBPM() {
+        return ((LightweightSequencer) abstractSequencer).getAverageTempoInBPM();
+    }
+    
+    public double getMedianTempoInBPM() {
+        return ((LightweightSequencer) abstractSequencer).getMedianTempoInBPM();
     }
     
     public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
