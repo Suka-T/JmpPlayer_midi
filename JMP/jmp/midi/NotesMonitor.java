@@ -140,7 +140,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     public void timerEvent() {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - startTime >= 200) {
+        if (currentTime - startTime >= 100) {
             long diff = notesCount - pastNotesCount;
             nps = (double) diff * 1000 / (currentTime - startTime);
             if (nps > maxNps) {

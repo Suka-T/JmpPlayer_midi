@@ -199,6 +199,7 @@ public class LightweightSequencer implements Sequencer {
     private int usageAnalyzeThreadCount = 8;
     private int usageExtractThreadCount = 4;
 
+    private List<Future<Integer>> extractFutures = new ArrayList<>();
     private ExtractThreadResult[] extractResults = new ExtractThreadResult[MaxUsageExtractThreadCount];
     private AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[MaxUsageAnalyzeThreadCount];
 
@@ -358,7 +359,7 @@ public class LightweightSequencer implements Sequencer {
         long localStartTick = startTick;
         long localEndTick = localStartTick + localBlockTick;
         do {
-            List<Future<Integer>> futures = new ArrayList<>();
+            extractFutures.clear();
             for (int i = 0; i < threadCount; i++) {
                 extractResults[i].init();
                 extractResults[i].startTick = localStartTick;
@@ -382,15 +383,11 @@ public class LightweightSequencer implements Sequencer {
                     continue;
                 }
 
-                // System.out.println("extTh : s=" +
-                // extractResults[exThId].startTick + " e=" +
-                // extractResults[exThId].endTick);
-
-                futures.add(executor.submit(() -> {
+                extractFutures.add(executor.submit(() -> {
                     final int executorId = exThId;
                     for (short trkIndex = 0; trkIndex < seq.getNumTracks(); trkIndex++) {
                         try {
-                            seq.parse(trkIndex, new MappedParseFunc(startTick, endTick) {
+                            seq.parse(trkIndex, new MappedParseFunc(startTick, endTick, MappedParseFunc.READ_FLAG_SHORT_MESSAGE) {
 
                                 @Override
                                 public void sysexMessage(int trk, long tick, int statusByte, byte[] sysexData, int length) {
@@ -451,7 +448,7 @@ public class LightweightSequencer implements Sequencer {
                 }));
             }
 
-            for (Future<Integer> f : futures) {
+            for (Future<Integer> f : extractFutures) {
                 try {
                     int fid = f.get();
                     ExtractThreadResult thResult = extractResults[fid];

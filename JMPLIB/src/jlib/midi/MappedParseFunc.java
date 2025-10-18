@@ -7,12 +7,19 @@ import java.nio.MappedByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 public class MappedParseFunc {
-    //private StringBuilder sb = new StringBuilder(64); // 初期容量を指定
+
+    public static final byte READ_FLAG_META_MESSAGE = 0x01;
+    public static final byte READ_FLAG_SHORT_MESSAGE = 0x02;
+    public static final byte READ_FLAG_SYSEX_MESSAGE = 0x04;
+    public static final byte READ_FLAG_ALL = (READ_FLAG_META_MESSAGE | READ_FLAG_SHORT_MESSAGE | READ_FLAG_SYSEX_MESSAGE);
+
+    // private StringBuilder sb = new StringBuilder(64); // 初期容量を指定
     private long startTick = -1;
     private long endTick = -1;
     private long waitMargin = 1000;
     private long waitTime = 2;
-    
+    private byte readFlag = READ_FLAG_ALL;
+
     public void setWaintTime(long margin, long waitTime) {
         this.waitMargin = margin;
         this.waitTime = waitTime;
@@ -26,6 +33,13 @@ public class MappedParseFunc {
     public MappedParseFunc(long startTick, long endTick) {
         this.startTick = startTick;
         this.endTick = endTick;
+        this.readFlag = READ_FLAG_ALL;
+    }
+    
+    public MappedParseFunc(long startTick, long endTick, byte readFlag) {
+        this.startTick = startTick;
+        this.endTick = endTick;
+        this.readFlag = readFlag;
     }
 
     public void setStartTick(long tick) {
@@ -44,6 +58,14 @@ public class MappedParseFunc {
         return endTick;
     }
 
+    public byte getReadFlag() {
+        return readFlag;
+    }
+
+    public void setReadFlag(byte readFlag) {
+        this.readFlag = readFlag;
+    }
+
     public void metaMessage(int trk, long tick, int type, byte[] metaData, int length) {
     };
 
@@ -55,16 +77,37 @@ public class MappedParseFunc {
 
     public void calcTick(int trk, int tick) {
     };
-    
+
     public boolean interrupt() {
         return false;
     }
-    
+
     public void end() {
-        
+
+    }
+
+    public void endTrack(int trk) {
     }
     
-    public void endTrack(int trk) {
+    protected boolean isMeta(int statusByte) {
+        if (statusByte == 0xFF) { // Meta
+            return true;
+        }
+        return false;
+    }
+    
+    protected boolean isShort(int statusByte) {
+        if (statusByte >= 0x80 && statusByte <= 0xEF) { // Channel
+            return true;
+        }
+        return false;
+    }
+    
+    protected boolean isSysEx(int statusByte) {
+        if (statusByte == 0xF0 || statusByte == 0xF7) { // SysEx
+            return true;
+        }
+        return false;
     }
 
     public void parse(int trk, MappedByteBuffer buf) throws IOException {
@@ -96,7 +139,7 @@ public class MappedParseFunc {
             if (interrupt() == true) {
                 break;
             }
-            
+
             curMillis = System.currentTimeMillis();
             if ((curMillis - pastMillis) > waitMargin) {
                 pastMillis = System.currentTimeMillis();
@@ -106,7 +149,7 @@ public class MappedParseFunc {
                 catch (InterruptedException e) {
                 }
             }
-            
+
             delta = readVariableLength(buf);
             tick += delta;
 
@@ -118,7 +161,8 @@ public class MappedParseFunc {
 
             statusByte = buf.get() & 0xFF;
             if (statusByte < 0x80) {
-                //if (lastStatus == 0) throw new IOException("Invalid running status");
+                // if (lastStatus == 0) throw new IOException("Invalid running
+                // status");
                 buf.position(buf.position() - 1);
                 statusByte = lastStatus;
             }
@@ -129,36 +173,48 @@ public class MappedParseFunc {
             // イベントデータを処理 or スキップ
             inRange = (this.startTick == -1 || tick >= this.startTick);
 
-            if (statusByte == 0xFF) { // Meta
+            if (isMeta(statusByte)) { // Meta
                 type = buf.get() & 0xFF;
                 length = readVariableLength(buf);
-                byte[] metaData = new byte[length];
-                buf.get(metaData);
-                if (inRange) {
-                    metaMessage(trk, tick, type, metaData, length);
+                if ((readFlag & READ_FLAG_META_MESSAGE) != 0) {
+                    byte[] metaData = new byte[length];
+                    buf.get(metaData);
+                    if (inRange) {
+                        metaMessage(trk, tick, type, metaData, length);
+                    }
+                }
+                else {
+                    buf.position(buf.position() + length);
                 }
             }
-            else if (statusByte >= 0x80 && statusByte <= 0xEF) { // Channel
+            else if (isShort(statusByte)) { // Channel
                 command = statusByte & 0xF0;
                 data1 = buf.get() & 0xFF;
                 data2 = (command != 0xC0 && command != 0xD0) ? (buf.get() & 0xFF) : 0;
-                if (inRange) {
-                    shortMessage(trk, tick, statusByte, data1, data2);
+                if ((readFlag & READ_FLAG_SHORT_MESSAGE) != 0) {
+                    if (inRange) {
+                        shortMessage(trk, tick, statusByte, data1, data2);
+                    }
                 }
             }
-            else if (statusByte == 0xF0 || statusByte == 0xF7) { // SysEx
+            else if (isSysEx(statusByte)) { // SysEx
                 length = readVariableLength(buf);
-                byte[] sysexData = new byte[length];
-                buf.get(sysexData);
-                if (inRange) {
-                    sysexMessage(trk, tick, statusByte, sysexData, length);
+                if ((readFlag & READ_FLAG_SYSEX_MESSAGE) != 0) {
+                    byte[] sysexData = new byte[length];
+                    buf.get(sysexData);
+                    if (inRange) {
+                        sysexMessage(trk, tick, statusByte, sysexData, length);
+                    }
+                }
+                else {
+                    buf.position(buf.position() + length);
                 }
             }
             else {
-                //throw new IOException("Unknown status byte: " + statusByte);
+                // throw new IOException("Unknown status byte: " + statusByte);
             }
         }
-        
+
         endTrack(trk);
         end();
     }

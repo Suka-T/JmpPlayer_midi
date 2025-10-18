@@ -21,7 +21,6 @@ import javax.sound.sampled.Port;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
 
-import function.Platform;
 import function.Utility;
 import jlib.core.IDataManager;
 import jlib.core.ISoundManager;
@@ -143,7 +142,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         String[] exMUSIC = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MEDIA));
 
         /* MoviePlayerはjava8のみ */
-        String javaVer = Platform.getJavaVersion();
+        //String javaVer = Platform.getJavaVersion();
         boolean isEnableMoviePlayer = false;
         // if (javaVer.startsWith("1.8") == true) {
         isEnableMoviePlayer = true;
@@ -1194,6 +1193,7 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     @Override
     public void removeMidiSequence() {
         SMidiPlayer.removeSequence();
+        notesMonitor.reset();
         
         if (getCurrentPlayer() == SMidiPlayer) {
             JMPCore.getWindowManager().getMainWindow().clearStatusMessage();
