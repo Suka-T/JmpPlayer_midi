@@ -12,8 +12,7 @@ import jlib.midi.MidiByte;
 import jmp.core.JMPCore;
 
 public class NotesMonitor implements IMidiEventListener, INotesMonitor {
-
-    public class KeyStateMonitor {
+    class KeyStateMonitor {
         public int channel = -1;
         public int track = -1;
 
@@ -25,13 +24,40 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             track = -1;
         }
     }
+    
+    class NpsManager {
+        private NpsCounter[] npsCounter = null;
+        
+        public NpsManager() {
+            npsCounter = new NpsCounter[100];
+            for (int i = 0; i < npsCounter.length; i++) {
+                npsCounter[i] = new NpsCounter();
+            }
+        }
+        
+        public void reset() {
+            for (int i = 0; i < npsCounter.length; i++) {
+                npsCounter[i].reset();
+                npsCounter[i].setDelay(i);
+            }
+        }
+        
+        public void timerEvent(long notesCount) {
+            for (int i = 0; i < npsCounter.length; i++) {
+                if (npsCounter[i].timerEvent(notesCount)) {
+                    nps = npsCounter[i].getNps();
+                    if (nps > maxNps) {
+                        maxNps = nps;
+                    }
+                }
+            }
+        }
+    }
 
     private long notesCount = 0;
     private long numOfNotes = 0;
     private int numOfTrack = 0;
 
-    private long startTime = System.currentTimeMillis();
-    private long pastNotesCount = 0;
     private double nps = 0;
     private double maxNps = 0;
 
@@ -42,12 +68,15 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     private int polyphony = 0;
     private int maxPolyphony = 0;
+    
+    private NpsManager npsManager = null;
 
     public NotesMonitor() {
         noteOnMonitorChannel = new int[16][128];
         noteOnMonitorTrack = new ArrayList<int[]>();
         pitchBendMonitor = new int[16];
         expressionMonitor = new int[16];
+        npsManager = new NpsManager();
         reset();
     }
 
@@ -96,6 +125,7 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             expressionMonitor[i] = 127;
             pitchBendMonitor[i] = 0;
         }
+        npsManager.reset();
 
         resetNoteMonitor();
     }
@@ -139,16 +169,8 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     }
 
     public void timerEvent() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - startTime >= 100) {
-            long diff = notesCount - pastNotesCount;
-            nps = (double) diff * 1000 / (currentTime - startTime);
-            if (nps > maxNps) {
-                maxNps = nps;
-            }
-            pastNotesCount = notesCount;
-            startTime = currentTime;
-        }
+        
+        npsManager.timerEvent(notesCount);
 
         polyphony = calcPolyphony();
         if (maxPolyphony < polyphony) {
