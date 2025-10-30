@@ -144,11 +144,7 @@ public abstract class TaskOfBase implements ITask, Runnable {
         clearQue();
     }
 
-    /**
-     * スリープタイム取得
-     *
-     * @return スリープタイム
-     */
+    @Override
     public long getSleepTime() {
         return sleepTime;
     }

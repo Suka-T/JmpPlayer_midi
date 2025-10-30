@@ -10,8 +10,13 @@ import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.MidiByte;
 import jmp.core.JMPCore;
+import jmp.core.TaskManager.TaskID;
 
 public class NotesMonitor implements IMidiEventListener, INotesMonitor {
+    
+    // タイマーイベントの入力元タスクを指定する 
+    private static final TaskID TASK_SOURCE = TaskID.MIDI;
+    
     class KeyStateMonitor {
         public int channel = -1;
         public int track = -1;
@@ -28,8 +33,8 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     class NpsManager {
         private NpsCounter[] npsCounter = null;
         
-        public NpsManager() {
-            npsCounter = new NpsCounter[100];
+        public NpsManager(int sampleNum) {
+            npsCounter = new NpsCounter[sampleNum];
             for (int i = 0; i < npsCounter.length; i++) {
                 npsCounter[i] = new NpsCounter();
             }
@@ -76,7 +81,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
         noteOnMonitorTrack = new ArrayList<int[]>();
         pitchBendMonitor = new int[16];
         expressionMonitor = new int[16];
-        npsManager = new NpsManager();
+        
+        int sampleNum = (int) (1000 / JMPCore.getTaskManager().getCyclicMills(TASK_SOURCE) + 1);
+        npsManager = new NpsManager(sampleNum);
         reset();
     }
 

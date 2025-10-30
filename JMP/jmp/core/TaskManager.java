@@ -181,5 +181,10 @@ public class TaskManager extends AbstractManager {
     public void requestWindowUpdate() {
         queuing(TaskID.UPDATE, new TaskPacket(PacketType.RequestUpdate));
     }
+    
+    public long getCyclicMills(TaskID taskId) {
+        ITask task = taskMap.get(taskId);
+        return task.getSleepTime();
+    }
 
 }

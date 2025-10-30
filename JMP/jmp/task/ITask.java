@@ -42,4 +42,11 @@ public interface ITask {
      * @return
      */
     abstract boolean isRunnable();
+    
+    /**
+     * 待ち時間を取得する 
+     * 
+     * @return sleepTime
+     */
+    abstract long getSleepTime();
 }

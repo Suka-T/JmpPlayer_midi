@@ -1078,7 +1078,9 @@ public class LightweightSequencer implements Sequencer {
     public void setSequence(Sequence sequence) {
         this.sequence = sequence;
         this.resolution = sequence.getResolution();
+        long curMillis = System.currentTimeMillis();
         analyzeSequence((MappedSequence) sequence);
+        System.out.println("[" + (System.currentTimeMillis() - curMillis) + "ms] MIDI Analyze elapsed time");
         this.tickPosition = 0;
     }
 
