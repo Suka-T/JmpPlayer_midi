@@ -103,6 +103,9 @@ public class JMPFlags {
     /** MidiEventのキャッシュを作成するフラグ */
     public static boolean MakeNativeMidiEventFlag = true;
     
+    /** アクティベート処理(ライセンス認証)を省く */
+    public static boolean PreActivation = false;
+    
     /** 
      * MIDI, WAV同時ロード時の挙動。MIDIをミュートするか？
      *  0 : そのまま。(WavとMIDI両方の音声が出力する

@@ -396,7 +396,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         }
 
         /* デバッグモード or ライブラリモードの際はアクティベートする */
-        if (JMPFlags.DebugMode == true || JMPFlags.LibraryMode == true) {
+        if (JMPFlags.DebugMode == true || JMPFlags.LibraryMode == true || JMPFlags.PreActivation == true) {
             JMPFlags.ActivateFlag = true;
         }
     }
@@ -407,7 +407,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         if (JMPFlags.ActivateFlag == true) {
             activateOutFlag = true;
         }
-        if (JMPFlags.DebugMode == true || JMPFlags.LibraryMode == true) {
+        if (JMPFlags.DebugMode == true || JMPFlags.LibraryMode == true || JMPFlags.PreActivation == true) {
             // デバッグは発行しない
             activateOutFlag = false;
         }
