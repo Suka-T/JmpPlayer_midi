@@ -36,8 +36,10 @@ public interface ISystemManager {
     public static final int PATH_SYSCOMMON_FILE = (PATH_ACTIVATE_FILE + 1);
     /** "SKIN"ディレクトリ */
     public static final int PATH_SKIN_DIR = (PATH_SYSCOMMON_FILE + 1);
+    /** カレントディレクトリ */
+    public static final int PATH_CURRENT_DIR = (PATH_SKIN_DIR + 1);
     /** システムパス総数 */
-    public static final int NUM_OF_PATH = (PATH_SKIN_DIR + 1);
+    public static final int NUM_OF_PATH = (PATH_CURRENT_DIR + 1);
 
     // 設定値取得ID
 

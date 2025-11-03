@@ -485,6 +485,9 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         aPath = new String[NUM_OF_PATH];
 
         String currentPath = Platform.getCurrentPath(false);
+        
+        // カレントディレクトリ 
+        aPath[PATH_CURRENT_DIR] = currentPath;
 
         // プラグイン格納ディレクトリパス
         aPath[PATH_PLUGINS_DIR] = Utility.pathCombin(currentPath, PLUGINS_DIR_NAME);
