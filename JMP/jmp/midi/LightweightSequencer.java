@@ -97,7 +97,7 @@ public class LightweightSequencer implements Sequencer {
         public long startTick = 0;
         public long endTick = 0;
         public long maxTick = 0;
-        public long notesCount = 0;
+        //public long notesCount = 0;
         public boolean finTrackState[];
         public int numOfTrack = 0;
 
@@ -117,7 +117,6 @@ public class LightweightSequencer implements Sequencer {
             startTick = 0;
             endTick = 0;
             maxTick = 0;
-            notesCount = 0;
             if (finTrackState != null) {
                 for (int j = 0; j < this.numOfTrack; j++) {
                     finTrackState[j] = false;
@@ -130,7 +129,7 @@ public class LightweightSequencer implements Sequencer {
         public long startTick = 0;
         public long endTick = 0;
         public Map<Long, PackedLongList> map;
-        public int numOfTrack = 0;
+        //public int numOfTrack = 0;
 
         public ExtractThreadResult() {
             map = new HashMap<Long, PackedLongList>();
@@ -202,6 +201,8 @@ public class LightweightSequencer implements Sequencer {
     private List<Future<Integer>> extractFutures = new ArrayList<>();
     private ExtractThreadResult[] extractResults = new ExtractThreadResult[MaxUsageExtractThreadCount];
     private AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[MaxUsageAnalyzeThreadCount];
+    
+    private MidiNotesCountRenderer notesCountRenderer = new MidiNotesCountRenderer();
 
     // Sequenceを削除するフラグ
     public void toInvalid() {
@@ -347,7 +348,7 @@ public class LightweightSequencer implements Sequencer {
 
         int threadCount = usageExtractThreadCount;
         for (int i = 0; i < threadCount; i++) {
-            extractResults[i].numOfTrack = seq.getNumTracks();
+            //extractResults[i].numOfTrack = seq.getNumTracks();
             extractResults[i].init();
         }
 
@@ -532,13 +533,15 @@ public class LightweightSequencer implements Sequencer {
 
         tempMaxTick = 0;
         tempNotesCount = 0;
-        tempBlockTick = 200000;
+        tempBlockTick = 100000;
         tempStartTick = 0;
         tempEndTick = tempStartTick + tempBlockTick;
         tempFinTrk = 0;
         analyzing = true;
 
         tempCurFinTrk = 0;
+        
+        notesCountRenderer.initialize(100);
 
         int threadCount = usageAnalyzeThreadCount;
         for (int i = 0; i < threadCount; i++) {
@@ -597,7 +600,7 @@ public class LightweightSequencer implements Sequencer {
                                 public void shortMessage(int trk, long tick, int statusByte, int data1, int data2) {
                                     int command = statusByte & 0xF0;
                                     if (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 > 0) {
-                                        analyzeResults[executorId].notesCount++;
+                                        notesCountRenderer.count(tick);
                                     }
                                 }
 
@@ -661,7 +664,6 @@ public class LightweightSequencer implements Sequencer {
                     if (tempMaxTick < thResult.maxTick) {
                         tempMaxTick = thResult.maxTick;
                     }
-                    tempNotesCount += thResult.notesCount;
 
                     for (int j = 0; j < seq.getNumTracks(); j++) {
                         if (thResult.finTrackState[j] == true) {
@@ -675,7 +677,12 @@ public class LightweightSequencer implements Sequencer {
                 catch (ExecutionException e) {
                     e.printStackTrace();
                 }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
+            
+            tempNotesCount = notesCountRenderer.getNotesCount(tempMaxTick);
 
             tempCurFinTrk = 0;
             for (int j = 0; j < seq.getNumTracks(); j++) {
@@ -689,10 +696,10 @@ public class LightweightSequencer implements Sequencer {
 
         executor.shutdown();
 
+        long roundNoteCount = notesCountRenderer.getNotesCount(tempMaxTick);
         seq.setTickLength(tempMaxTick);
-        seq.setNumOfNotes(tempNotesCount);
+        seq.setNumOfNotes(roundNoteCount);
 
-        long roundNoteCount = tempNotesCount;
         if (roundNoteCount == 0) {
             roundNoteCount = (seq.getFileSize() - 2000) / 8; // ファイルサイズからおおよそのノーツ数を計算
         }
@@ -1650,5 +1657,9 @@ public class LightweightSequencer implements Sequencer {
             usageExtractThreadCount = MaxUsageExtractThreadCount;
         }
         this.usageExtractThreadCount = usageExtractThreadCount;
+    }
+    
+    public long getRenderedNotesCount(long tick) {
+        return notesCountRenderer.getNotesCount(tick);
     }
 } /* LightweightSequencer class end */

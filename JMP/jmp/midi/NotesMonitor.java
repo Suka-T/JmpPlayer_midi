@@ -9,6 +9,7 @@ import jlib.midi.IMidiEventListener;
 import jlib.midi.IMidiUnit;
 import jlib.midi.INotesMonitor;
 import jlib.midi.MidiByte;
+import jmp.JMPFlags;
 import jmp.core.JMPCore;
 import jmp.core.TaskManager.TaskID;
 
@@ -98,7 +99,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             int data2 = sm.getData2();
             int trackIndex = sm.getTrackIndex();
             if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON) && (data2 > 0)) {
-                notesCount++;
+                if (JMPFlags.UseRenderedNotesCount == false) {
+                    notesCount++;
+                }
                 if (midiUnit.isGhostNotesOfMonitor(data2) == false) {
                     noteOnMonitorChannel[channel][data1] = 1;
                     if (trackIndex < noteOnMonitorTrack.size()) {
@@ -176,7 +179,10 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
     }
 
     public void timerEvent() {
-        
+        if (JMPFlags.UseRenderedNotesCount == true) {
+            long tick = JMPCore.getSoundManager().getMidiUnit().getTickPosition();
+            notesCount = JMPCore.getSoundManager().getMidiUnit().getRenderedNotesCount(tick);
+        }
         npsManager.timerEvent(notesCount);
 
         polyphony = calcPolyphony();

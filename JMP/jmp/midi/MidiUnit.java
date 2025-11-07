@@ -271,4 +271,9 @@ public class MidiUnit implements IMidiUnit {
         }
         getSequencer().setUsageExtractThreadCount(usageExtractThreadCount);
     }
+
+    @Override
+    public long getRenderedNotesCount(long tick) {
+        return getSequencer().getRenderedNotesCount(tick);
+    }
 }

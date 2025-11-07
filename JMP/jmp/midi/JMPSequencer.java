@@ -448,4 +448,8 @@ public class JMPSequencer implements Sequencer {
     public void setUsageExtractThreadCount(int usageExtractThreadCount) {
         this.usageExtractThreadCount = usageExtractThreadCount;
     }
+    
+    public long getRenderedNotesCount(long tick) {
+        return ((LightweightSequencer) abstractSequencer).getRenderedNotesCount(tick);
+    }
 }

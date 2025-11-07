@@ -118,5 +118,8 @@ public class JMPFlags {
      * MidiSequencer1ループ周期の時間を設定する 
      */
     public static long Sequencer1CycleNanos = 5_000_000; //ns単位
+    
+    /** レンダリングノーツカウントを使用する */
+    public static boolean UseRenderedNotesCount = true;
 
 }

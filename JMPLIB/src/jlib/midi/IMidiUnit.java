@@ -175,4 +175,11 @@ public interface IMidiUnit {
      * @param usageExtractThreadCount スレッド数
      */
     abstract void setUsageExtractThreadCount(int usageExtractThreadCount);
+    
+    /**
+     * レンダリング済みのNotesCountを取得する 
+     * @param tick 指定tickまでのNotesCountを取得する 
+     * @return
+     */
+    abstract long getRenderedNotesCount(long tick);
 }
