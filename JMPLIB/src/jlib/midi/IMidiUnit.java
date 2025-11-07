@@ -9,6 +9,9 @@ import java.io.IOException;
  *
  */
 public interface IMidiUnit {
+    
+    public static final int POLY_CALC_METHOD_CHANNEL = 0;
+    public static final int POLY_CALC_METHOD_TRACK = 1;
 
     /**
      * Midiシーケンサーの再生状態取得
@@ -182,4 +185,16 @@ public interface IMidiUnit {
      * @return
      */
     abstract long getRenderedNotesCount(long tick);
+    
+    /**
+     * Polyの計算方法 
+     * @param method 0:Channel, 1:Track 
+     */
+    abstract void setPolyphonyCalcMethod(int method);
+    
+    /**
+     * 
+     * @return 0:Channel, 1:Track 
+     */
+    abstract int getPolyphonyCalcMethod();
 }

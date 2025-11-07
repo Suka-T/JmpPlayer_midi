@@ -213,10 +213,21 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
     private int calcPolyphony() {
         int num = 0;
-        for (int i = 0; i < 16; i++) {
-            for (int j = 0; j < 128; j++) {
-                if (noteOnMonitorChannel[i][j] != 0) {
-                    num++;
+        if (JMPCore.getSoundManager().getMidiUnit().getPolyphonyCalcMethod() == IMidiUnit.POLY_CALC_METHOD_CHANNEL) {
+            for (int i = 0; i < 16; i++) {
+                for (int j = 0; j < 128; j++) {
+                    if (noteOnMonitorChannel[i][j] != 0) {
+                        num++;
+                    }
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < noteOnMonitorTrack.size(); i++) {
+                for (int j = 0; j < 128; j++) {
+                    if (noteOnMonitorTrack.get(i)[j] != 0) {
+                        num++;
+                    }
                 }
             }
         }

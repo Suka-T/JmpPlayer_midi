@@ -21,6 +21,8 @@ public class MidiUnit implements IMidiUnit {
     private MidiPlayer midiPlayer;
 
     private List<IMidiFilter> filters = null;
+    
+    private int polyCalcMethod = IMidiUnit.POLY_CALC_METHOD_TRACK;
 
     public MidiUnit(MidiPlayer midiPlayer) {
         this.midiPlayer = midiPlayer;
@@ -275,5 +277,15 @@ public class MidiUnit implements IMidiUnit {
     @Override
     public long getRenderedNotesCount(long tick) {
         return getSequencer().getRenderedNotesCount(tick);
+    }
+
+    @Override
+    public void setPolyphonyCalcMethod(int method) {
+        polyCalcMethod = method;
+    }
+
+    @Override
+    public int getPolyphonyCalcMethod() {
+        return polyCalcMethod;
     }
 }
