@@ -128,6 +128,12 @@ public class FileManager extends AbstractManager implements IFileManager {
         loadFile(path);
     }
 
+    @Override
+    public void reloadToPlay() {
+        String path = JMPCore.getDataManager().getLoadedFile();
+        loadFileToPlay(path);
+    }
+
     public AutoPlayMode getAutoPlayMode() {
         return autoPlayMode;
     }

@@ -81,4 +81,9 @@ public interface IFileManager {
      * リロード処理
      */
     abstract void reload();
+    
+    /**
+     * リロード処理(ロード後、再生する)
+     */
+    abstract void reloadToPlay();
 }
