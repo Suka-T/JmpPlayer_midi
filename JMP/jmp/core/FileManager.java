@@ -10,6 +10,8 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
 import jlib.core.IFileManager;
+import jlib.core.ISystemManager.ErrorCategory;
+import jmp.JMPFlags;
 import jmp.file.FileResult;
 import jmp.file.IFileResultCallback;
 import jmp.gui.ui.FileListTableModel;
@@ -47,6 +49,26 @@ public class FileManager extends AbstractManager implements IFileManager {
         loadCallbacks = new ArrayList<IFileResultCallback>();
         fileListModel = new FileListTableModel(columnNames, 0);
         fileList = new JTable(fileListModel);
+        
+        if (JMPFlags.ShowFileErrorDialog == true) {
+            addLoadResultCallback(new IFileResultCallback() {
+                
+                @Override
+                public void end(FileResult result) {
+                    if (result.status == false) {
+                        JMPCore.getSystemManager().errorHandle(ErrorCategory.ERROR, result.statusMsg);
+                    }
+                }
+                
+                @Override
+                public void begin(FileResult result) {
+                    if (result.status == false) {
+                        JMPCore.getSystemManager().errorHandle(ErrorCategory.ERROR, result.statusMsg);
+                    }
+                }
+            });
+        }
+        
         return super.initFunc();
     }
 

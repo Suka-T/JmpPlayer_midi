@@ -121,5 +121,8 @@ public class JMPFlags {
     
     /** レンダリングノーツカウントを使用する */
     public static boolean UseRenderedNotesCount = true;
+    
+    /** ファイルエラー発生時にエラーダイアログを表示する */
+    public static boolean ShowFileErrorDialog = false;
 
 }

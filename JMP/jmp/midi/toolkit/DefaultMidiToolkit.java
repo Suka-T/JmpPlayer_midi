@@ -57,14 +57,7 @@ public class DefaultMidiToolkit implements IMidiToolkit {
 
     @Override
     public Sequence readMidiFile(File file) throws InvalidMidiDataException, IOException {
-        Sequence seq = null;
-        try {
-            seq = JMPMidiReader.parseSmf(file);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        return seq;
+        return JMPMidiReader.parseSmf(file);
         // JmpMidiFileReader reader = new JmpMidiFileReader();
         // return reader.getSequence(file);
         // return MidiSystem.getSequence(file);

@@ -56,10 +56,8 @@ public class FileCallbackCreator {
             // 後処理
             cleanupProcces();
 
-            if (endResult.status == true) {
-                // 終了判定の結果を通知
-                JMPCore.getTaskManager().sendNotifyMessage(NotifyID.FILE_RESULT_END, endResult);
-            }
+            // 終了判定の結果を通知
+            JMPCore.getTaskManager().sendNotifyMessage(NotifyID.FILE_RESULT_END, endResult);
         }
 
         /**
