@@ -3,7 +3,6 @@ package jmp.midi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1032,24 +1031,14 @@ public class LightweightSequencer implements Sequencer {
     public float getMedianTempoInBPM() {
         if (tempoChanges.isEmpty())
             return 120.0f;
-
-        // 値をリスト化
-        List<Float> values = new ArrayList<>(tempoChanges.values());
-
-        // 昇順ソート
-        Collections.sort(values);
-
-        int size = values.size();
-        if (size % 2 == 1) {
-            // 奇数個 → 真ん中の要素
-            return values.get(size / 2);
+        
+        float min = Float.POSITIVE_INFINITY;
+        float max = Float.NEGATIVE_INFINITY;
+        for (float v : tempoChanges.values()) {
+            if (v < min) min = v;
+            if (v > max) max = v;
         }
-        else {
-            // 偶数個 → 真ん中2つの平均
-            float lower = values.get(size / 2 - 1);
-            float upper = values.get(size / 2);
-            return (lower + upper) / 2.0f;
-        }
+        return (min + max) / 2f;
     }
 
     @Override
