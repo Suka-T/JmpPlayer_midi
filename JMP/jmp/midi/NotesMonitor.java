@@ -306,7 +306,8 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
 
         for (int i = trkBegin; i != trkEnd; i += trkDir) {
             if (i < noteOnMonitorTrack.size()) {
-                if (noteOnMonitorTrack.get(i)[midiNo] != 0) {
+                int[] array = noteOnMonitorTrack.get(i);
+                if (array != null && array[midiNo] != 0) {
                     topTrkStat = i;
                     break;
                 }
