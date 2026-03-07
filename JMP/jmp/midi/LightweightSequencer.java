@@ -759,11 +759,6 @@ public class LightweightSequencer implements Sequencer {
                         // microPerQuarter を更新
                         microPerQuarter = 60_000_000.0 / tempoBPM;
                     }
-
-                    if (i >= getTickLength()) {
-                        stop();
-                        break;
-                    }
                     tickPosition++;
                 }
 
@@ -773,6 +768,10 @@ public class LightweightSequencer implements Sequencer {
                     while (!midiMsgPump.isWait()) {
                         LockSupport.parkNanos(500_000); // 0.5ms sleep相当
                     }
+                }
+                
+                if (tickPosition >= getTickLength()) {
+                    stop();
                 }
 
                 loopEnd = System.nanoTime();
