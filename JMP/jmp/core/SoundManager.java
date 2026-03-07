@@ -35,6 +35,7 @@ import jlib.midi.MidiByte;
 import jlib.player.IPlayer;
 import jlib.player.Player;
 import jmp.JMPFlags;
+import jmp.JMPLoader;
 import jmp.core.FileManager.AutoPlayMode;
 import jmp.core.asset.AbstractCoreAsset;
 import jmp.core.asset.AbstractCoreAsset.OperateType;
@@ -49,15 +50,12 @@ import jmp.midi.MidiUnit;
 import jmp.midi.NotesMonitor;
 import jmp.midi.toolkit.MidiToolkitManager;
 import jmp.player.DualPlayerSynchronizer;
-import jmp.player.DummyPlayer;
-import jmp.player.FFmpegPlayer;
 import jmp.player.IMoviePlayerModel;
 import jmp.player.MidiPlayer;
-import jmp.player.MoviePlayer;
 import jmp.player.MusicMacroPlayer;
 import jmp.player.MusicXmlPlayer;
 import jmp.player.PlayerAccessor;
-import jmp.player.WavPlayerClip;
+import jmp.player.WFFmpegPlayer;
 import jmp.player.WavPlayerMin;
 import jmp.util.JmpUtil;
 
@@ -81,13 +79,12 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     private static PlayerAccessor PlayerAccessor = null;
 
     // プレイヤーインスタンス
-    private DummyPlayer SDummyPlayer = null;
+    //private DummyPlayer SDummyPlayer = null;
     private MidiPlayer SMidiPlayer = null;
     private Player SWavPlayer = null;
     private Player SMusicXmlPlayer = null;
     private Player SMusicMacloPlayer = null;
-    private Player SFFmpegPlayer = null;
-    private Player SMoviePlayer = null;
+    private WFFmpegPlayer SMoviePlayer = null;
     private DualPlayerSynchronizer SDualPlayerSynchronizer = null;
 
     // プレイヤーのインターフェース
@@ -141,40 +138,26 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         String[] exMML = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MML));
         String[] exMUSIC = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MEDIA));
 
-        /* MoviePlayerはjava8のみ */
-        //String javaVer = Platform.getJavaVersion();
-        boolean isEnableMoviePlayer = false;
-        // if (javaVer.startsWith("1.8") == true) {
-        isEnableMoviePlayer = true;
-        // }
+        /* MoviePlayerの有効化 */
+        boolean isEnableMoviePlayer = JMPLoader.ValidMoviePlayer;
 
         // midi
         SMidiPlayer = new MidiPlayer();
         SMidiPlayer.setSupportExtentions(exMIDI);
         PlayerAccessor.register(SMidiPlayer);
-
-        // movie
-        if (isEnableMoviePlayer == true) {
-            SMoviePlayer = new MoviePlayer();
-            SMoviePlayer.setSupportExtentions(exMUSIC);
-            PlayerAccessor.register(SMoviePlayer);
-        }
-        else {
-            System.out.println("Disable movie player");
-            SMoviePlayer = SDummyPlayer;
-        }
+        
+        // WFFmpeg Movie
+        SMoviePlayer = new WFFmpegPlayer();
+        SMoviePlayer.setSupportExtentions(exMUSIC);
+        SMoviePlayer.setValidMoviePlayer(isEnableMoviePlayer);
+        PlayerAccessor.register(SMoviePlayer);
         moviePlayerModel = (IMoviePlayerModel) SMoviePlayer;
 
         // wav
-        if (isEnableMoviePlayer == true) {
-            SWavPlayer = new WavPlayerMin(SMoviePlayer);
-        }
-        else {
-            SWavPlayer = new WavPlayerClip();
-        }
+        SWavPlayer = new WavPlayerMin(SMoviePlayer);
         SWavPlayer.setSupportExtentions(exWAV);
         PlayerAccessor.register(SWavPlayer);
-
+        
         // musicxml
         SMusicXmlPlayer = new MusicXmlPlayer(SMidiPlayer);
         SMusicXmlPlayer.setSupportExtentions(exMUSICXML);
@@ -184,14 +167,9 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         SMusicMacloPlayer = new MusicMacroPlayer(SMidiPlayer);
         SMusicMacloPlayer.setSupportExtentions(exMML);
         PlayerAccessor.register(SMusicMacloPlayer);
-
-        // ffmpeg
-        SFFmpegPlayer = new FFmpegPlayer(SWavPlayer);
-        SFFmpegPlayer.setSupportExtentions("*");
-        PlayerAccessor.register(SFFmpegPlayer);
-
+        
         // Midi Wav 同時再生
-        SDualPlayerSynchronizer = new DualPlayerSynchronizer(SMidiPlayer, SWavPlayer);
+        SDualPlayerSynchronizer = new DualPlayerSynchronizer(SMidiPlayer, SMoviePlayer);
         PlayerAccessor.registerDualPlayerSynchronizer(SDualPlayerSynchronizer);
 
         // デフォルトはMIDIプレイヤーにする
