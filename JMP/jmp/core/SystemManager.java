@@ -209,9 +209,9 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         cReg.add(cRegKeys[COMMON_REGKEY_NO_EXTENSION_MUSICXML], JmpUtil.genExtensions2Str("xml", "musicxml", "mxl"));
         cReg.add(cRegKeys[COMMON_REGKEY_NO_EXTENSION_MEDIA], JmpUtil.genExtensions2Str(//
                 // 動画 //
-                "mp4", "mkv", "mov", "avi", "webm", "flv", "m4v", "ts", "mts", "m2ts", "wmv",//
+                "mp4", "m4a", "mkv", "mov", "webm", //
                 // 音楽 //
-                "mp3", "aac", "m4a", "flac", "wav", "ogg", "opus"//
+                "mp3", "aac", "flac", "wav", "ogg", "opus"//
         ));//
         cReg.add(cRegKeys[COMMON_REGKEY_NO_EXTENSION_MML], JmpUtil.genExtensions2Str("mml"));
         cReg.add(cRegKeys[COMMON_REGKEY_NO_USE_MIDI_TOOLKIT], USE_MIDI_TOOLKIT_CLASSNAME);
