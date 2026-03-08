@@ -28,9 +28,6 @@ public class JMPLoader {
     public static boolean UseConfigFile = true;
     public static boolean UseHistoryFile = true;
     public static boolean UseSkinFile = true;
-    
-    /** 動画プレイヤーを有効化するか */
-    public static boolean ValidMoviePlayer = true;
 
     /* コマンド文字列 */
     public static final String CMD_MANUAL = "-man";

@@ -40,6 +40,10 @@ public interface IDataManager {
     public static final String CFG_KEY_YOUTUBEDL_FILENAME_MODE = "YOUTUBEDL_FILENAME_MODE";
     /** Plugin準拠バージョンの確認 */
     public static final String CFG_KEY_CHECK_PLUGIN_VERSION = "CHECK_PLUGIN_VERSION";
+    /** 動画プレイヤーの有効化 */
+    public static final String CFG_KEY_USE_VIDEO_PLAYER = "USE_VIDEO_PLAYER";
+    /** 動画プレイヤーの画質設定 */
+    public static final String CFG_KEY_VIDEO_QUALITY = "VIDEO_QUALITY";
 
     /**
      * コンフィグ変更

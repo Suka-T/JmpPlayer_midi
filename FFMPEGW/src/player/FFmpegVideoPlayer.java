@@ -58,11 +58,6 @@ public class FFmpegVideoPlayer {
     public FFmpegVideoPlayer(VideoPanel panel, FFmpegMusicPlayer music) {
         this.panel = panel;
         this.musicPlayer = music;
-
-        // width = 854;
-        // height = 480;
-        width = 1280;
-        height = 720;
         rotate = 0;
     }
 
@@ -104,7 +99,6 @@ public class FFmpegVideoPlayer {
 
             videoWidth = Integer.parseInt(parts[0]);
             videoHeight = Integer.parseInt(parts[1]);
-            System.out.println("w" + videoWidth + " " + "h" + videoHeight);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -356,21 +350,6 @@ public class FFmpegVideoPlayer {
         return volume;
     }
 
-    public boolean isSupportedExtension(String ext) {
-
-        if (ext == null)
-            return false;
-
-        ext = ext.toLowerCase();
-
-        return ext.equals("mp4") || ext.equals("mkv") || ext.equals("mov") || ext.equals("webm");
-    }
-
-    public String[] getSupportExtentions() {
-
-        return new String[] { "mp4", "mkv", "mov", "webm" };
-    }
-
     public String getFFmpegCommand() {
         return ffmpegCommand;
     }
@@ -385,5 +364,10 @@ public class FFmpegVideoPlayer {
 
     public void setFfprobeCommand(String ffprobeCommand) {
         this.ffprobeCommand = ffprobeCommand;
+    }
+    
+    public void setQuality(int width, int height) {
+        this.width = width;
+        this.height = height;
     }
 }

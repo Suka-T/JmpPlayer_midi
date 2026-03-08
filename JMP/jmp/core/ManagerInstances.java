@@ -75,6 +75,8 @@ public class ManagerInstances {
             put(IDataManager.CFG_KEY_RANDOMPLAY, new JmpConfigValueType(IJmpConfigDatabase.IJ_FALSE, TypeOfKey.BOOL));
             put(IDataManager.CFG_KEY_YOUTUBEDL_FILENAME_MODE, new JmpConfigValueType("ID"));
             put(IDataManager.CFG_KEY_CHECK_PLUGIN_VERSION, new JmpConfigValueType(IJmpConfigDatabase.IJ_FALSE, TypeOfKey.BOOL));
+            put(IDataManager.CFG_KEY_USE_VIDEO_PLAYER, new JmpConfigValueType(IJmpConfigDatabase.IJ_TRUE, TypeOfKey.BOOL));
+            put(IDataManager.CFG_KEY_VIDEO_QUALITY, new JmpConfigValueType("720p"));
         }
     };
 

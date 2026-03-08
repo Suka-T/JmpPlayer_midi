@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
@@ -28,6 +29,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
@@ -762,6 +764,59 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
             }
         });
         configMenu.add(mntmJmSynth);
+        
+        lblVideo = new JLabel("-- Video Setting --");
+        lblVideo.setForeground(Color.DARK_GRAY);
+        lblVideo.setFont(new Font("Dialog", Font.BOLD, 12));
+        lblVideo.setHorizontalAlignment(SwingConstants.LEFT);
+        configMenu.add(lblVideo);
+        
+        chckbxmntmVideoValid = new JCheckBoxMenuItem("Video Player validate");
+        chckbxmntmVideoValid.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JMPCore.getDataManager().setValidVideoPlayer(chckbxmntmVideoValid.isSelected());
+            }
+        });
+        configMenu.add(chckbxmntmVideoValid);
+        
+        mnVideoQuality = new JMenu("Quality");
+        configMenu.add(mnVideoQuality);
+        
+        rdbtnmntmVideoQua1080p = new JRadioButtonMenuItem("1080p");
+        buttonGroup.add(rdbtnmntmVideoQua1080p);
+        rdbtnmntmVideoQua1080p.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JMPCore.getDataManager().setVideoQuality(rdbtnmntmVideoQua1080p.getText());
+            }
+        });
+        mnVideoQuality.add(rdbtnmntmVideoQua1080p);
+        
+        rdbtnmntmVideoQua720p = new JRadioButtonMenuItem("720p");
+        buttonGroup.add(rdbtnmntmVideoQua720p);
+        rdbtnmntmVideoQua720p.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JMPCore.getDataManager().setVideoQuality(rdbtnmntmVideoQua720p.getText());
+            }
+        });
+        mnVideoQuality.add(rdbtnmntmVideoQua720p);
+        
+        rdbtnmntmVideoQua480p = new JRadioButtonMenuItem("480p");
+        buttonGroup.add(rdbtnmntmVideoQua480p);
+        rdbtnmntmVideoQua480p.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JMPCore.getDataManager().setVideoQuality(rdbtnmntmVideoQua480p.getText());
+            }
+        });
+        mnVideoQuality.add(rdbtnmntmVideoQua480p);
+        
+        rdbtnmntmVideoQua360p = new JRadioButtonMenuItem("360p");
+        buttonGroup.add(rdbtnmntmVideoQua360p);
+        rdbtnmntmVideoQua360p.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JMPCore.getDataManager().setVideoQuality(rdbtnmntmVideoQua360p.getText());
+            }
+        });
+        mnVideoQuality.add(rdbtnmntmVideoQua360p);
 
         lblDebugMenu = new JLabel("-- Developer menu --");
         lblDebugMenu.setForeground(Color.DARK_GRAY);
@@ -1280,6 +1335,14 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
     private JMenu mnTranspose;
     private JSpinner transposeSpinner;
     private JMenuItem mntmTransposeReset;
+    private JLabel lblVideo;
+    private JCheckBoxMenuItem chckbxmntmVideoValid;
+    private JMenu mnVideoQuality;
+    private JRadioButtonMenuItem rdbtnmntmVideoQua1080p;
+    private JRadioButtonMenuItem rdbtnmntmVideoQua720p;
+    private JRadioButtonMenuItem rdbtnmntmVideoQua480p;
+    private JRadioButtonMenuItem rdbtnmntmVideoQua360p;
+    private final ButtonGroup buttonGroup = new ButtonGroup();
 
     public void updatePluginMenu() {
         pluginMenu.removeAll();
@@ -1335,6 +1398,22 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         alwayTopCheckBox.setSelected(isAlwaysOnTop());
         chckbxmntmLyricView.setSelected(dm.isLyricView());
         chckbxmntmSendSystemSetupBeforePlayback.setSelected(dm.isSendMidiSystemSetup());
+        chckbxmntmVideoValid.setSelected(dm.isValidVideoPlayer());
+        
+        rdbtnmntmVideoQua1080p.setVisible(false); // 非対応 
+        if (dm.getVideoQuality().equalsIgnoreCase("1080p")) {
+            rdbtnmntmVideoQua1080p.setSelected(true);
+        }
+        else if (dm.getVideoQuality().equalsIgnoreCase("720p")) {
+            rdbtnmntmVideoQua720p.setSelected(true);
+        }
+        else if (dm.getVideoQuality().equalsIgnoreCase("480p")) {
+            rdbtnmntmVideoQua480p.setSelected(true);
+        }
+        else if (dm.getVideoQuality().equalsIgnoreCase("360p")) {
+            rdbtnmntmVideoQua360p.setSelected(true);
+        }
+        
         mntmJmSynth.setEnabled(wm.isValidBuiltinSynthFrame());
         mntmInitializeConfig.setEnabled(!sm.isPlay());
         transposeSpinner.setValue(sm.getTranspose());
@@ -1594,6 +1673,10 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
 
         wm.changeFont(mntmJmSynth, LangID.Builtin_synthesizer_settings);
         wm.changeFont(chckbxmntmWindowResizeble, LangID.Allow_window_size_change);
+        
+        wm.changeFont(lblVideo, "-- " + lm.getLanguageStr(LangID.Video_Setting) + " --");
+        wm.changeFont(chckbxmntmVideoValid, LangID.Enable_Video_Player);
+        wm.changeFont(mnVideoQuality, LangID.Image_Quality);
 
         if (JMPCore.getDataManager().getConfigParam(DataManager.CFG_KEY_LOADED_FILE).isEmpty() == true) {
             setInitializeStatusText();

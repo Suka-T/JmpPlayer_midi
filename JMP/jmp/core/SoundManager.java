@@ -35,7 +35,6 @@ import jlib.midi.MidiByte;
 import jlib.player.IPlayer;
 import jlib.player.Player;
 import jmp.JMPFlags;
-import jmp.JMPLoader;
 import jmp.core.FileManager.AutoPlayMode;
 import jmp.core.asset.AbstractCoreAsset;
 import jmp.core.asset.AbstractCoreAsset.OperateType;
@@ -138,9 +137,6 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         String[] exMML = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MML));
         String[] exMUSIC = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MEDIA));
 
-        /* MoviePlayerの有効化 */
-        boolean isEnableMoviePlayer = JMPLoader.ValidMoviePlayer;
-
         // midi
         SMidiPlayer = new MidiPlayer();
         SMidiPlayer.setSupportExtentions(exMIDI);
@@ -149,7 +145,6 @@ public class SoundManager extends AbstractManager implements ISoundManager {
         // WFFmpeg Movie
         SMoviePlayer = new WFFmpegPlayer();
         SMoviePlayer.setSupportExtentions(exMUSIC);
-        SMoviePlayer.setValidMoviePlayer(isEnableMoviePlayer);
         PlayerAccessor.register(SMoviePlayer);
         moviePlayerModel = (IMoviePlayerModel) SMoviePlayer;
 

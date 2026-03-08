@@ -259,20 +259,6 @@ public class FFmpegMusicPlayer {
         }
     }
 
-    public boolean isSupportedExtension(String ext) {
-
-        if (ext == null)
-            return false;
-
-        ext = ext.toLowerCase();
-
-        return ext.equals("mp4") || ext.equals("m4a") || ext.equals("mov");
-    }
-
-    public String[] getSupportExtentions() {
-        return new String[] { "mp4", "m4a", "mov" };
-    }
-
     public String getFFmpegCommand() {
         return ffmpegCommand;
     }

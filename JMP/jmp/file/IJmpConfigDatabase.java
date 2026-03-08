@@ -222,4 +222,20 @@ public interface IJmpConfigDatabase {
     default void setCheckPluginVersion(boolean isChecked) {
         setConfigParamToBoolean(DataManager.CFG_KEY_CHECK_PLUGIN_VERSION, isChecked);
     }
+    
+    default boolean isValidVideoPlayer() {
+        return getConfigParamToBoolean(DataManager.CFG_KEY_USE_VIDEO_PLAYER, false);
+    }
+
+    default void setValidVideoPlayer(boolean isChecked) {
+        setConfigParamToBoolean(DataManager.CFG_KEY_USE_VIDEO_PLAYER, isChecked);
+    }
+    
+    default String getVideoQuality() {
+        return getConfigParam(DataManager.CFG_KEY_VIDEO_QUALITY);
+    }
+
+    default void setVideoQuality(String quality) {
+        setConfigParam(DataManager.CFG_KEY_VIDEO_QUALITY, quality);
+    }
 }

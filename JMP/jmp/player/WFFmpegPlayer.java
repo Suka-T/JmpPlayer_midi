@@ -28,7 +28,7 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
 
         public VideoPlayerFrame() {
 
-            setTitle("JMP Video Player");
+            setTitle("JMPP Video");
             setSize(1280, 720);
             setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
             setLayout(new BorderLayout());
@@ -104,8 +104,6 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
     private String stFfprobeCommand = "";
 
     private boolean loadFlag = false;
-    
-    private boolean validMoviePlayer = true;
 
     public WFFmpegPlayer() {
         ffmpegMP = new FFmpegMusicPlayer();
@@ -201,8 +199,6 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
         loadFlag = true;
         updatePath();
 
-        // 動画非対応
-        mediaType = MEDIA_TYPE_AUDIO;
         if (hasVideoStream(file)) {
             mediaType = MEDIA_TYPE_VIDEO;
         }
@@ -211,6 +207,29 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
             mediaType = MEDIA_TYPE_AUDIO;
         }
         loadFlag = false;
+        
+        // 動画プレイヤーを無効化 
+        if (JMPCore.getDataManager().isValidVideoPlayer() == false) {
+            mediaType = MEDIA_TYPE_AUDIO;
+        }
+        
+        // 画質設定 
+        String sQuality = JMPCore.getDataManager().getVideoQuality();
+        if (sQuality.equalsIgnoreCase("1080p")) {
+            ffmpegVP.setQuality(1920, 1080);
+        }
+        else if (sQuality.equalsIgnoreCase("720p")) {
+            ffmpegVP.setQuality(1280, 720);
+        }
+        else if (sQuality.equalsIgnoreCase("480p")) {
+            ffmpegVP.setQuality(854, 480);
+        }
+        else if (sQuality.equalsIgnoreCase("360p")) {
+            ffmpegVP.setQuality(640, 360);
+        }
+        else /*if (sQuality.equalsIgnoreCase("240p"))*/ {
+            ffmpegVP.setQuality(420, 240);
+        }
 
         ffmpegMP.setFFmpegCommand(stFfmpegCommand);
         ffmpegMP.setFfprobeCommand(stFfprobeCommand);
@@ -272,11 +291,6 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
     }
 
     public boolean hasVideoStream(File file) {
-        
-        if (isValidMoviePlayer() == false) {
-            return false;
-        }
-
         try {
 
             ProcessBuilder pb = new ProcessBuilder(stFfprobeCommand, "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name", "-of",
@@ -341,14 +355,6 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
     @Override
     public boolean isVisibleView() {
         return frame.isVisible();
-    }
-
-    public boolean isValidMoviePlayer() {
-        return validMoviePlayer;
-    }
-
-    public void setValidMoviePlayer(boolean validMoviePlayer) {
-        this.validMoviePlayer = validMoviePlayer;
     }
 
 }
