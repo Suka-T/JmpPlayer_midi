@@ -32,6 +32,21 @@ public class WaveGenerater {
         double ff = (reverse == false) ? (1.0 - trimF(f, samplingRate)) : trimF(f, samplingRate);
         return (byte) ((Math.sin(2.0 * Math.PI * ff) * (double)overallLeval));
     }
+    
+    public static byte pianoWave(double f, int overallLevel) {
+
+        double stretch = 1.002; // ピアノ弦の硬さ
+
+        double v =
+            1.0  * Math.sin(2 * Math.PI * f) +
+            0.6  * Math.sin(2 * Math.PI * f * 2 * stretch) +
+            0.35 * Math.sin(2 * Math.PI * f * 3 * stretch) +
+            0.20 * Math.sin(2 * Math.PI * f * 4 * stretch);
+
+        v += 0.15 * Math.sin(2 * Math.PI * f * 7);
+        
+        return (byte)(v * overallLevel * 0.8);
+    }
 
     /**
      * 矩形波生成

@@ -23,14 +23,21 @@ public abstract class AbstractWaveGenOscillator implements IOscillator {
         overallLevel *= LEVEL_OFFSET;
         for (int i = 0; i < length; i = i + 2) {
             toneStep++;
+            if (toneStep > amplitude) {
+                toneStep = 0;
+            }
+            
             double f = (1.0 * (double) toneStep / (double) amplitude) - (double) (toneStep / amplitude);
             y = (byte) (makeWave(f, (overallLevel & 0xff), oscConfig));
+            
+            int mix = data[i] + y;
+            mix = clamp(mix, -128, 127);
 
             /* Lch 分 */
-            data[i] += y;
+            data[i] = (byte)mix;
 
             /* Rch 分 */
-            data[i + 1] += y;
+            data[i + 1] = (byte)mix;
         }
         if (toneStep >= (Integer.MAX_VALUE - 100000)) {
             /*
@@ -41,6 +48,12 @@ public abstract class AbstractWaveGenOscillator implements IOscillator {
         }
         tone.setToneStep(toneStep);
         return length;
+    }
+    
+    public static int clamp(int v, int min, int max) {
+        if (v < min) return min;
+        if (v > max) return max;
+        return v;
     }
 
     @Override
