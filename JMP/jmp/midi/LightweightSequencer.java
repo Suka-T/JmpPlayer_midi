@@ -902,6 +902,10 @@ public class LightweightSequencer implements Sequencer {
                 }
             }
         }
+        
+        // NoteONのモニターをリセットする 
+        SoundManager sm = JMPCore.getSoundManager();
+        sm.getNotesMonitor().resetNoteMonitor();
     }
 
     @Override
