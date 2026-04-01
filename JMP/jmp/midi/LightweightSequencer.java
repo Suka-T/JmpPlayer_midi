@@ -967,7 +967,6 @@ public class LightweightSequencer implements Sequencer {
                 }
                 resume();
             }
-            return;
         }
         else {
             playThread = new Thread(this::runLoop);
@@ -989,17 +988,27 @@ public class LightweightSequencer implements Sequencer {
             midiMsgPump.reset();
             extractThread.start();
         }
+        
+        // プラグインに通知 
+        JMPCore.getPluginManager().startSequencer();
     }
 
     @Override
     public void stop() {
-        pause();
-
-        allSoundOff();
-
+        try {
+            pause();
+            allSoundOff();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         if (tickPosition > getTickLength()) {
             tickPosition = getTickLength();
         }
+        
+        // プラグインに通知 
+        JMPCore.getPluginManager().stopSequencer();
     }
 
     @Override

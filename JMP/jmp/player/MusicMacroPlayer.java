@@ -4,8 +4,11 @@ import java.io.File;
 
 import javax.sound.midi.Sequence;
 
+import function.Platform;
 import jlib.player.Player;
 import jmp.convert.mml.MusicMacroReader;
+import jmp.core.JMPCore;
+import jmp.core.SystemManager;
 
 public class MusicMacroPlayer extends Player {
 
@@ -76,7 +79,15 @@ public class MusicMacroPlayer extends Player {
         reader.load(file);
 
         Sequence seq = reader.convertToMidi();
-        midiPlayer.loadMidiSequence(seq);
+        
+        
+        JMPCore.getSystemManager().tryToMakeTempDir();
+        String tmpPath = JMPCore.getSystemManager().getSystemPath(SystemManager.PATH_TEMP_DIR);
+        tmpPath += Platform.getSeparator() +  System.currentTimeMillis() + "_" + file.getName();
+        
+        System.out.println(tmpPath);
+        midiPlayer.outputMidiFile(seq, 1, tmpPath);
+        midiPlayer.loadMidiFile(tmpPath);
         return true;
         // File xmlFile = null;
         // File tmpDir = null;

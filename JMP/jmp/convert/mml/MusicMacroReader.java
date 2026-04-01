@@ -8,7 +8,6 @@ import java.util.Vector;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.Track;
 
 import function.Utility;
 import jlib.midi.IMidiToolkit;
@@ -37,11 +36,13 @@ public class MusicMacroReader implements IJMPDocumentReader {
     }
 
     public class MmlChannelObject extends MmlObject {
-        public int ch = 0;
+        public List<Integer> chLst = null;
 
-        public MmlChannelObject(int col, int row, int ch) {
+        public MmlChannelObject(int col, int row, List<Integer> chLst) {
             super(col, row);
-            this.ch = ch;
+            
+            this.chLst = new ArrayList<Integer>();
+            for (int ti : chLst) this.chLst.add(ti); 
         }
     }
 
@@ -63,6 +64,15 @@ public class MusicMacroReader implements IJMPDocumentReader {
         }
     }
 
+    public class MmlFmObject extends MmlObject {
+        public int fmNum = 0;
+
+        public MmlFmObject(int col, int row, int fmNum) {
+            super(col, row);
+            this.fmNum = fmNum;
+        }
+    }
+    
     public class MmlOctaveObject extends MmlObject {
         public int oct = 0;
 
@@ -94,27 +104,27 @@ public class MusicMacroReader implements IJMPDocumentReader {
         public MmlTone tone = MmlTone.C;
         public int length = -1;
         public int alter = 0;
-        public boolean isDotted = false;
+        public int dottCnt = 0;
 
-        public MmlNoteObject(int col, int row, MmlTone tone, int length, int alter, boolean isDotted) {
+        public MmlNoteObject(int col, int row, MmlTone tone, int length, int alter, int dottCnt) {
             super(col, row);
             this.tone = tone;
             this.length = length;
             this.alter = alter;
-            this.isDotted = isDotted;
+            this.dottCnt = dottCnt;
         }
     }
 
     public class MmlTupletObject extends MmlObject {
         public List<MmlNoteObject> tones;
         public int length = -1;
-        public boolean isDotted = false;
+        public int dottCnt = 0;
 
-        public MmlTupletObject(int col, int row, List<MmlNoteObject> tones, int length, boolean isDotted) {
+        public MmlTupletObject(int col, int row, List<MmlNoteObject> tones, int length, int dottCnt) {
             super(col, row);
             this.tones = tones;
             this.length = length;
-            this.isDotted = isDotted;
+            this.dottCnt = dottCnt;
         }
     }
 
@@ -154,15 +164,17 @@ public class MusicMacroReader implements IJMPDocumentReader {
                 String token = "";
                 char cr = line.charAt(c);
                 if (c == 0) {
-                    if (cr == '#') {
+                    if (cr == '#' || cr == ';') {
                         break;
                     }
 
+                    List<Integer> chLst = new ArrayList<Integer>();
                     while (cr != ' ') {
-                        objects.add(new MmlChannelObject(c, r, toChannel(cr)));
+                        chLst.add(toChannel(cr));
                         c++;
                         cr = line.charAt(c);
                     }
+                    objects.add(new MmlChannelObject(c, r, chLst));
                 }
                 else {
                     if (isSymbol(cr) == true) {
@@ -198,6 +210,8 @@ public class MusicMacroReader implements IJMPDocumentReader {
                             objects.add(new MmlVolumeObject(saveC, saveR, volume));
                         }
                         else if (isFmCommand(command) == true) {
+                            int fm = Utility.tryParseInt(token, 1);
+                            objects.add(new MmlFmObject(saveC, saveR, fm));
                         }
                         else if (isOctave(command) == true) {
                             int oct = Utility.tryParseInt(token, 0);
@@ -214,10 +228,10 @@ public class MusicMacroReader implements IJMPDocumentReader {
                         else if (isTone(command) == true) {
                             MmlTone tone = toTone(command);
                             if (token.isEmpty() == true) {
-                                objects.add(new MmlNoteObject(saveC, saveR, tone, -1, 0, false));
+                                objects.add(new MmlNoteObject(saveC, saveR, tone, -1, 0, 0));
                             }
                             else {
-                                boolean isDotted = false;
+                                int dottCnt = 0;
                                 int alter = 0;
                                 int start = 0;
                                 if (isAlter(token.charAt(start)) == true) {
@@ -228,7 +242,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
                                 String lToken = "";
                                 for (int i = start; i < token.length(); i++) {
                                     if (token.charAt(i) == 0x2e) {// Dot
-                                        isDotted = true;
+                                        dottCnt++;;
                                     }
                                     else {
                                         lToken += token.charAt(i);
@@ -236,10 +250,10 @@ public class MusicMacroReader implements IJMPDocumentReader {
                                 }
 
                                 if (lToken.isEmpty() == true) {
-                                    objects.add(new MmlNoteObject(saveC, saveR, tone, -1, alter, isDotted));
+                                    objects.add(new MmlNoteObject(saveC, saveR, tone, -1, alter, dottCnt));
                                 }
                                 else {
-                                    objects.add(new MmlNoteObject(saveC, saveR, tone, Utility.tryParseInt(lToken, -1), alter, isDotted));
+                                    objects.add(new MmlNoteObject(saveC, saveR, tone, Utility.tryParseInt(lToken, -1), alter, dottCnt));
                                 }
                             }
                         }
@@ -247,7 +261,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
                             MmlNoteObject note = null;
                             List<MmlNoteObject> tones = new ArrayList<MmlNoteObject>();
                             int length = -1;
-                            boolean isDotted = false;
+                            int dottCnt = 0;
                             for (int i = 0; i < token.length(); i++) {
                                 if (token.charAt(i) == '}') {
                                     if (note != null) {
@@ -257,7 +271,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
                                     String lToken = "";
                                     for (int j = i; j < token.length(); j++) {
                                         if (token.charAt(i) == 0x2e) { // Dot
-                                            isDotted = true;
+                                            dottCnt++;
                                         }
                                         else {
                                             lToken += token.charAt(j);
@@ -271,7 +285,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
                                     if (note != null) {
                                         tones.add(note);
                                     }
-                                    note = new MmlNoteObject(saveC, saveR, toTone(token.charAt(i)), -1, 0, false);
+                                    note = new MmlNoteObject(saveC, saveR, toTone(token.charAt(i)), -1, 0, dottCnt);
                                 }
                                 else if (isAlter(token.charAt(i)) == true) {
                                     if (note != null) {
@@ -280,7 +294,7 @@ public class MusicMacroReader implements IJMPDocumentReader {
                                 }
                             }
 
-                            objects.add(new MmlTupletObject(saveC, saveR, tones, length, isDotted));
+                            objects.add(new MmlTupletObject(saveC, saveR, tones, length, dottCnt));
                         }
                     }
                 }
@@ -294,90 +308,126 @@ public class MusicMacroReader implements IJMPDocumentReader {
         final int FixedVelocity = 80;
 
         Sequence sequence = new Sequence(Sequence.PPQ, BaseDuration);
-        for (int trackIndex = 0; trackIndex < 16; trackIndex++) {
-            Track track = sequence.createTrack();
-            int curCh = -1;
-            int octave = 4;
-            int defaultLength = 4;
+        for (int trackIndex = 0; trackIndex < 'Z' - 'A' + 1; trackIndex++) {
+            sequence.createTrack();
+        }
+        
+        List<Integer> chLst = new ArrayList<Integer>();
+        int curCh = -1;
+        int octave = 4;
+        int defaultLength = 4;
+        int volume = FixedVelocity;
 
-            long position = 100;
-            position = 480;
-            for (MmlObject obj : objects) {
-                if (obj instanceof MmlChannelObject) {
-                    MmlChannelObject o = (MmlChannelObject) obj;
-                    curCh = o.ch;
+        long[] position = new long['Z' - 'A' + 1];
+        for (int i=0; i<position.length; i++) {
+            position[i] = 480;
+        }
+        for (MmlObject obj : objects) {
+            if (obj instanceof MmlChannelObject) {
+                MmlChannelObject o = (MmlChannelObject) obj;
+                
+                chLst.clear();
+                for (int ti : o.chLst) chLst.add(ti); 
+            }
+            
+            if (chLst.isEmpty()) {
+                chLst.add(0); // CH指定無い場合はA固定 
+            }
+            
+            if (obj instanceof MmlOctaveObject) {
+                MmlOctaveObject o = (MmlOctaveObject) obj;
+                octave = o.oct;
+            }
+            if (obj instanceof MmlVolumeObject) {
+                MmlVolumeObject o = (MmlVolumeObject) obj;
+                volume = o.volume;
+            }
+            else if (obj instanceof MmlOctaveControllerObject) {
+                MmlOctaveControllerObject o = (MmlOctaveControllerObject) obj;
+                octave += o.amount;
+            }
+            else if (obj instanceof MmlLengthObject) {
+                MmlLengthObject o = (MmlLengthObject) obj;
+                defaultLength = o.length;
+            }
+            else if (obj instanceof MmlFmObject) {
+                MmlFmObject o = (MmlFmObject) obj;
+                
+                for (int trackIndex : chLst) {
+                    curCh = trackIndex % 16;
+                    sequence.getTracks()[trackIndex].add(toolkit.createProgramChangeEvent(position[trackIndex], curCh, o.fmNum - 1));
                 }
-
-                // トラック数≒チャンネル数
-                if (curCh != trackIndex) {
-                    continue;
+            }
+            else if (obj instanceof MmlTempoObject) {
+                MmlTempoObject o = (MmlTempoObject) obj;
+                
+                for (int trackIndex : chLst) {
+                    curCh = trackIndex % 16;
+                    sequence.getTracks()[trackIndex].add(toolkit.createTempoEvent(position[trackIndex], o.tempo));
                 }
-
-                if (obj instanceof MmlOctaveObject) {
-                    MmlOctaveObject o = (MmlOctaveObject) obj;
-                    octave = o.oct;
-                }
-                else if (obj instanceof MmlOctaveControllerObject) {
-                    MmlOctaveControllerObject o = (MmlOctaveControllerObject) obj;
-                    octave += o.amount;
-                }
-                else if (obj instanceof MmlLengthObject) {
-                    MmlLengthObject o = (MmlLengthObject) obj;
-                    defaultLength = o.length;
-                }
-                else if (obj instanceof MmlTempoObject) {
-                    MmlTempoObject o = (MmlTempoObject) obj;
-                    track.add(toolkit.createTempoEvent(position, o.tempo));
-                }
-                else if (obj instanceof MmlNoteObject) {
-                    MmlNoteObject o = (MmlNoteObject) obj;
+            }
+            else if (obj instanceof MmlNoteObject) {
+                MmlNoteObject o = (MmlNoteObject) obj;
+                
+                for (int trackIndex : chLst) {
+                    curCh = trackIndex % 16;
                     int length = defaultLength;
                     if (o.length != -1) {
                         length = o.length;
                     }
-
+    
                     int duration = (int) ((double) BaseDuration * ((double) 4 / (double) length));
-                    if (o.isDotted == true) {
-                        duration += (duration / 2);
+                    if (o.dottCnt != 0) {
+                        int addDuration = duration;
+                        for (int i = 0; i < o.dottCnt; i++) {
+                            addDuration /= 2;
+                            duration += addDuration;
+                        }
                     }
                     if (o.tone == MmlTone.R) {
-                        position += duration;
+                        position[trackIndex] += duration;
                     }
                     else {
                         int midiNumber = convertToMidiNumber(o.tone, o.alter, octave);
-
-                        track.add(toolkit.createNoteOnEvent(position, curCh, midiNumber, FixedVelocity));
-                        track.add(toolkit.createNoteOffEvent(position + (int) ((double) duration * 1.0), curCh, midiNumber, 0));
-                        position += duration;
+                        sequence.getTracks()[trackIndex].add(toolkit.createNoteOnEvent(position[trackIndex], curCh, midiNumber, volume));
+                        sequence.getTracks()[trackIndex].add(toolkit.createNoteOffEvent(position[trackIndex] + (int) ((double) duration * 1.0), curCh, midiNumber, 0));
+                        position[trackIndex] += duration;
                     }
                 }
-                else if (obj instanceof MmlTupletObject) {
-                    MmlTupletObject o = (MmlTupletObject) obj;
+            }
+            else if (obj instanceof MmlTupletObject) {
+                MmlTupletObject o = (MmlTupletObject) obj;
+                
+                for (int trackIndex : chLst) {
+                    curCh = trackIndex % 16;
                     int length = defaultLength;
                     if (o.length != -1) {
                         length = o.length;
                     }
-
+    
                     int duration = (int) ((double) BaseDuration * ((double) 4 / (double) length));
-                    if (o.isDotted == true) {
-                        duration += (duration / 2);
+                    if (o.dottCnt != 0) {
+                        int addDuration = duration;
+                        for (int i = 0; i < o.dottCnt; i++) {
+                            addDuration /= 2;
+                            duration += addDuration;
+                        }
                     }
                     if (o.tones.size() <= 0) {
-                        position += duration;
+                        position[trackIndex] += duration;
                     }
                     else {
-                        long nextPosition = position + duration;
+                        long nextPosition = position[trackIndex] + duration;
                         int dDuration = duration / o.tones.size();
                         for (MmlNoteObject note : o.tones) {
                             int midiNumber = convertToMidiNumber(note.tone, note.alter, octave);
-                            track.add(toolkit.createNoteOnEvent(position, curCh, midiNumber, FixedVelocity));
-                            track.add(toolkit.createNoteOffEvent(position + (int) ((double) dDuration * 1.0), curCh, midiNumber, 0));
-                            position += dDuration;
+                            sequence.getTracks()[trackIndex].add(toolkit.createNoteOnEvent(position[trackIndex], curCh, midiNumber, volume));
+                            sequence.getTracks()[trackIndex].add(toolkit.createNoteOffEvent(position[trackIndex] + (int) ((double) dDuration * 1.0), curCh, midiNumber, 0));
+                            position[trackIndex] += dDuration;
                         }
-                        position = nextPosition;
+                        position[trackIndex] = nextPosition;
                     }
                 }
-
             }
         }
         return sequence;
@@ -476,6 +526,10 @@ public class MusicMacroReader implements IJMPDocumentReader {
     public boolean isOctave(char c) {
         return isAbstractSymbol(c, 'o');
     }
+    
+    public boolean isLength(char c) {
+        return isAbstractSymbol(c, 'l');
+    }
 
     public boolean isOctaveController(char c) {
         return isAbstractSymbol(c, '<') || isAbstractSymbol(c, '>');
@@ -492,19 +546,15 @@ public class MusicMacroReader implements IJMPDocumentReader {
         }
     }
 
-    public boolean isLength(char c) {
-        return isAbstractSymbol(c, 'l');
-    }
-
     public boolean isTuplet(char c) {
         return isAbstractSymbol(c, '{');
     }
 
     public boolean isTone(char c) {
-        if ('a' <= c && c <= 'g') {
+        if ('a' <= c && c <= 'g' || c == 'r') {
             return true;
         }
-        else if ('A' <= c && c <= 'G') {
+        else if ('A' <= c && c <= 'G' || c == 'R') {
             return true;
         }
         return false;
@@ -533,8 +583,10 @@ public class MusicMacroReader implements IJMPDocumentReader {
             case 'b':
             case 'B':
                 return MmlTone.B;
+            case 'r':
+            case 'R':
             default:
-                return MmlTone.C;
+                return MmlTone.R;
         }
     }
 

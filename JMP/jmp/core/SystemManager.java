@@ -72,6 +72,9 @@ public class SystemManager extends AbstractManager implements ISystemManager {
 
     /** saveディレクトリ名 */
     public static final String SAVE_DIR_NAME = "save";
+    
+    /** tempディレクトリ名 */
+    public static final String TEMP_DIR_NAME = "temp";
 
     /** sysファイル */
     public static final String COMMON_SYS_FILENAME = "syscommon";
@@ -346,6 +349,9 @@ public class SystemManager extends AbstractManager implements ISystemManager {
                 return false;
             }
         }
+        
+        // テンポラリを削除 
+        tryToDeleteTempDir();
 
         // アクティベート処理
         preActivate();
@@ -362,11 +368,39 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         }
         return true;
     }
+    
+    private void deleteFolder(File folder) {
+        if (folder.isDirectory()) {
+            File[] files = folder.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteFolder(file);
+                }
+            }
+        }
+        folder.delete();
+    }
+    
+    public void tryToDeleteTempDir() {
+        try {
+            File folder = new File(aPath[PATH_TEMP_DIR]);
+            deleteFolder(folder);
+        }
+        catch (Exception e) {
+        }
+    }
+    
+    public void tryToMakeTempDir() {
+        makeDir(aPath[PATH_TEMP_DIR]);
+    }
 
     protected boolean endFunc() {
         super.endFunc();
 
         closeConsole();
+        
+        // テンポラリを削除 
+        tryToDeleteTempDir();
 
         /* アクティベート処理 */
         postActivate();
@@ -527,6 +561,9 @@ public class SystemManager extends AbstractManager implements ISystemManager {
 
         // セーブデータ格納ディレクトリパス
         aPath[PATH_SAVE_DIR] = Utility.pathCombin(currentPath, SAVE_DIR_NAME);
+        
+        // テンポラリディレクトリパス
+        aPath[PATH_TEMP_DIR] = Utility.pathCombin(currentPath, TEMP_DIR_NAME);
 
         // アクティベートファイルパス
         aPath[PATH_ACTIVATE_FILE] = Utility.pathCombin(currentPath, "activate");
