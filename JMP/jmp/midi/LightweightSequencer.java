@@ -1052,6 +1052,41 @@ public class LightweightSequencer implements Sequencer {
         }
         return (min + max) / 2f;
     }
+    
+    public float getDominantTempoInBPM() {
+        if (tempoChanges.isEmpty())
+            return 120.0f;
+
+        long totalTicks = getTickLength();
+        float dominantTempo = 120.0f;
+        long maxDuration = -1;
+
+        long prevTick = 0;
+        float prevTempo = 120.0f;
+
+        for (Map.Entry<Long, Float> entry : tempoChanges.entrySet()) {
+            long tick = entry.getKey();
+            float tempo = entry.getValue();
+
+            long duration = tick - prevTick;
+
+            if (duration > maxDuration) {
+                maxDuration = duration;
+                dominantTempo = prevTempo;
+            }
+
+            prevTick = tick;
+            prevTempo = tempo;
+        }
+
+        // 最後の区間（曲の終わりまで）
+        long lastDuration = totalTicks - prevTick;
+        if (lastDuration > maxDuration) {
+            dominantTempo = prevTempo;
+        }
+
+        return dominantTempo;
+    }
 
     @Override
     public long getTickPosition() {

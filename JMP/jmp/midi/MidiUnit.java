@@ -99,6 +99,11 @@ public class MidiUnit implements IMidiUnit {
     public double getMedianTempoInBPM() {
         return getSequencer().getMedianTempoInBPM();
     }
+    
+    @Override
+    public double getDominantTempoInBPM() {
+        return getSequencer().getDominantTempoInBPM();
+    }
 
     @Override
     public long getTickPosition() {

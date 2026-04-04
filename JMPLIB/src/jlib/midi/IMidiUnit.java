@@ -49,6 +49,13 @@ public interface IMidiUnit {
     abstract double getMedianTempoInBPM();
     
     /**
+     * 一番長いtick区間を占めているBPMを取得
+     * 
+     * @return
+     */
+    abstract double getDominantTempoInBPM();
+    
+    /**
      * 現在のティック取得
      *
      * @return

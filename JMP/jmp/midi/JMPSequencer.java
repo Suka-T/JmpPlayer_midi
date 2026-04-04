@@ -361,6 +361,10 @@ public class JMPSequencer implements Sequencer {
         return ((LightweightSequencer) abstractSequencer).getMedianTempoInBPM();
     }
     
+    public double getDominantTempoInBPM() {
+        return ((LightweightSequencer) abstractSequencer).getDominantTempoInBPM();
+    }
+    
     public void setIgnoreNotesVelocityOfMonitor(int lowest, int highest) {
         // ロード時にSequencerに設定する 
         ignoreNotesLowestOfMonitor = lowest;
