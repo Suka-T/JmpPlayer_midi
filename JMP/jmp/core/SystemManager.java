@@ -242,8 +242,8 @@ public class SystemManager extends AbstractManager implements ISystemManager {
 
         cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_OUTPUT], "output");
         cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_WIN], "ffmpeg", true);
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_MAC], "/Usr/local/bin/ffmpeg", true);
-        cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_OTHER], "/usr/local/bin/ffmpeg", true);
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_MAC], "ffmpeg", true);
+        cReg.add(cRegKeys[COMMON_REGKEY_NO_FFMPEG_OTHER], "ffmpeg", true);
         cReg.add(cRegKeys[COMMON_REGKEY_NO_LYRIC_CHARCODE], "SJIS", true);
         cReg.add(cRegKeys[COMMON_REGKEY_NO_AUTOPLAY_FUNC], "DIR", true);
 

@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import javax.swing.JFrame;
 
 import function.Platform;
+import function.Platform.KindOfPlatform;
 import jlib.core.ISystemManager;
 import jlib.player.Player;
 import jmp.core.JMPCore;
@@ -274,7 +275,7 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
                 isExistsCurrent = true;
             }
 
-            if (isExistsCurrent == true) {
+            if (isExistsCurrent == true && Platform.getRunPlatform() == KindOfPlatform.WINDOWS) {
                 // カレントに有効なffmpegがあるときはそちらを優先的に使用する
                 stFfmpegCommand = "ffmpeg.exe";
                 stFfprobeCommand = replaceLastFFmpeg(stFfmpegCommand);
