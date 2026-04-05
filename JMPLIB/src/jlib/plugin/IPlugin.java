@@ -50,6 +50,14 @@ public interface IPlugin {
     abstract boolean isOpen();
 
     /**
+     * ファイルロード事前準備 
+     *
+     * @param file
+     *            ファイル
+     */
+    default void prepareLoadFile(File file) {};
+    
+    /**
      * ファイルロード
      *
      * @param file

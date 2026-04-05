@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import jmp.JMPFlags;
 import jmp.core.asset.DualFileLoadCoreAsset;
 import jmp.core.asset.FileLoadCoreAsset;
+import jmp.core.asset.PrepareDualFileLoadCoreAsset;
+import jmp.core.asset.PrepareFileLoadCoreAsset;
 import jmp.file.FileResult;
 import jmp.lang.DefineLanguage.LangID;
 import jmp.plugin.PluginWrapper;
@@ -95,6 +97,10 @@ public class FileCallbackCreator {
             this.loadToPlayFlag = toPlay;
         }
 
+        public PrepareFileLoadCoreAsset createFilePrepareLoadCoreAsset() {
+            return new PrepareFileLoadCoreAsset(file);
+        }
+        
         public FileLoadCoreAsset createFileLoadCoreAsset() {
             endResult.status = true;
             endResult.statusMsg = "";
@@ -156,6 +162,10 @@ public class FileCallbackCreator {
             String tmpFileName = dm.getLoadedFile();
 
             dm.clearCachedFiles(file);
+            
+            /* FileLoad前の通知 */
+            PrepareFileLoadCoreAsset preAsset = createFilePrepareLoadCoreAsset();
+            JMPCore.operate(preAsset, true);
 
             /* coreのOperateをコール */
             FileLoadCoreAsset asset = createFileLoadCoreAsset();
@@ -245,6 +255,11 @@ public class FileCallbackCreator {
             super(f, noneHistoryFlag, toPlay);
 
             this.subFile = sub;
+        }
+        
+        @Override
+        public PrepareFileLoadCoreAsset createFilePrepareLoadCoreAsset() {
+            return new PrepareDualFileLoadCoreAsset(file, subFile);
         }
 
         @Override

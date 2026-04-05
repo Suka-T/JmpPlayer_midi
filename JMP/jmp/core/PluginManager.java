@@ -21,6 +21,7 @@ import jmp.JMPLoader;
 import jmp.core.asset.AbstractCoreAsset;
 import jmp.core.asset.AbstractCoreAsset.OperateType;
 import jmp.core.asset.FileLoadCoreAsset;
+import jmp.core.asset.PrepareFileLoadCoreAsset;
 import jmp.file.IJmpFileBuilder;
 import jmp.file.JmpFileBuilderFactory;
 import jmp.lang.DefineLanguage.LangID;
@@ -885,7 +886,16 @@ public class PluginManager extends AbstractManager {
     @Override
     protected boolean operate(AbstractCoreAsset asset) {
         boolean res = super.operate(asset);
-        if ((asset.getOperateType() == OperateType.FileLoad) || (asset.getOperateType() == OperateType.DualFileLoad)) {
+        if ((asset.getOperateType() == OperateType.PrepareFileLoad) || (asset.getOperateType() == OperateType.PrepareDualFileLoad)) {
+            PrepareFileLoadCoreAsset fileAsset = (PrepareFileLoadCoreAsset) asset;
+            try {
+                observers.prepareLoadFile(fileAsset.file);
+            }
+            catch (Exception e) {
+                res = false;
+            }
+        }
+        else if ((asset.getOperateType() == OperateType.FileLoad) || (asset.getOperateType() == OperateType.DualFileLoad)) {
             /* ファイルロード処理 */
             FileLoadCoreAsset fileAsset = (FileLoadCoreAsset) asset;
             try {

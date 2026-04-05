@@ -617,24 +617,23 @@ public class SoundManager extends AbstractManager implements ISoundManager {
     @Override
     protected boolean operate(AbstractCoreAsset asset) {
         boolean res = super.operate(asset);
-
-        getNotesMonitor().clearNumOfNotes();
         
-        String recvName = getConfigParam(IDataManager.CFG_KEY_MIDIOUT);
-        if (recvName.equals(SoundManager.NULL_RECEIVER_NAME)) {
-            SMidiPlayer.setSeqMode(ESeqMode.NonSound);
+        if (asset.getOperateType() == OperateType.PrepareFileLoad || asset.getOperateType() == OperateType.PrepareDualFileLoad) {
+            String recvName = getConfigParam(IDataManager.CFG_KEY_MIDIOUT);
+            if (recvName.equals(SoundManager.NULL_RECEIVER_NAME)) {
+                SMidiPlayer.setSeqMode(ESeqMode.NonSound);
+            }
+            else if (recvName.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME)) {
+                SMidiPlayer.setSeqMode(ESeqMode.TickOnly);
+            }
+            else {
+                SMidiPlayer.setSeqMode(ESeqMode.Normal);
+            } 
+            
+            getNotesMonitor().reset();
+            getNotesMonitor().clearNumOfNotes();
         }
-        else if (recvName.equals(SoundManager.RENDER_ONLY_RECEIVER_NAME)) {
-            SMidiPlayer.setSeqMode(ESeqMode.TickOnly);
-        }
-//        else if (recvName.equals("") == true || recvName.isEmpty() == true || recvName.equals(SoundManager.AUTO_RECEIVER_NAME) == true) {
-//            SMidiPlayer.setSeqMode(ESeqMode.Normal);
-//        }
-        else {
-            SMidiPlayer.setSeqMode(ESeqMode.Normal);
-        }
-
-        if (asset.getOperateType() == OperateType.FileLoad) {
+        else if (asset.getOperateType() == OperateType.FileLoad) {
             /* ファイルロード処理 */
             FileLoadCoreAsset fileAsset = (FileLoadCoreAsset) asset;
             Player tmpPlayer = PlayerAccessor.getCurrent();
@@ -671,6 +670,8 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 LanguageManager lm = JMPCore.getLanguageManager();
                 fileAsset.result.statusMsg = lm.getLanguageStr(LangID.FILE_ERROR_5);
             }
+            
+            getNotesMonitor().analyzeMidiSequence();
 
             res = loadResult;
         }
@@ -726,11 +727,11 @@ public class SoundManager extends AbstractManager implements ISoundManager {
                 LanguageManager lm = JMPCore.getLanguageManager();
                 fileAsset.result.statusMsg = lm.getLanguageStr(LangID.FILE_ERROR_5);
             }
+            
+            getNotesMonitor().analyzeMidiSequence();
 
             res = loadResult;
         }
-
-        getNotesMonitor().analyzeMidiSequence();
 
         return res;
     }

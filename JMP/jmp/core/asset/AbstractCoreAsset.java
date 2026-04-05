@@ -3,7 +3,7 @@ package jmp.core.asset;
 public abstract class AbstractCoreAsset {
 
     public enum OperateType {
-        FileLoad, DualFileLoad,
+        PrepareFileLoad, FileLoad, PrepareDualFileLoad, DualFileLoad,
     }
 
     protected OperateType opeType;

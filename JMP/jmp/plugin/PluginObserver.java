@@ -162,6 +162,15 @@ public class PluginObserver implements IPlugin, IPlayerListener, IMidiEventListe
             pluginWrap.catchMidiEvent(message, timeStamp, senderType);
         }
     }
+    
+    @Override
+    public void prepareLoadFile(File file) {
+        for (PluginWrapper pw : getPlugins()) {
+            if (pw.isSupportExtension(file) == true) {
+                pw.prepareLoadFile(file);
+            }
+        }
+    }
 
     @Override
     public void loadFile(File file) {

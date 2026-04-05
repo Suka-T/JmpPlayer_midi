@@ -256,6 +256,11 @@ public class PluginWrapper implements IPlugin, IPlayerListener, IMidiEventListen
     public boolean isOpen() {
         return plugin.isOpen();
     }
+    
+    @Override
+    public void prepareLoadFile(File file) {
+        plugin.prepareLoadFile(file);
+    }
 
     @Override
     public void loadFile(File file) {
