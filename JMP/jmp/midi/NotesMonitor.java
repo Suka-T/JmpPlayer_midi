@@ -103,6 +103,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
                     notesCount++;
                 }
                 if (midiUnit.isGhostNotesOfMonitor(data2) == false) {
+                    
+                    if (data1 >= 128) return; // 不正なMidiNoを保護 
+                    
                     noteOnMonitorChannel[channel][data1] = 1;
                     if (trackIndex < noteOnMonitorTrack.size()) {
                         noteOnMonitorTrack.get(trackIndex)[data1] = 1;
@@ -111,6 +114,9 @@ public class NotesMonitor implements IMidiEventListener, INotesMonitor {
             }
             else if ((command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF)
                     || (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 <= 0)) {
+                
+                if (data1 >= 128) return; // 不正なMidiNoを保護 
+                
                 noteOnMonitorChannel[channel][data1] = 0;
                 if (trackIndex < noteOnMonitorTrack.size()) {
                     noteOnMonitorTrack.get(trackIndex)[data1] = 0;
