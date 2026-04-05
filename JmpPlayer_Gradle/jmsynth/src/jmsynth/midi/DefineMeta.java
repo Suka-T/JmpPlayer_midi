@@ -1,4 +1,4 @@
-﻿package jmsynth.midi;
+package jmsynth.midi;
 
 public class DefineMeta {
     static final int SEQUENCE_NUMBER = 0;

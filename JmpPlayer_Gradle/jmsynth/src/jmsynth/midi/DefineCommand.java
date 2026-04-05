@@ -1,4 +1,4 @@
-﻿package jmsynth.midi;
+package jmsynth.midi;
 
 public class DefineCommand {
     static final int NOTE_OFF = 128;

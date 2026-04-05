@@ -1,22 +1,7 @@
 package jmp.player;
 
-import java.awt.Dimension;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.io.File;
-
-import fmp.FlagMediaPlayer;
-import fmp.FlagMediaPlayerProrpaty;
-import function.Utility;
-import gui.FlagMediaAccessor;
-import gui.FlagMediaAccessor.PlayerStatus;
-import jlib.player.Player;
-import jmp.core.JMPCore;
-
-public class MoviePlayer extends Player implements IMoviePlayerModel {
-
+public class MoviePlayer /*extends Player implements IMoviePlayerModel*/ {
+/*
     private static final long TIMEOUT_MILLS = 15 * 1000;
 
     // FlagMediaPlayerWindow win;
@@ -264,4 +249,5 @@ public class MoviePlayer extends Player implements IMoviePlayerModel {
         }
         return mediaAccessor.isVisibleView();
     }
+*/
 }

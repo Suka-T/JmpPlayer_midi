@@ -1,4 +1,4 @@
-﻿package jmsynth.midi;
+package jmsynth.midi;
 
 public class DefineControlChange {
     static final int BANK_SELECT_MSB = 0;
