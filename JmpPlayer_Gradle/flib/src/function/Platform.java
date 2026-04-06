@@ -1,7 +1,6 @@
 package function;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 
 /**
@@ -228,19 +227,8 @@ public class Platform {
     }
     
     private static String executionPath = "";
-    
-    public static void setExecutionMainClass(Class<?> clazz) {
-        executionPath = "";
-        try {
-            // クラスの場所を取得
-            File path = new File(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
-            
-            // classもjarも同じ?
-            executionPath = path.isFile() ? path.getParent() : path.getParent();
-        } catch (URISyntaxException e) {
-            executionPath = "";
-        }
-        
+    public static void setExecutionPath(File file) {
+        executionPath = file.getPath();
         System.out.println("ExePath : " + executionPath);
     }
     
