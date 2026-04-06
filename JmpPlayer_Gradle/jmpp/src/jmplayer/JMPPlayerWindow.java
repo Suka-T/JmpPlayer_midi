@@ -573,7 +573,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 // FileNameExtensionFilter("PLUGIN SETUP Files(*.JMS)",
                 // PluginManager.SETUP_FILE_EX);
                 filechooser.setFileFilter(JmpUtil.createFileFilter("PLUGIN Files", PluginManager.PLUGIN_ZIP_EX));
-                File dir = new File(Platform.getCurrentPath());
+                File dir = new File(Platform.getExecutionPath());
                 filechooser.setCurrentDirectory(dir);
                 int selected = filechooser.showOpenDialog(getParent());
                 switch (selected) {
@@ -864,7 +864,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         zipGenerateMenuItem = new JMenuItem("Generate importing \"jmz\"");
         zipGenerateMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String path = Utility.pathCombin(Platform.getCurrentPath(false), "_jmz");
+                String path = Utility.pathCombin(Platform.getExecutionPath(false), "_jmz");
                 File dir = new File(path);
                 if (dir.exists() == false) {
                     dir.mkdir();
@@ -887,7 +887,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         mnExecuteBatFile = new JMenu("Execute \"mkj\" file");
         mnExecuteBatFile.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
-                File current = new File(Platform.getCurrentPath(false));
+                File current = new File(Platform.getExecutionPath(false));
 
                 mnExecuteBatFile.removeAll();
 
@@ -950,7 +950,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
                 String[] exMIDI = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MIDI));
                 String[] exMUSICXML = JmpUtil.genStr2Extensions(system.getCommonRegisterValue(SystemManager.COMMON_REGKEY_NO_EXTENSION_MUSICXML));
 
-                File defaultDir = new File(Platform.getCurrentPath());
+                File defaultDir = new File(Platform.getExecutionPath());
                 String loadedFile = JMPCore.getDataManager().getLoadedFile();
                 if (Utility.checkExtensions(loadedFile, exMIDI) == true || Utility.checkExtensions(loadedFile, exMUSICXML) == true) {
                     String defaultFileName = Utility.getFileNameAndExtension(loadedFile);
@@ -974,7 +974,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         mntmOpenCurrentFolder.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    Utility.openExproler(Platform.getCurrentPath());
+                    Utility.openExproler(Platform.getExecutionPath());
                 }
                 catch (IOException e1) {
                 }
@@ -985,7 +985,7 @@ public class JMPPlayerWindow extends JFrame implements WindowListener, IJmpMainW
         mntmOpenFilePicker = new JMenuItem("Open File Picker");
         mntmOpenFilePicker.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                File dir = new File(Platform.getCurrentPath());
+                File dir = new File(Platform.getExecutionPath());
                 JFileChooser filechooser = new JFileChooser();
                 filechooser.setCurrentDirectory(dir);
                 filechooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);

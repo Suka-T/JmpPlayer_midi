@@ -499,7 +499,7 @@ public class MidiFileListDialog extends JMPFrame {
 
         String listPath = JMPCore.getDataManager().getPlayListPath();
         if ((listPath.isEmpty() == true) || (Utility.isExsistFile(listPath) == false)) {
-            updateList(Platform.getCurrentPath());
+            updateList(Platform.getExecutionPath());
         }
     }
 

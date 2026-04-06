@@ -84,7 +84,7 @@ public class MusicXmlPlayer extends Player {
             String tmpDirectoryPath = "";
             while (tmpDirectoryPath.isEmpty() == true || Utility.isExsistFile(tmpDirectoryPath) == true) {
                 String tmpDirectoryName = String.format("_%s%d%s", "mxl", cnt, Utility.getFileNameNotExtension(file));
-                tmpDirectoryPath = Utility.pathCombin(Platform.getCurrentPath(false), tmpDirectoryName);
+                tmpDirectoryPath = Utility.pathCombin(Platform.getExecutionPath(false), tmpDirectoryName);
                 cnt++;
             }
             Utility.unZip(file.getPath(), tmpDirectoryPath);

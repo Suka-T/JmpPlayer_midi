@@ -80,7 +80,7 @@ public class LicenseReaderDialog extends JMPDialog implements WindowListener {
                 // labelClipMes.setVisible(true);
                 // Utility.setClipboard(textAreaLisence.getText());
                 String contents = JMPCore.getLanguageManager().getReadmeContent();
-                File defaultDirectory = new File(Platform.getCurrentPath());
+                File defaultDirectory = new File(Platform.getExecutionPath());
                 File saveFile = Utility.openSaveFileDialog(LicenseReaderDialog.this, defaultDirectory, "license.txt");
                 if (saveFile != null) {
                     try {

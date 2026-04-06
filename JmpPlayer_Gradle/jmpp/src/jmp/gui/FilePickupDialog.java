@@ -148,7 +148,7 @@ public class FilePickupDialog extends JDialog implements IJMPComponentUI, IJmpWi
     public void updateList() {
         listModel.removeAllElements();
         if (dir == null) {
-            dir = new File(Platform.getCurrentPath());
+            dir = new File(Platform.getExecutionPath());
             // lblDirectory.setText("None");
             // return;
         }

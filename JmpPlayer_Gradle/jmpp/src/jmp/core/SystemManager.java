@@ -523,7 +523,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
 
         aPath = new String[NUM_OF_PATH];
 
-        String currentPath = Platform.getCurrentPath(false);
+        String currentPath = Platform.getExecutionPath(false);
         
         // カレントディレクトリ 
         aPath[PATH_CURRENT_DIR] = currentPath;

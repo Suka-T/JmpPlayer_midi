@@ -290,7 +290,7 @@ public class PluginManager extends AbstractManager {
 
         boolean ret = false;
         String path = f.getPath();
-        String tmpDirectoryPath = Utility.pathCombin(Platform.getCurrentPath(false),
+        String tmpDirectoryPath = Utility.pathCombin(Platform.getExecutionPath(false),
                 Utility.stringsCombin("_", Utility.getFileNameNotExtension(path), Utility.getCurrentTimeStr()));
 
         File tmpDir = new File(tmpDirectoryPath);
@@ -378,7 +378,7 @@ public class PluginManager extends AbstractManager {
 
     public boolean readingJmzPackage(String path, boolean isImport) {
         boolean ret = true;
-        String tmpDirectoryPath = Utility.pathCombin(Platform.getCurrentPath(false),
+        String tmpDirectoryPath = Utility.pathCombin(Platform.getExecutionPath(false),
                 Utility.stringsCombin("_", Utility.getFileNameNotExtension(path), Utility.getCurrentTimeStr()));
 
         File tmpDir = new File(tmpDirectoryPath);

@@ -119,7 +119,7 @@ public class MakeJmpPackege extends JFrame {
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("Jar Files(*.jar)", "jar");
                 filechooser.setFileFilter(filter);
 
-                File dir = new File(Platform.getCurrentPath());
+                File dir = new File(Platform.getExecutionPath());
                 filechooser.setCurrentDirectory(dir);
                 int selected = filechooser.showOpenDialog(getParent());
                 switch (selected) {
@@ -157,7 +157,7 @@ public class MakeJmpPackege extends JFrame {
                 // ファイルフィルター
                 JFileChooser filechooser = new JFileChooser();
 
-                File dir = new File(Platform.getCurrentPath());
+                File dir = new File(Platform.getExecutionPath());
                 filechooser.setCurrentDirectory(dir);
                 filechooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 int selected = filechooser.showOpenDialog(getParent());
@@ -218,7 +218,7 @@ public class MakeJmpPackege extends JFrame {
                 // ファイルフィルター
                 JFileChooser filechooser = new JFileChooser();
 
-                File dir = new File(Platform.getCurrentPath());
+                File dir = new File(Platform.getExecutionPath());
                 filechooser.setCurrentDirectory(dir);
                 filechooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 int selected = filechooser.showOpenDialog(getParent());
@@ -266,7 +266,7 @@ public class MakeJmpPackege extends JFrame {
         btnWrite.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String name = textFieldPluginName.getText();
-                String path = Platform.getCurrentPath(true) + name + "." + MakeJmpLib.PKG_PROJECT_CFG_EX;
+                String path = Platform.getExecutionPath(true) + name + "." + MakeJmpLib.PKG_PROJECT_CFG_EX;
                 saveFileMkj(path);
             }
         });
@@ -276,7 +276,7 @@ public class MakeJmpPackege extends JFrame {
         btnRead = new JButton(MakeJmpLib.PKG_PROJECT_CFG_EX.toUpperCase() + " Read");
         btnRead.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                File ret = Utility.openLoadFileDialog(null, new File(Platform.getCurrentPath()));
+                File ret = Utility.openLoadFileDialog(null, new File(Platform.getExecutionPath()));
                 if (ret != null) {
                     loadFileMkj(ret.getPath());
                 }

@@ -156,7 +156,7 @@ public class YoutubeConvertDialog extends JMPDialog {
                     dir = ef.getParentFile();
                 }
                 else {
-                    dir = new File(Platform.getCurrentPath());
+                    dir = new File(Platform.getExecutionPath());
                 }
                 if (dir != null) {
                     if (dir.isDirectory() == false) {
@@ -335,7 +335,7 @@ public class YoutubeConvertDialog extends JMPDialog {
 
         /* 常にカレントを開く */
         try {
-            Utility.openExproler(Platform.getCurrentPath());
+            Utility.openExproler(Platform.getExecutionPath());
         }
         catch (Exception e2) {
         }
@@ -412,7 +412,7 @@ public class YoutubeConvertDialog extends JMPDialog {
                 repaint();
 
                 // String dstExt = dstExtTextField.getText();
-                JMPCore.getWindowManager().showFilePickupDialog(new File(Platform.getCurrentPath()));
+                JMPCore.getWindowManager().showFilePickupDialog(new File(Platform.getExecutionPath()));
             }
 
             @Override

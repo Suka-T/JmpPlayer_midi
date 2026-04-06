@@ -1,6 +1,7 @@
 package function;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 
 /**
@@ -224,6 +225,41 @@ public class Platform {
             osName = platformToStr.get(platform);
         }
         return osName;
+    }
+    
+    private static String executionPath = "";
+    
+    public static void setExecutionMainClass(Class<?> clazz) {
+        executionPath = "";
+        try {
+            // クラスの場所を取得
+            File path = new File(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
+            
+            // classもjarも同じ?
+            executionPath = path.isFile() ? path.getParent() : path.getParent();
+        } catch (URISyntaxException e) {
+            executionPath = "";
+        }
+        
+        System.out.println("ExePath : " + executionPath);
+    }
+    
+    /**
+     * 指定したクラスが所属する実行場所（JARパスまたはビルドディレクトリ）を返します。
+     * @param clazz 基準となるクラス（Main.classなど）
+     * @return 実行ディレクトリのFileオブジェクト
+     */
+    public static String getExecutionPath(boolean isAddingSeparator) {
+        String ret = "";
+        String path = (executionPath.isEmpty()) ? getCurrentPath(isAddingSeparator) : executionPath;
+        File f = new File(path);
+        ret = f.getPath();
+        
+        return (isAddingSeparator == false) ? ret : (ret + getSeparator());
+    }
+    
+    public static String getExecutionPath() {
+        return getExecutionPath(true);
     }
 
     /**

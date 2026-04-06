@@ -154,7 +154,7 @@ public class FFmpegConvertDialog extends JMPDialog {
                     dir = ef.getParentFile();
                 }
                 else {
-                    dir = new File(Platform.getCurrentPath());
+                    dir = new File(Platform.getExecutionPath());
                 }
                 if (dir != null) {
                     if (dir.isDirectory() == false) {
@@ -185,7 +185,7 @@ public class FFmpegConvertDialog extends JMPDialog {
             public void actionPerformed(ActionEvent e) {
                 // ファイルフィルター
                 JFileChooser filechooser = new JFileChooser();
-                File dir = new File(Platform.getCurrentPath());
+                File dir = new File(Platform.getExecutionPath());
                 filechooser.setCurrentDirectory(dir);
                 int selected = filechooser.showOpenDialog(getParent());
                 switch (selected) {

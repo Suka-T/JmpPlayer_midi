@@ -29,7 +29,7 @@ public class JmpUtil {
     }
 
     public static String getDesktopPathOrCurrent() {
-        String current = Platform.getCurrentPath();
+        String current = Platform.getExecutionPath();
         return getDesktopPath(current);
     }
 
