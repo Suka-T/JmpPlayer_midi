@@ -14,6 +14,7 @@ import javax.swing.JFrame;
 
 import function.Platform;
 import function.Platform.KindOfPlatform;
+import function.Utility;
 import jlib.core.ISystemManager;
 import jlib.player.Player;
 import jmp.core.JMPCore;
@@ -270,14 +271,15 @@ public class WFFmpegPlayer extends Player implements IMoviePlayerModel {
         boolean isFFmpegInstalled = JMPCore.getDataManager().isFFmpegInstalled();
         if (isFFmpegInstalled == true) {
             boolean isExistsCurrent = false;
-            File ffmpegFile = new File("ffmpeg.exe");
+            
+            File ffmpegFile = new File(Utility.pathCombin(Platform.getExecutionPath(), "ffmpeg.exe"));
             if (ffmpegPath.isEmpty() == false && ffmpegFile.exists() == true) {
                 isExistsCurrent = true;
             }
 
             if (isExistsCurrent == true && Platform.getRunPlatform() == KindOfPlatform.WINDOWS) {
                 // カレントに有効なffmpegがあるときはそちらを優先的に使用する
-                stFfmpegCommand = "ffmpeg.exe";
+                stFfmpegCommand = ffmpegFile.getAbsolutePath();
                 stFfprobeCommand = replaceLastFFmpeg(stFfmpegCommand);
             }
             else {
