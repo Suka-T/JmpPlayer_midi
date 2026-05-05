@@ -293,4 +293,29 @@ public class MidiUnit implements IMidiUnit {
     public int getPolyphonyCalcMethod() {
         return polyCalcMethod;
     }
+
+	@Override
+	public int getRenderedNoteRange(long tick) {
+		return getSequencer().getRenderedNoteRange(tick);
+	}
+
+	@Override
+	public double getRenderedNoteResolutionBaseBPM() {
+		return getSequencer().getKeyRangeResolutionBaseBPM();
+	}
+
+	@Override
+	public void setRenderedNoteResolutionBaseBPM(double resolutionBaseBPM) {
+		getSequencer().setKeyRangeResolutionBaseBPM(resolutionBaseBPM);
+	}
+
+	@Override
+	public double getRenderedNoteResolutionSec() {
+		return getSequencer().getKeyRangeResolutionSec();
+	}
+
+	@Override
+	public void setRenderedNoteResolutionSec(double resolutionSec) {
+		getSequencer().setKeyRangeResolutionSec(resolutionSec);
+	}
 }

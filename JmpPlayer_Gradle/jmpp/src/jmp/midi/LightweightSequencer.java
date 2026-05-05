@@ -202,6 +202,9 @@ public class LightweightSequencer implements Sequencer {
     private AnalyzeThreadResult[] analyzeResults = new AnalyzeThreadResult[MaxUsageAnalyzeThreadCount];
     
     private MidiNotesCountRenderer notesCountRenderer = new MidiNotesCountRenderer();
+    private MidiNoteRangeRenderer notesRangeRenderer = new MidiNoteRangeRenderer();
+    private double keyRangeResolutionBaseBPM = 120.0;
+    private double keyRangeResolutionSec = 8.0;
 
     // Sequenceを削除するフラグ
     public void toInvalid() {
@@ -542,6 +545,12 @@ public class LightweightSequencer implements Sequencer {
         
         notesCountRenderer.initialize(100);
 
+        // KeyRangeを計算するおおまかな分解能(秒)を決定 
+        double tickPerSec = 60.0 / (keyRangeResolutionBaseBPM * (double)getResolution()); 
+        int notesRangeRenderRes = (int)(keyRangeResolutionSec / tickPerSec); 
+        if (notesRangeRenderRes < 1000) notesRangeRenderRes = 1000;
+        notesRangeRenderer.initialize(notesRangeRenderRes);
+        
         int threadCount = usageAnalyzeThreadCount;
         for (int i = 0; i < threadCount; i++) {
             analyzeResults[i].setNumOfTrack(seq.getNumTracks());
@@ -600,6 +609,10 @@ public class LightweightSequencer implements Sequencer {
                                     int command = statusByte & 0xF0;
                                     if (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON && data2 > 0) {
                                         notesCountRenderer.count(tick);
+                                    }
+                                    
+                                    if (command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_ON || command == MidiByte.Status.Channel.ChannelVoice.Fst.NOTE_OFF) {
+                                    	notesRangeRenderer.count(tick, data1);
                                     }
                                 }
 
@@ -789,7 +802,6 @@ public class LightweightSequencer implements Sequencer {
     }
 
     protected void onTick(long tick) {
-
         // Note On / Off 処理
         PackedLongList events = currentEventMap.get(tick);
         if (events != null && lwTransmitter.getReceiver() != null) {
@@ -1698,4 +1710,24 @@ public class LightweightSequencer implements Sequencer {
     public long getRenderedNotesCount(long tick) {
         return notesCountRenderer.getNotesCount(tick);
     }
+    
+    public int getRenderedNotesRange(long tick) {
+        return notesRangeRenderer.getNoteRange(tick);
+    }
+
+	public double getKeyRangeResolutionBaseBPM() {
+		return keyRangeResolutionBaseBPM;
+	}
+
+	public void setKeyRangeResolutionBaseBPM(double keyRangeResolutionBaseBPM) {
+		this.keyRangeResolutionBaseBPM = keyRangeResolutionBaseBPM;
+	}
+
+	public double getKeyRangeResolutionSec() {
+		return keyRangeResolutionSec;
+	}
+
+	public void setKeyRangeResolutionSec(double keyRangeResolutionSec) {
+		this.keyRangeResolutionSec = keyRangeResolutionSec;
+	}
 } /* LightweightSequencer class end */

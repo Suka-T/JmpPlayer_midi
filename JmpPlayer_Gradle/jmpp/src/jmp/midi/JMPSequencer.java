@@ -450,4 +450,24 @@ public class JMPSequencer implements Sequencer {
     public long getRenderedNotesCount(long tick) {
         return ((LightweightSequencer) abstractSequencer).getRenderedNotesCount(tick);
     }
+    
+    public int getRenderedNoteRange(long tick) {
+        return ((LightweightSequencer) abstractSequencer).getRenderedNotesRange(tick);
+    }
+    
+	public double getKeyRangeResolutionBaseBPM() {
+		return ((LightweightSequencer) abstractSequencer).getKeyRangeResolutionBaseBPM();
+	}
+
+	public void setKeyRangeResolutionBaseBPM(double keyRangeResolutionBaseBPM) {
+		((LightweightSequencer) abstractSequencer).setKeyRangeResolutionBaseBPM(keyRangeResolutionBaseBPM);
+	}
+
+	public double getKeyRangeResolutionSec() {
+		return ((LightweightSequencer) abstractSequencer).getKeyRangeResolutionSec();
+	}
+
+	public void setKeyRangeResolutionSec(double keyRangeResolutionSec) {
+		((LightweightSequencer) abstractSequencer).setKeyRangeResolutionSec(keyRangeResolutionSec);
+	}
 }

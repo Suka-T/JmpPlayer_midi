@@ -204,4 +204,19 @@ public interface IMidiUnit {
      * @return 0:Channel, 1:Track 
      */
     abstract int getPolyphonyCalcMethod();
+    
+    /**
+     * レンダリング済みのNotesRangeを取得する 
+     * @param tick 指定tickまでのNotesCountを取得する 
+     * @return
+     */
+    abstract int getRenderedNoteRange(long tick);
+    
+    abstract double getRenderedNoteResolutionBaseBPM();
+
+    abstract void setRenderedNoteResolutionBaseBPM(double resolutionBaseBPM);
+
+    abstract double getRenderedNoteResolutionSec();
+
+    abstract void setRenderedNoteResolutionSec(double resolutionSec);
 }
