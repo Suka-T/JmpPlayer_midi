@@ -760,19 +760,38 @@ public class LightweightSequencer implements Sequencer {
                 // Δtick = Δμ秒 / (テンポ（μs/拍） / resolution)
                 microPerQuarter = 60_000_000.0 / tempoBPM;
                 ticksDelta = (double) (deltaUs * resolution) / microPerQuarter;
-
+                
+                if (tickPosition == 0 && tempoChanges.containsKey(0L)) {
+                    setTempoInBPM(tempoChanges.get(tickPosition));
+                    microPerQuarter = 60_000_000.0 / tempoBPM;
+                    ticksDelta = (double) (deltaUs * resolution) / microPerQuarter;
+                }
+                
                 tickRemainder += ticksDelta;
                 ticksToAdvance = (long) tickRemainder;
                 tickRemainder -= ticksToAdvance;
 
                 for (i = 0; i < ticksToAdvance; i++) {
-                    if (tempoChanges.containsKey(tickPosition)) {
-                        setTempoInBPM(tempoChanges.get(tickPosition));
-
-                        // microPerQuarter を更新
-                        microPerQuarter = 60_000_000.0 / tempoBPM;
-                    }
                     tickPosition++;
+
+                    if (tempoChanges.containsKey(tickPosition)) {
+                        // テンポ変更時の速度調整 
+                        double oldMicroPerQuarter = microPerQuarter;
+                        setTempoInBPM(tempoChanges.get(tickPosition));
+                        microPerQuarter = 60_000_000.0 / tempoBPM;
+
+                        // 残りのループ回数（i以降）を新しいテンポで補正する
+                        // これをしないと、テンポが変わったのに古い速度のまま進んでしまう
+                        double remainingTicks = (ticksToAdvance - 1 - i);
+                        // 古いテンポでの残り時間を、新しいテンポでのTick数に変換し直す
+                        double adjustedTicks = remainingTicks * (oldMicroPerQuarter / microPerQuarter);
+                        
+                        // 端数を含めて tickRemainder に戻し、ループを再構成する
+                        double currentProgress = adjustedTicks + tickRemainder;
+                        ticksToAdvance = (long) currentProgress;
+                        tickRemainder = currentProgress - ticksToAdvance;
+                        i = -1; // ループを最初（0）からやり直すためのリセット
+                    }
                 }
 
                 midiMsgPump.nextTick(tickPosition);
