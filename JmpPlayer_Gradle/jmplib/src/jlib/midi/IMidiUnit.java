@@ -2,6 +2,8 @@ package jlib.midi;
 
 import java.io.IOException;
 
+import javax.sound.midi.Receiver;
+
 /**
  * 高度なMidi関係の設定にアクセスするためのクラス
  *
@@ -219,4 +221,9 @@ public interface IMidiUnit {
     abstract double getRenderedNoteResolutionSec();
 
     abstract void setRenderedNoteResolutionSec(double resolutionSec);
+    
+    // 外部Receiverを登録する
+    abstract void addExternalReceiver(String name, Receiver extRec);
+    // 外部Receiverを登録済か？
+    abstract boolean containsExternalReceiver(String name);
 }

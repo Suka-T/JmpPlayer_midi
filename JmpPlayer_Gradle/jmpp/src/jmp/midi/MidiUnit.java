@@ -318,4 +318,14 @@ public class MidiUnit implements IMidiUnit {
 	public void setRenderedNoteResolutionSec(double resolutionSec) {
 		getSequencer().setKeyRangeResolutionSec(resolutionSec);
 	}
+
+	@Override
+	public void addExternalReceiver(String name, Receiver extRec) {
+		getMidiPlayer().registerExternalReceiver(name, extRec);
+	}
+
+	@Override
+	public boolean containsExternalReceiver(String name) {
+		return getMidiPlayer().containsExternalReceiver(name);
+	}
 }

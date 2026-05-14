@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaEventListener;
@@ -219,6 +221,8 @@ public class MidiPlayer extends Player {
     private ReceiverWrapper receiverWrapper = null;
     
     private SignatureInfo signatureInfo = null;
+    
+    private Map<String, Receiver> externalReceiverMap = null;
 
     public Receiver getCurrentReciver() {
         return currentReceiver;
@@ -263,6 +267,8 @@ public class MidiPlayer extends Player {
         currentTransmitter = transmitterWrapper;
         
         signatureInfo = new SignatureInfo();
+        
+        externalReceiverMap = new HashMap<String, Receiver>();
 
         return result;
     }
@@ -270,9 +276,16 @@ public class MidiPlayer extends Player {
     private static final String NO_CACHE = "NO_CACHE";
     private String cachedMidiOutName = NO_CACHE;
     private String cachedMidiInName = NO_CACHE;
-
+    
+    public void registerExternalReceiver(String name, Receiver extRec) {
+    	externalReceiverMap.put(name, extRec);
+    }
+    
+    public boolean containsExternalReceiver(String name) {
+    	return externalReceiverMap.containsKey(name);
+    }
+    
     public boolean updateMidiOut(String name) {
-
         if (cachedMidiOutName.equals(NO_CACHE) == false && cachedMidiOutName.equals(name) == true) {
             // 同名は処理しない
             return false;
@@ -286,9 +299,14 @@ public class MidiPlayer extends Player {
             receiverWrapper.close();
 
             /* Receiverインスタンス生成 */
-            ReceiverFactory factory = new ReceiverFactory();
-            ReceiverCreator creator = factory.create(name);
-            receiver = creator.getReciever();
+            if (externalReceiverMap.containsKey(name) == true) {
+            	receiver = externalReceiverMap.get(name);
+            }
+            else {
+            	ReceiverFactory factory = new ReceiverFactory();
+	            ReceiverCreator creator = factory.create(name);
+	            receiver = creator.getReciever();
+            }
 
             receiverWrapper.changeAbsReceiver(receiver);
             currentReceiver = receiverWrapper;
