@@ -848,6 +848,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
     /** エラーダイアログ表示中フラグ */
     public JDialog showErrorDlg = null;
     public ErrorCategory showErrorDlgCategory = ErrorCategory.ERROR;
+    private String tempErrorMsg = "";
 
     protected void errorHandleImpl(ErrorCategory category, String msg, boolean unsync) {
         
@@ -911,6 +912,10 @@ public class SystemManager extends AbstractManager implements ISystemManager {
                         null,
                         new Object[]{}
                 );
+                
+                if (showErrorDlgCategory == ErrorCategory.CRITICAL) {
+                	tempErrorMsg = new String(msg);
+                }
 
                 // モーダルでない JDialog を作る
                 showErrorDlg = optionPane.createDialog(parent, strCat);
@@ -923,6 +928,12 @@ public class SystemManager extends AbstractManager implements ISystemManager {
                     public void windowClosed(java.awt.event.WindowEvent e) {
                         System.out.println("handle error.");
                         if (showErrorDlgCategory == ErrorCategory.CRITICAL) {
+                        	try {
+								JmpUtil.writeTextFile("errorlog_critical.txt", tempErrorMsg);
+							}
+                        	catch (Exception e1) {
+								e1.printStackTrace();
+							}
                             System.exit(1);
                         }
                         showErrorDlgCategory = ErrorCategory.ERROR;
@@ -952,7 +963,7 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         errorHandleImpl(category, msg, unsync);
     }
 
-    public void errorHandle(Throwable e, boolean unsync) {
+    public void errorHandle(Throwable e, boolean unsync, boolean forcedCritical) {
         ErrorCategory cat = ErrorCategory.ERROR;
         if (e instanceof Error) {
             cat = ErrorCategory.CRITICAL;
@@ -963,10 +974,25 @@ public class SystemManager extends AbstractManager implements ISystemManager {
         else if (e instanceof Exception) {
             cat = ErrorCategory.ERROR;
         }
+        
+        if (forcedCritical) {
+        	cat = ErrorCategory.CRITICAL;
+        }
+        
         String msg = "";
         msg += "Type : " +  e.getClass().getSimpleName() + Platform.getNewLine();
         msg += e.getMessage();
         e.printStackTrace();
+        
+        if (cat == ErrorCategory.CRITICAL) {
+        	// スタックトレースを文字列として取得する
+        	java.io.StringWriter sw = new java.io.StringWriter();
+        	java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+        	e.printStackTrace(pw); // コンソールではなくpw（StringWriter）に出力する
+        	
+        	msg += Platform.getNewLine();
+        	msg += sw.toString();
+        }
         errorHandleImpl(cat, msg, unsync);
     }
 }

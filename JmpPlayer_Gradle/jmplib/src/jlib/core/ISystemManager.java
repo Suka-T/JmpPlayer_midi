@@ -252,8 +252,11 @@ public interface ISystemManager {
      * エラーハンドリング 
      * 
      */
-    abstract void errorHandle(Throwable e, boolean unsync);
+    abstract void errorHandle(Throwable e, boolean unsync, boolean forcedCritical);
+    default void errorHandle(Throwable e, boolean unsync) {
+    	errorHandle(e, unsync, false);
+    }
     default void errorHandle(Throwable e) {
-        errorHandle(e, true);
+    	errorHandle(e, true, false);
     };
 }
